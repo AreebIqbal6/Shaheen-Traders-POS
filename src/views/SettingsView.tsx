@@ -1,0 +1,433 @@
+import React, { useState } from 'react';
+import { Store, Receipt, Printer, Database, Download, Upload, FolderDown, FolderSearch } from 'lucide-react';
+import toast from 'react-hot-toast';
+import { open, save } from '@tauri-apps/plugin-dialog';
+import { writeTextFile, readTextFile } from '@tauri-apps/plugin-fs';
+import { desktopDir } from '@tauri-apps/api/path';
+
+export default function SettingsView() {
+  const [backupPath, setBackupPath] = useState('');
+  const [secondaryBackupPath, setSecondaryBackupPath] = useState('');
+
+  React.useEffect(() => {
+    const fetchDefault = async () => {
+      const saved = localStorage.getItem('shaheen_backuppath');
+      if (saved) {
+        setBackupPath(saved);
+      } else {
+        try {
+          const desktop = await desktopDir();
+          setBackupPath(desktop);
+        } catch {
+          setBackupPath('D:\\AREEB');
+        }
+      }
+      
+      const savedSecondary = localStorage.getItem('shaheen_secondary_backuppath');
+      if (savedSecondary) {
+        setSecondaryBackupPath(savedSecondary);
+      }
+    };
+    fetchDefault();
+  }, []);
+  const [address, setAddress] = useState(() => {
+    return localStorage.getItem('shaheen_address') || 'Gulberg';
+  });
+  
+  const [storeName, setStoreName] = useState(() => {
+    return localStorage.getItem('shaheen_store_name') || 'Shaheen Traders';
+  });
+  const [outletLocation, setOutletLocation] = useState(() => {
+    return localStorage.getItem('shaheen_outlet_location') || 'Main Outlet';
+  });
+  
+  const [autoPrintReceipt, setAutoPrintReceipt] = useState(() => {
+    return localStorage.getItem('shaheen_autoprint') !== 'false';
+  });
+  const [globalBarcode, setGlobalBarcode] = useState(() => {
+    return localStorage.getItem('shaheen_globalbarcode') !== 'false';
+  });
+  const [cashDrawerKick, setCashDrawerKick] = useState(() => {
+    return localStorage.getItem('shaheen_cashdrawerkick') !== 'false';
+  });
+
+  const handleSave = () => {
+    localStorage.setItem('shaheen_backuppath', backupPath.trim());
+    localStorage.setItem('shaheen_secondary_backuppath', secondaryBackupPath.trim());
+    localStorage.setItem('shaheen_store_name', storeName.trim());
+    localStorage.setItem('shaheen_outlet_location', outletLocation.trim());
+    localStorage.setItem('shaheen_address', address.trim());
+    localStorage.setItem('shaheen_autoprint', String(autoPrintReceipt));
+    localStorage.setItem('shaheen_globalbarcode', String(globalBarcode));
+    localStorage.setItem('shaheen_cashdrawerkick', String(cashDrawerKick));
+    toast.success('Configurations Saved Successfully!');
+  };
+
+  const handleSelectFolder = async () => {
+    try {
+      if ('__TAURI__' in window) {
+        const selected = await open({
+          directory: true,
+          multiple: false,
+        });
+        if (selected && typeof selected === 'string') {
+          setBackupPath(selected);
+          localStorage.setItem('shaheen_backuppath', selected);
+          toast.success('Backup location updated and saved!');
+        }
+      } else {
+        if ('showDirectoryPicker' in window) {
+          const loadingId = toast.loading('Please allow folder access in the browser prompt above...', { duration: 10000 });
+          try {
+            const dirHandle = await (window as any).showDirectoryPicker();
+            toast.dismiss(loadingId);
+            const pathName = `Web Folder: ${dirHandle.name}`;
+            setBackupPath(pathName);
+            localStorage.setItem('shaheen_backuppath', pathName);
+            toast.success('Backup location updated for web!');
+          } catch (e) {
+            toast.dismiss(loadingId);
+            toast.error('Folder selection cancelled or denied.');
+          }
+        } else {
+          const pathName = prompt('Enter a folder path for Auto-Save:');
+          if (pathName) {
+            setBackupPath(pathName);
+            localStorage.setItem('shaheen_backuppath', pathName);
+            toast.success('Backup location updated for web!');
+          }
+        }
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error('Failed to open folder picker: ' + String(err));
+    }
+  };
+
+  const handleSelectSecondaryFolder = async () => {
+    try {
+      if ('__TAURI__' in window) {
+        const selected = await open({
+          directory: true,
+          multiple: false,
+        });
+        if (selected && typeof selected === 'string') {
+          setSecondaryBackupPath(selected);
+          localStorage.setItem('shaheen_secondary_backuppath', selected);
+          toast.success('Secondary Backup location updated and saved!');
+        }
+      } else {
+        if ('showDirectoryPicker' in window) {
+          const loadingId = toast.loading('Please allow folder access...', { duration: 10000 });
+          try {
+            const dirHandle = await (window as any).showDirectoryPicker();
+            toast.dismiss(loadingId);
+            const pathName = `Web Folder: ${dirHandle.name}`;
+            setSecondaryBackupPath(pathName);
+            localStorage.setItem('shaheen_secondary_backuppath', pathName);
+            toast.success('Secondary Backup location updated for web!');
+          } catch (e) {
+            toast.dismiss(loadingId);
+            toast.error('Folder selection cancelled or denied.');
+          }
+        } else {
+          const pathName = prompt('Enter a USB/Drive folder path for Secondary Backup:');
+          if (pathName) {
+            setSecondaryBackupPath(pathName);
+            localStorage.setItem('shaheen_secondary_backuppath', pathName);
+            toast.success('Secondary Backup location updated for web!');
+          }
+        }
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error('Failed to open folder picker: ' + String(err));
+    }
+  };
+
+  return (
+    <div className="flex-1 bg-[#f8fafc] p-4 md:p-8 overflow-y-auto custom-scrollbar h-full overflow-x-hidden">
+      <div className="max-w-4xl mx-auto">
+        <h1 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-50 tracking-tight mb-6">System Settings</h1>
+
+        <div className="flex flex-col gap-4">
+          
+          {/* General Store Settings */}
+          <div className="bg-white dark:bg-zinc-900/60 backdrop-blur-md border border-zinc-200 dark:border-zinc-700 rounded-sm shadow-sm overflow-hidden">
+            <div className="border-b border-zinc-100 bg-zinc-50 dark:bg-zinc-900 px-5 py-4 flex items-center gap-2">
+              <Store className="text-zinc-600" size={18} />
+              <h2 className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">Store Information</h2>
+            </div>
+            <div className="p-5 grid grid-cols-1 md:grid-cols-2 gap-5">
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[13px] font-semibold text-zinc-600">Store Name</label>
+                <input type="text" value={storeName} onChange={(e) => setStoreName(e.target.value)} className="border border-zinc-200 dark:border-zinc-700 rounded-sm px-3 py-2 focus:outline-none focus:border-zinc-400 focus:ring-1 focus:ring-zinc-400 transition-all text-zinc-800 dark:text-zinc-200 font-medium text-[13px]" />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[13px] font-semibold text-zinc-600">Outlet Location</label>
+                <input type="text" value={outletLocation} onChange={(e) => setOutletLocation(e.target.value)} className="border border-zinc-200 dark:border-zinc-700 rounded-sm px-3 py-2 focus:outline-none focus:border-zinc-400 focus:ring-1 focus:ring-zinc-400 transition-all text-zinc-800 dark:text-zinc-200 font-medium text-[13px]" />
+              </div>
+              <div className="flex flex-col gap-1.5 col-span-1 md:col-span-2">
+                <label className="text-[13px] font-semibold text-zinc-600">Address on Receipt</label>
+                <input 
+                   type="text" 
+                   value={address} 
+                   onChange={(e) => setAddress(e.target.value)}
+                   className="border border-zinc-200 dark:border-zinc-700 rounded-sm px-3 py-2 focus:outline-none focus:border-zinc-400 focus:ring-1 focus:ring-zinc-400 transition-all text-zinc-800 dark:text-zinc-200 font-medium text-[13px]" 
+                />
+              </div>
+              <div className="col-span-1 md:col-span-2 flex justify-end mt-1">
+                 <button onClick={() => {
+                   localStorage.setItem('shaheen_store_name', storeName.trim());
+                   localStorage.setItem('shaheen_outlet_location', outletLocation.trim());
+                   localStorage.setItem('shaheen_address', address.trim());
+                   toast.success('Store Information Saved!');
+                 }} className="bg-zinc-900 text-zinc-50 px-5 py-2 rounded-sm font-semibold shadow-sm hover:bg-zinc-800 transition-colors text-[12px]">
+                   Save Store Info
+                 </button>
+              </div>
+            </div>
+          </div>
+
+
+
+          {/* Hardware */}
+          <div className="bg-white dark:bg-zinc-900/60 backdrop-blur-md border border-zinc-200 dark:border-zinc-700 rounded-sm shadow-sm overflow-hidden">
+            <div className="border-b border-zinc-100 bg-zinc-50 dark:bg-zinc-900 px-5 py-4 flex items-center gap-2">
+              <Printer className="text-zinc-600" size={18} />
+              <h2 className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">Hardware Integration</h2>
+            </div>
+            <div className="p-5 flex flex-col gap-3 text-[13px]">
+                <div className="flex items-center justify-between py-2 border-b border-zinc-100">
+                  <div>
+                    <p className="font-semibold text-zinc-800 dark:text-zinc-200">Auto-Print Receipt</p>
+                    <p className="text-xs text-zinc-500 dark:text-zinc-400">Automatically fire print command after payment</p>
+                  </div>
+                  <div 
+                    onClick={() => {
+                      const newVal = !autoPrintReceipt;
+                      setAutoPrintReceipt(newVal);
+                      localStorage.setItem('shaheen_autoprint', String(newVal));
+                    }}
+                    className={`w-10 h-5 rounded-full relative cursor-pointer shadow-inner transition-colors ${autoPrintReceipt ? 'bg-zinc-900' : 'bg-zinc-200'}`}>
+                    <div className={`w-3.5 h-3.5 bg-white dark:bg-zinc-900/60 backdrop-blur-md rounded-full absolute top-[3px] shadow-sm transition-all ${autoPrintReceipt ? 'right-1' : 'left-1'}`}></div>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between py-2 border-b border-zinc-100">
+                  <div>
+                    <p className="font-semibold text-zinc-800 dark:text-zinc-200">Global Barcode Scanner Listener</p>
+                    <p className="text-xs text-zinc-500 dark:text-zinc-400">Listen for rapid barcode inputs even when out of focus</p>
+                  </div>
+                  <div 
+                    onClick={() => {
+                      const newVal = !globalBarcode;
+                      setGlobalBarcode(newVal);
+                      localStorage.setItem('shaheen_globalbarcode', String(newVal));
+                    }}
+                    className={`w-10 h-5 rounded-full relative cursor-pointer shadow-inner transition-colors ${globalBarcode ? 'bg-zinc-900' : 'bg-zinc-200'}`}>
+                    <div className={`w-3.5 h-3.5 bg-white dark:bg-zinc-900/60 backdrop-blur-md rounded-full absolute top-[3px] shadow-sm transition-all ${globalBarcode ? 'right-1' : 'left-1'}`}></div>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between py-2">
+                  <div>
+                    <p className="font-semibold text-zinc-800 dark:text-zinc-200">Cash Drawer Kick</p>
+                    <p className="text-xs text-zinc-500 dark:text-zinc-400">Send pulse to cash drawer upon exact change</p>
+                  </div>
+                  <div 
+                    onClick={() => {
+                      const newVal = !cashDrawerKick;
+                      setCashDrawerKick(newVal);
+                      localStorage.setItem('shaheen_cashdrawerkick', String(newVal));
+                    }}
+                    className={`w-10 h-5 rounded-full relative cursor-pointer shadow-inner transition-colors ${cashDrawerKick ? 'bg-zinc-900' : 'bg-zinc-200'}`}>
+                    <div className={`w-3.5 h-3.5 bg-white dark:bg-zinc-900/60 backdrop-blur-md rounded-full absolute top-[3px] shadow-sm transition-all ${cashDrawerKick ? 'right-1' : 'left-1'}`}></div>
+                  </div>
+                </div>
+            </div>
+          </div>
+
+          {/* Security & Backup */}
+          <div className="bg-white dark:bg-zinc-900/60 backdrop-blur-md border border-zinc-200 dark:border-zinc-700 rounded-sm shadow-sm overflow-hidden">
+            <div className="border-b border-zinc-100 bg-zinc-50 dark:bg-zinc-900 px-5 py-4 flex items-center gap-2">
+              <Database className="text-zinc-600" size={18} />
+              <h2 className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">Security & Offline Backup</h2>
+            </div>
+            <div className="p-5 flex flex-col gap-5">
+              
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[13px] font-semibold text-zinc-600">Manual JSON Backup & Restore</label>
+                <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mb-2">Export your entire offline database (products, pos_history, our_order, cart) to a JSON file. You can save this on your phone, PC, or USB. Use Import to restore the system from a JSON file.</p>
+                <div className="flex items-center gap-3">
+                  <button 
+                    onClick={async () => {
+                      try {
+                        const data = {
+                          products: localStorage.getItem('shaheen_products'),
+                          pos_history: localStorage.getItem('shaheen_orders'),
+                          our_order: localStorage.getItem('shaheen_our_order'),
+                          cart: localStorage.getItem('shaheen_cart')
+                        };
+                        
+                        if ('__TAURI__' in window) {
+                          const filePath = await save({
+                            filters: [{ name: 'JSON', extensions: ['json'] }],
+                            defaultPath: `shaheen_backup_${new Date().toISOString().split('T')[0]}.json`,
+                          });
+                          
+                          if (filePath) {
+                            await writeTextFile(filePath, JSON.stringify(data));
+                            toast.success('Backup exported successfully!');
+                          }
+                        } else {
+                          const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
+                          const url = URL.createObjectURL(blob);
+                          const a = document.createElement('a');
+                          a.href = url;
+                          a.download = `shaheen_backup_${new Date().toISOString().split('T')[0]}.json`;
+                          document.body.appendChild(a);
+                          a.click();
+                          document.body.removeChild(a);
+                          URL.revokeObjectURL(url);
+                          toast.success('Backup exported successfully!');
+                        }
+                      } catch (err) {
+                        console.error(err);
+                        toast.error('Failed to export backup: ' + String(err));
+                      }
+                    }}
+                    className="flex items-center gap-2 bg-blue-50 text-blue-600 border border-blue-200 hover:bg-blue-100 px-4 py-2 rounded-sm text-[12px] font-bold transition-colors"
+                  >
+                    <Download size={14} /> Export Backup
+                  </button>
+
+                  <button 
+                    onClick={async () => {
+                      try {
+                        if ('__TAURI__' in window) {
+                          const selectedPath = await open({
+                            multiple: false,
+                            filters: [{ name: 'JSON', extensions: ['json'] }]
+                          });
+                          if (selectedPath && typeof selectedPath === 'string') {
+                            if (!confirm('Are you sure? This will override all current offline data.')) return;
+                            
+                            const fileContents = await readTextFile(selectedPath);
+                            const data = JSON.parse(fileContents);
+                            
+                            if (data.products) localStorage.setItem('shaheen_products', data.products);
+                            if (data.pos_history) localStorage.setItem('shaheen_orders', data.pos_history);
+                            if (data.our_order) localStorage.setItem('shaheen_our_order', data.our_order);
+                            if (data.cart) localStorage.setItem('shaheen_cart', data.cart);
+                            toast.success('Backup restored successfully! Please reload the application.');
+                            window.location.reload();
+                          }
+                        } else {
+                          const input = document.createElement('input');
+                          input.type = 'file';
+                          input.accept = '.json';
+                          input.onchange = (e: any) => {
+                            const file = e.target.files[0];
+                            if (!file) return;
+                            if (!confirm('Are you sure? This will override all current offline data.')) return;
+                            const reader = new FileReader();
+                            reader.onload = (event) => {
+                              try {
+                                const fileContents = event.target?.result as string;
+                                const data = JSON.parse(fileContents);
+                                if (data.products) localStorage.setItem('shaheen_products', data.products);
+                                if (data.pos_history) localStorage.setItem('shaheen_orders', data.pos_history);
+                                if (data.our_order) localStorage.setItem('shaheen_our_order', data.our_order);
+                                if (data.cart) localStorage.setItem('shaheen_cart', data.cart);
+                                toast.success('Backup restored successfully! Please reload the application.');
+                                window.location.reload();
+                              } catch (err) {
+                                toast.error('Invalid JSON file.');
+                              }
+                            };
+                            reader.readAsText(file);
+                          };
+                          input.click();
+                        }
+                      } catch (err) {
+                        console.error(err);
+                        toast.error('Import failed or cancelled: ' + String(err));
+                      }
+                    }}
+                    className="flex items-center gap-2 bg-slate-50 text-slate-700 border border-slate-300 hover:bg-slate-100 px-4 py-2 rounded-sm text-[12px] font-bold transition-colors cursor-pointer"
+                  >
+                    <Upload size={14} /> Import Backup
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-blue-50/50 dark:bg-blue-900/10 border-2 border-blue-500/30 rounded-lg p-6 shadow-sm mb-6">
+            <div className="flex items-center gap-3 mb-4 text-blue-700 dark:text-blue-400">
+              <FolderDown size={28} />
+              <h2 className="text-lg font-bold">Auto-Save Export Location (Excel, PDF, SQL)</h2>
+            </div>
+            
+            <div className="flex flex-col gap-2">
+              <p className="text-[14px] text-blue-900/70 dark:text-blue-200/70 mb-2 leading-relaxed max-w-3xl">
+                This is the absolute path on your PC or USB drive where the system will silently and automatically export a complete backup of every dispatched order (PDF Receipt, Excel Sheet, SQL Query).
+                <br />
+                <span className="font-semibold text-blue-700 dark:text-blue-400">A "SHAHEEN BACKUP" folder will automatically be created inside this path.</span>
+              </p>
+              
+              <div className="flex items-center gap-2">
+                <input 
+                  type="text" 
+                  value={backupPath} 
+                  onChange={e => setBackupPath(e.target.value)}
+                  placeholder="Click Browse to select folder..."
+                  className="border-2 border-blue-300 dark:border-blue-700 rounded-md px-4 py-3 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all text-blue-900 dark:text-blue-100 font-bold w-full text-[15px] bg-white dark:bg-slate-800 shadow-inner" 
+                />
+                <button onClick={handleSelectFolder} className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-3 rounded-md font-bold flex items-center gap-2 shadow-sm whitespace-nowrap transition-colors">
+                  <FolderSearch size={20} />
+                  Browse
+                </button>
+              </div>
+            </div>
+          </div>
+
+            <div className="bg-emerald-50/50 dark:bg-emerald-900/10 border-2 border-emerald-500/30 rounded-lg p-6 shadow-sm mb-6">
+              <div className="flex items-center gap-3 mb-4 text-emerald-700 dark:text-emerald-400">
+                <FolderDown size={28} />
+                <h2 className="text-lg font-bold">Secondary Backup Location (USB / External Drive)</h2>
+              </div>
+              
+              <div className="flex flex-col gap-2">
+                <p className="text-[14px] text-emerald-900/70 dark:text-emerald-200/70 mb-2 leading-relaxed max-w-3xl">
+                  This is an optional secondary location. If a path is provided here, the system will simultaneously save the exact same backup files to this location as well. If the drive is disconnected, the system will skip it gracefully without throwing an error.
+                  <br />
+                  <span className="font-semibold text-emerald-700 dark:text-emerald-400">A "SHAHEEN BACKUP" folder will automatically be created inside this path.</span>
+                </p>
+                
+                <div className="flex items-center gap-2">
+                  <input 
+                    type="text" 
+                    value={secondaryBackupPath} 
+                    onChange={e => setSecondaryBackupPath(e.target.value)}
+                    placeholder="Leave empty or click Browse to select a USB drive..."
+                    className="border-2 border-emerald-300 dark:border-emerald-700 rounded-md px-4 py-3 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all text-emerald-900 dark:text-emerald-100 font-bold w-full text-[15px] bg-white dark:bg-slate-800 shadow-inner" 
+                  />
+                  <button onClick={handleSelectSecondaryFolder} className="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-3 rounded-md font-bold flex items-center gap-2 shadow-sm whitespace-nowrap transition-colors">
+                    <FolderSearch size={20} />
+                    Browse
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-end mt-2">
+             <button onClick={handleSave} className="bg-zinc-900 text-zinc-50 px-6 py-2.5 rounded-sm font-semibold shadow-sm hover:bg-zinc-800 transition-colors text-[13px]">
+               Save Configurations
+             </button>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  );
+}

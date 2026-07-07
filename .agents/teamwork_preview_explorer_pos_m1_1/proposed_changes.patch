@@ -1,0 +1,403 @@
+diff --git a/supabase/schema.sql b/supabase/schema.sql
+index 05fa600..7cf4d58 100644
+--- a/supabase/schema.sql
++++ b/supabase/schema.sql
+@@ -45,6 +45,7 @@ CREATE TABLE public.orders (
+     client_name TEXT NOT NULL,
++    client_phone TEXT,
++    area TEXT,
++    booker_name TEXT,
++    payment_terms TEXT,
+     total_amount NUMERIC(12, 2) NOT NULL,
+     status TEXT NOT NULL DEFAULT 'dispatched',
+     created_at TIMESTAMPTZ DEFAULT NOW()
+ );
+
+diff --git a/src/components/B2BCheckout.tsx b/src/components/B2BCheckout.tsx
+--- a/src/components/B2BCheckout.tsx
++++ b/src/components/B2BCheckout.tsx
+@@ -20,2 +20,3 @@ export default function B2BCheckout({ cart, total, onSuccess, onBack }: B2BCheck
+   const [isSubmitting, setIsSubmitting] = useState(false);
++  const [error, setError] = useState<string | null>(null);
+ 
+@@ -32,2 +33,12 @@   const handleSubmit = async (e: React.FormEvent) => {
+     e.preventDefault();
++    setIsSubmitting(true);
++    setError(null);
++
++    const validatePhone = (phone: string) => {
++      const cleanPhone = phone.replace(/[\s-]/g, '');
++      return /^((\+92)|(92))?3\d{9}$|^03\d{9}$/.test(cleanPhone);
++    };
++
++    if (!validatePhone(formData.contactNumber)) {
++      setError('Please enter a valid Pakistani phone number (e.g. 0300 1234567).');
++      setIsSubmitting(false);
++      return;
++    }
++
+     setIsSubmitting(true);
+@@ -58,9 +69,5 @@     try {
+       if (!navigator.onLine) {
+         throw new Error('Offline');
+       }
+ 
+-      // Remove extra fields that are likely missing from the Supabase schema
+       const { 
+         contact_number, 
+         b2b_user_id, 
+         idempotency_key, 
+         source, 
+         receipt_number,
+         payment_terms,
+         ...supabasePayload 
+       } = orderPayload;
+ 
+-      // Pack contact number into client_name so it's not lost
+       const finalPayload = {
+         ...supabasePayload,
+-        client_name: supabasePayload.client_name + (contact_number ? ` (Phone: ${contact_number})` : '')
++        client_phone: contact_number,
++        area: orderPayload.area,
++        booker_name: orderPayload.booker_name,
++        payment_terms: orderPayload.payment_terms
+       };
+ 
+       const { error: submitError } = await supabase.from('orders').insert(finalPayload);
+@@ -144,7 +151,3 @@               <div>
+                 <label className="text-sm font-bold text-slate-500 uppercase tracking-wide flex items-center gap-1.5 mb-1.5">
+                   <User size={12} className="text-blue-600 dark:text-blue-400" /> Booker / Contact Name
+                 </label>
+                 <input 
+                   required
+                   type="text" 
+                   value={formData.bookerName}
+-                  readOnly={!!activeBooker.name}
+-                  onChange={e => !activeBooker.name && setFormData({...formData, bookerName: e.target.value})}
+-                  className={`w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg py-2.5 px-3 font-medium text-slate-900 dark:text-slate-50 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all text-sm ${activeBooker.name ? 'opacity-70 cursor-not-allowed' : ''}`}
+-                  placeholder="e.g. Irfan"
++                  disabled={true}
++                  className="w-full bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-700 rounded-lg py-2.5 px-3 font-medium text-slate-900 dark:text-slate-50 focus:outline-none transition-all text-sm opacity-70 cursor-not-allowed"
++                  placeholder="Booker Name"
+                 />
+               </div>
+ 
+@@ -176,3 +179,4 @@                   <select 
+                     value={formData.paymentTerms}
+-                    onChange={e => setFormData({...formData, paymentTerms: e.target.value})}
+-                    className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg py-2.5 px-3 pr-8 font-medium text-slate-900 dark:text-slate-50 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all text-sm appearance-none"
++                    disabled={true}
++                    className="w-full bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-700 rounded-lg py-2.5 px-3 pr-8 font-medium text-slate-900 dark:text-slate-50 focus:outline-none transition-all text-sm appearance-none opacity-70 cursor-not-allowed"
+                   >
+
+diff --git a/src/views/B2BShopView.tsx b/src/views/B2BShopView.tsx
+--- a/src/views/B2BShopView.tsx
++++ b/src/views/B2BShopView.tsx
+@@ -112,5 +112,9 @@   const syncOfflineOrders = async () => {
+-          const { isOffline, contact_number, b2b_user_id, idempotency_key, source, receipt_number, payment_terms, ...supabasePayload } = order;
++          const { isOffline, contact_number, b2b_user_id, idempotency_key, source, receipt_number, payment_terms, area, booker_name, ...supabasePayload } = order;
+           const finalPayload = {
+             ...supabasePayload,
+-            client_name: supabasePayload.client_name + (contact_number ? ` (Phone: ${contact_number})` : '')
++            client_phone: contact_number,
++            area: area,
++            booker_name: booker_name,
++            payment_terms: payment_terms
+           };
+           const { error } = await supabase.from('orders').insert(finalPayload);
+
+diff --git a/src/views/AdminPOSView.tsx b/src/views/AdminPOSView.tsx
+--- a/src/views/AdminPOSView.tsx
++++ b/src/views/AdminPOSView.tsx
+@@ -2,3 +2,3 @@
+-import { LayoutDashboard, ShoppingBag, Package, Settings, Search, Trash2, Printer, ScanBarcode, BarChart3, Bell, X, AlertTriangle, FileText, User, Building, Moon, Sun, Grid, ShoppingCart, CreditCard, MapPin, LogOut, ClipboardList, Menu, Users, ChevronDown } from 'lucide-react';
++import { LayoutDashboard, ShoppingBag, Package, Settings, Search, Trash2, Printer, ScanBarcode, BarChart3, Bell, X, AlertTriangle, FileText, User, Building, Moon, Sun, Grid, ShoppingCart, CreditCard, MapPin, LogOut, ClipboardList, Menu, Users, ChevronDown, Phone } from 'lucide-react';
+ 
+@@ -321,3 +321,3 @@   const handleAcceptOrder = async (order: any) => {
+-    setContactNumber(order.contactNumber || '');
++    setContactNumber(order.client_phone || order.contact_number || order.contactNumber || '');
+     setDraftOrderId(uniqueId);
+     setIsCheckoutSuccess(false);
+-    setMobileActiveTab('cart');
++    
++    // Map items fully to preserve metadata
++    const loadedCart: CartItem[] = (order.items || []).map((item: any) => {
++      const matchedProduct = products.find(p => p.id === item.id);
++      return {
++        id: item.id,
++        name: item.name || matchedProduct?.name || 'Unknown Product',
++        price: item.price || matchedProduct?.price || 0,
++        stock: matchedProduct?.stock || 0,
++        barcode: item.barcode || matchedProduct?.barcode || '',
++        sku: item.sku || matchedProduct?.sku || '',
++        category: item.category || matchedProduct?.category || '',
++        cartId: Date.now().toString() + Math.random(),
++        quantity: item.quantity,
++        uom: item.uom || 'Pcs'
++      };
++    });
++    setCart(loadedCart);
++    
++    // Navigate to Register view
++    setActiveMenu('Register');
++    setMobileActiveTab('cart');
+ 
+@@ -458,2 +486,11 @@   const handleDispatch = async () => {
+     if (isSubmitting) return;
++    
++    const validatePhone = (phone: string) => {
++      const cleanPhone = phone.replace(/[\s-]/g, '');
++      return /^((\+92)|(92))?3\d{9}$|^03\d{9}$/.test(cleanPhone);
++    };
++    if (contactNumber && !validatePhone(contactNumber)) {
++      toast.error('Please enter a valid Pakistani phone number.');
++      return;
++    }
+     setIsSubmitting(true);
+@@ -715,4 +752,5 @@                             <span className="flex items-center gap-1"><MapPin size={12} /> Area: {order.area || 'N/A'}</span>
+                             <span className="flex items-center gap-1"><User size={12} /> Booker: {order.booker_name || 'N/A'}</span>
+                             <span className="flex items-center gap-1"><CreditCard size={12} /> Terms: {order.payment_terms || 'Cash'}</span>
++                            <span className="flex items-center gap-1"><Phone size={12} /> Phone: {order.client_phone || order.contact_number || order.contactNumber || 'N/A'}</span>
+                          </div>
+@@ -996,3 +1034,4 @@                           <select 
+                             value={paymentTerms}
+-                            onChange={e => setPaymentTerms(e.target.value)}
+-                            className="w-full bg-slate-50 dark:bg-[#0a0a0c] border border-slate-200 dark:border-zinc-800/50 rounded-sm py-1.5 px-2 pr-8 font-medium focus:outline-none focus:border-slate-400 transition-all text-xs appearance-none"
++                            disabled={true}
++                            className="w-full bg-slate-100 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-800/50 rounded-sm py-1.5 px-2 pr-8 font-medium focus:outline-none transition-all text-xs appearance-none opacity-70 cursor-not-allowed"
+                           >
+@@ -1015,3 +1054,4 @@                           <input 
+                             type="text" 
+                             value={bookerName}
+-                            onChange={e => setBookerName(e.target.value)}
+-                            className="w-full bg-slate-50 dark:bg-[#0a0a0c] border border-slate-200 dark:border-zinc-800/50 rounded-sm py-1.5 px-2 font-medium focus:outline-none focus:border-slate-400 transition-all text-xs"
+-                            placeholder="e.g. Irfan"
++                            disabled={true}
++                            className="w-full bg-slate-100 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-800/50 rounded-sm py-1.5 px-2 font-medium focus:outline-none transition-all text-xs opacity-70 cursor-not-allowed"
++                            placeholder="Booker Name"
+                           />
+@@ -1322,4 +1362,5 @@                          <div className="flex flex-col gap-1 text-xs text-slate-500 dark:text-slate-400 font-medium mb-3">
+                             <span className="flex items-center gap-1"><MapPin size={12} /> Area: {order.area || 'N/A'}</span>
+                             <span className="flex items-center gap-1"><User size={12} /> Booker: {order.booker_name || 'N/A'}</span>
+                             <span className="flex items-center gap-1"><CreditCard size={12} /> Terms: {order.payment_terms || 'Cash'}</span>
++                            <span className="flex items-center gap-1"><Phone size={12} /> Phone: {order.client_phone || order.contact_number || order.contactNumber || 'N/A'}</span>
+                          </div>
+
+diff --git a/src/components/OrderPreviewModal.tsx b/src/components/OrderPreviewModal.tsx
+--- a/src/components/OrderPreviewModal.tsx
++++ b/src/components/OrderPreviewModal.tsx
+@@ -74,109 +74,16 @@         {/* Action Bar */}
+         <div className="bg-zinc-100 border-t border-zinc-200 dark:border-zinc-700 p-4 flex flex-col sm:flex-row justify-end gap-3 rounded-b-sm">
+            <button 
+              onClick={onClose}
+              className="px-6 py-2.5 rounded-sm font-semibold text-zinc-600 bg-white dark:bg-slate-800 border border-zinc-300 hover:bg-zinc-50 dark:bg-zinc-900 transition-colors"
+            >
+              Back / Edit
+            </button>
+            <button 
+              onClick={async () => {
+                 if (isSubmitting) return;
+                 try {
+-                  const orderData = {
+-                    id: draftOrderId,
+-                    clientName: clientName || 'General Cash Sale',
+-                    area: area || 'Samnabad',
+-                    contactNumber: contactNumber || '-',
+-                    bookerName: bookerName || 'Irfan',
+-                    createdAt: new Date().toISOString(),
+-                    items: cart,
+-                    total: total
+-                  };
+-                  
+-                  const excelResult = await exportReceiptToExcel(orderData);
+-                  const jsonBlob = new Blob([JSON.stringify(orderData, null, 2)], { type: 'application/json' });
+-                  const jsonFilename = `Receipt_${draftOrderId}.json`;
+-                  
+                   let pdfResult = null;
+                   try {
+                     pdfResult = await exportReceiptToPDF('receipt-print-area', draftOrderId);
+                   } catch (e) {
+                     console.warn('PDF generation failed', e);
+                   }
+-
+-                  const files = [
+-                    { blob: excelResult.blob, filename: excelResult.filename },
+-                    { blob: jsonBlob, filename: jsonFilename }
+-                  ];
+-                  if (pdfResult) files.push(pdfResult);
+-
+-                  for (const f of files) saveAs(f.blob, f.filename);
+-                  
+-                  onDispatch();
+-                } catch (e) {
+-                  onDispatch();
+-                }
+-             }}
+-             disabled={isSubmitting}
+-             className="px-4 py-2.5 rounded-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+-           >
+-             <FolderDown size={18} />
+-             {isSubmitting ? 'Saving...' : 'Save Default & Close'}
+-           </button>
+-           <button 
+-             onClick={async () => {
+-                if (isSubmitting) return;
+-                try {
+-                  const orderData = {
+-                    id: draftOrderId,
+-                    clientName: clientName || 'General Cash Sale',
+-                    area: area || 'Samnabad',
+-                    contactNumber: contactNumber || '-',
+-                    bookerName: bookerName || 'Irfan',
+-                    createdAt: new Date().toISOString(),
+-                    items: cart,
+-                    total: total
+-                  };
+-                  
+-                  const excelResult = await exportReceiptToExcel(orderData);
+-                  const jsonBlob = new Blob([JSON.stringify(orderData, null, 2)], { type: 'application/json' });
+-                  const jsonFilename = `Receipt_${draftOrderId}.json`;
+-                  
+-                  let pdfResult = null;
+-                  try {
+-                    pdfResult = await exportReceiptToPDF('receipt-print-area', draftOrderId);
+-                  } catch (e) {
+-                    console.warn('PDF generation failed', e);
+-                  }
+-
+-                  const files = [
+-                    { blob: excelResult.blob, filename: excelResult.filename },
+-                    { blob: jsonBlob, filename: jsonFilename }
+-                  ];
+-                  if (pdfResult) files.push(pdfResult);
+-                  
+-                  if ('showDirectoryPicker' in window) {
+-                    try {
+-                      const dirHandle = await (window as any).showDirectoryPicker({ mode: 'readwrite' });
+-                      for (const f of files) {
+-                        const fileHandle = await dirHandle.getFileHandle(f.filename, { create: true });
+-                        const writable = await fileHandle.createWritable();
+-                        await writable.write(f.blob);
+-                        await writable.close();
+-                      }
+-                    } catch (err: any) {
+-                      if (err.name !== 'AbortError') throw err;
+-                    }
+-                  } else {
+-                    for (const f of files) saveAs(f.blob, f.filename);
+-                  }
+-                  
+-                  onDispatch();
+-                } catch (e) {
+-                  onDispatch();
+-                }
+-             }}
+-             disabled={isSubmitting}
+-             className="px-4 py-2.5 rounded-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 transition-colors flex items-center justify-center gap-2 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+-           >
+-             <Globe size={18} />
+-             Browse & Close
+-           </button>
++                  if (pdfResult) {
++                    saveAs(pdfResult.blob, pdfResult.filename);
++                  }
++                  onDispatch();
++                } catch (e) {
++                  onDispatch();
++                }
++             }}
++             disabled={isSubmitting}
++             className="px-4 py-2.5 rounded-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
++           >
++             <FolderDown size={18} />
++             {isSubmitting ? 'Saving...' : 'Download PDF & Dispatch'}
++           </button>
+         </div>
+
+diff --git a/src/views/ReceiptView.tsx b/src/views/ReceiptView.tsx
+--- a/src/views/ReceiptView.tsx
++++ b/src/views/ReceiptView.tsx
+@@ -47,5 +47,5 @@         if (data) {
+           const receiptData: ReceiptData = {
+              id: data.id,
+              clientName: data.client_name,
+              area: data.area,
+-             contactNumber: data.contact_number || '-',
++             contactNumber: data.client_phone || data.contact_number || '-',
+              bookerName: data.booker_name,
+@@ -140,14 +140,2 @@          <div className="flex gap-2">
+-           <button 
+-             onClick={async () => {
+-               try {
+-                 const { blob, filename } = await exportReceiptToExcel(order);
+-                 const { saveAs } = await import('file-saver');
+-                 saveAs(blob, filename);
+-               } catch (e) {
+-                 console.error(e);
+-               }
+-             }}
+-             className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-md font-semibold flex items-center gap-2 transition-colors shadow-sm"
+-           >
+-             <FileSpreadsheet size={18} /> Export Excel
+-           </button>
+            <button 
+
+diff --git a/src/views/DispatchHistory.tsx b/src/views/DispatchHistory.tsx
+--- a/src/views/DispatchHistory.tsx
++++ b/src/views/DispatchHistory.tsx
+@@ -309,5 +309,6 @@                 <div className="bg-zinc-50 dark:bg-[#0a0a0c] rounded-sm border border-zinc-200 dark:border-zinc-700 p-4 space-y-2 text-sm">
+                   <div className="flex justify-between"><span className="text-zinc-500">Date</span><span className="font-medium text-slate-800 dark:text-slate-200">{new Date(selectedOrder.date).toLocaleDateString()}</span></div>
+                   <div className="flex justify-between"><span className="text-zinc-500">Client</span><span className="font-medium text-slate-800 dark:text-slate-200">{selectedOrder.clientName || 'General Cash Sale'}</span></div>
++                  <div className="flex justify-between"><span className="text-zinc-500">Phone</span><span className="font-medium text-slate-800 dark:text-slate-200">{selectedOrder.contactNumber || '-'}</span></div>
+                   <div className="flex justify-between"><span className="text-zinc-500">Booker</span><span className="font-medium text-slate-800 dark:text-slate-200">{selectedOrder.bookerName || 'Self'}</span></div>
+@@ -316,48 +317,6 @@               {/* Download Buttons */}
+               <div>
+-                <h3 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-3">Download Versions</h3>
++                <h3 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-3">Download Receipt</h3>
+                 <div className="flex flex-col gap-3">
+-                  <button 
+-                    onClick={async () => {
+-                      try {
+-                        const { blob, filename } = await exportReceiptToExcel({
+-                          id: `REC-${selectedOrder.receiptNumber}`,
+-                          clientName: selectedOrder.clientName || 'General Cash Sale',
+-                          area: selectedOrder.area || 'N/A',
+-                          contactNumber: selectedOrder.contactNumber || '-',
+-                          bookerName: selectedOrder.bookerName || 'Self',
+-                          createdAt: new Date(selectedOrder.date).toISOString(),
+-                          items: selectedOrder.items,
+-                          total: selectedOrder.total
+-                        });
+-                        const { saveAs } = await import('file-saver');
+-                        saveAs(blob, filename);
+-                      } catch (e) {
+-                        console.error(e);
+-                      }
+-                    }}
+-                    className="flex items-center gap-3 w-full p-3 rounded-md border-2 border-emerald-500 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 font-semibold transition-colors"
+-                  >
+-                    <FileSpreadsheet size={20} /> Download as Excel
+-                  </button>
+- 
+                   <button 
+                     onClick={() => {
+                       // Open the unified ReceiptView which is optimized for printing to PDF
+                       window.open(`/receipt/REC-${selectedOrder.receiptNumber}`, '_blank');
+                     }}
+                     className="flex items-center gap-3 w-full p-3 rounded-md border-2 border-amber-500 text-amber-600 dark:text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-900/20 font-semibold transition-colors"
+                   >
+                     <FileText size={20} /> Download as PDF
+                   </button>
+- 
+-                  <button 
+-                    onClick={() => {
+-                      const jsonStr = JSON.stringify(selectedOrder, null, 2);
+-                      const blob = new Blob([jsonStr], { type: 'application/json' });
+-                      saveAs(blob, `Receipt_DB_${selectedOrder.receiptNumber}.json`);
+-                    }}
+-                    className="flex items-center gap-3 w-full p-3 rounded-md border-2 border-rose-500 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/20 font-semibold transition-colors"
+-                  >
+-                    <Database size={20} /> Download as Database
+-                  </button>
+                 </div>
+               </div>

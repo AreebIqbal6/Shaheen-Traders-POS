@@ -1,0 +1,10 @@
+flowchart TD
+    A[Field Booker] -->|Next.js PWA| B(Supabase Auth)
+    B --> C{Scan Barcode / Search SKU}
+    C --> D[Add to Cart]
+    D --> E[Submit Order via RPC process_order_transaction]
+    E --> F[(Supabase Cloud DB)]
+    F -->|Realtime WebSockets| G[Tauri Desktop POS]
+    G --> H[Cashier / Admin Reviews]
+    H --> I[Sync to Local SQLite]
+    I --> J[Print Invoice / Dispatch]

@@ -1,0 +1,191 @@
+{
+  "sample_row": [
+    {
+      "id": "6a5e676c-31f7-483a-93c8-9dd80b93d02f",
+      "user_id": null,
+      "client_name": "AREEB (Phone: 03322673373)",
+      "idempotency_key": null,
+      "created_at": "2026-06-25T21:30:22.891+00:00",
+      "area": "SAMNABAD",
+      "booker_name": "Irfan",
+      "payment_terms": null,
+      "source": null,
+      "items": [
+        {
+          "id": "28",
+          "name": "Shan Fresh Bread",
+          "price": 161,
+          "quantity": 1
+        },
+        {
+          "id": "48",
+          "name": "Lays Salted Bread",
+          "price": 771,
+          "quantity": 1
+        },
+        {
+          "id": "49",
+          "name": "Knorr Roasted Cheese",
+          "price": 1087,
+          "quantity": 1
+        },
+        {
+          "id": "50",
+          "name": "Olpers Diet Cereal",
+          "price": 512,
+          "quantity": 1
+        },
+        {
+          "id": "51",
+          "name": "Nestle Spicy Cheese",
+          "price": 334,
+          "quantity": 1
+        },
+        {
+          "id": "52",
+          "name": "Nestle Spicy Cheese",
+          "price": 228,
+          "quantity": 1
+        },
+        {
+          "id": "53",
+          "name": "Mitchells Organic Chocolate",
+          "price": 1337,
+          "quantity": 1
+        },
+        {
+          "id": "54",
+          "name": "Dalda Salted Bread",
+          "price": 761,
+          "quantity": 1
+        },
+        {
+          "id": "55",
+          "name": "Mitchells Diet Tea",
+          "price": 740,
+          "quantity": 1
+        },
+        {
+          "id": "56",
+          "name": "Olpers Sweet Juice",
+          "price": 1118,
+          "quantity": 1
+        },
+        {
+          "id": "57",
+          "name": "Fauji Organic Juice",
+          "price": 392,
+          "quantity": 1
+        },
+        {
+          "id": "58",
+          "name": "Shan Fresh Milk",
+          "price": 1646,
+          "quantity": 1
+        },
+        {
+          "id": "59",
+          "name": "Dalda Spicy Chips",
+          "price": 1991,
+          "quantity": 1
+        },
+        {
+          "id": "61",
+          "name": "National Organic Cereal",
+          "price": 1072,
+          "quantity": 1
+        },
+        {
+          "id": "62",
+          "name": "Knorr Diet Yogurt",
+          "price": 185,
+          "quantity": 1
+        },
+        {
+          "id": "63",
+          "name": "Olpers Sweet Chocolate",
+          "price": 1021,
+          "quantity": 1
+        },
+        {
+          "id": "64",
+          "name": "Tapal Spicy Chocolate",
+          "price": 968,
+          "quantity": 1
+        },
+        {
+          "id": "65",
+          "name": "Olpers Sweet Cheese",
+          "price": 858,
+          "quantity": 1
+        },
+        {
+          "id": "66",
+          "name": "Shan Classic Coffee",
+          "price": 917,
+          "quantity": 1
+        },
+        {
+          "id": "67",
+          "name": "National Roasted Chocolate",
+          "price": 1538,
+          "quantity": 1
+        },
+        {
+          "id": "68",
+          "name": "Tapal Fresh Juice",
+          "price": 1124,
+          "quantity": 1
+        },
+        {
+          "id": "69",
+          "name": "Dalda Salted Chips",
+          "price": 1092,
+          "quantity": 1
+        },
+        {
+          "id": "70",
+          "name": "Tapal Premium Chocolate",
+          "price": 1158,
+          "quantity": 1
+        }
+      ],
+      "total": 21011,
+      "status": "COMPLETED",
+      "b2b_user_id": null,
+      "client_phone": null,
+      "receipt_number": null
+    }
+  ],
+  "sample_error": null,
+  "column_checks": {
+    "contact_number": {
+      "exists": false,
+      "error": "column orders.contact_number does not exist"
+    },
+    "client_phone": {
+      "exists": true,
+      "error": null
+    },
+    "phone": {
+      "exists": false,
+      "error": "column orders.phone does not exist"
+    },
+    "payment_terms": {
+      "exists": true,
+      "error": null
+    },
+    "area": {
+      "exists": true,
+      "error": null
+    },
+    "booker_name": {
+      "exists": true,
+      "error": null
+    },
+    "client_name": {
+      "exists": true,
+      "error": null
+    }
+  }
+}

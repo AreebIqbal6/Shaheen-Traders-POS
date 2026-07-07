@@ -1,0 +1,36 @@
+erDiagram
+    USERS ||--o{ ORDERS : places
+    PRODUCTS ||--o{ ORDER_ITEMS : contains
+    ORDERS ||--|{ ORDER_ITEMS : includes
+    
+    USERS {
+        uuid id PK
+        string role "Admin, Cashier, Booker"
+        string email
+    }
+    
+    PRODUCTS {
+        uuid id PK
+        string name
+        string barcode "Primary Barcode"
+        float total_base_pieces "Inventory Count"
+        string uom "Pieces, Box, Carton"
+    }
+    
+    ORDERS {
+        uuid id PK
+        string order_id "e.g. ORD-123"
+        uuid user_id FK
+        float total_amount
+        string status "Pending, Dispatched"
+        timestamp created_at
+    }
+    
+    ORDER_ITEMS {
+        uuid id PK
+        uuid order_id FK
+        uuid product_id FK
+        int quantity
+        float unit_price
+        float subtotal
+    }

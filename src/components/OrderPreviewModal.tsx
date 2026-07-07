@@ -1,0 +1,259 @@
+import { useEffect } from 'react';
+import type { Product } from '../views/ProductsView';
+import Receipt from './Receipt';
+import { FolderDown, Globe, Printer, X, Check } from 'lucide-react';
+import { saveOrderBackup } from '../utils/exportManager';
+import toast from 'react-hot-toast';
+
+interface CartItem extends Product {
+  cartId: string;
+  quantity: number;
+  uom?: string;
+}
+
+interface OrderPreviewModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onDispatch?: () => void;
+  onBackupSuccess?: () => void;
+  cart: CartItem[];
+  total: number;
+  subTotal: number;
+  clientName: string;
+  paymentTerms: string;
+  area?: string;
+  bookerName?: string;
+  contactNumber?: string;
+  draftOrderId: string;
+  isSubmitting?: boolean;
+  isDispatched?: boolean;
+}
+
+export default function OrderPreviewModal({
+  isOpen,
+  onClose,
+  onDispatch,
+  onBackupSuccess,
+  cart,
+  total,
+  subTotal,
+  clientName,
+  paymentTerms,
+  area,
+  bookerName,
+  contactNumber,
+  draftOrderId,
+  isSubmitting,
+  isDispatched
+}: OrderPreviewModalProps) {
+  useEffect(() => {
+    if (isOpen) {
+      const originalTitle = document.title;
+      document.title = draftOrderId;
+      return () => {
+        document.title = originalTitle;
+      };
+    }
+  }, [isOpen, draftOrderId]);
+
+  if (!isOpen) return null;
+
+  const isAdmin = window.location.pathname.startsWith('/admin');
+  return (
+    <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex flex-col items-center justify-center z-50 p-4" onClick={onClose}>
+      {/* Container matching Image 3 proportions */}
+      <div className="bg-white dark:bg-slate-800 w-[800px] max-w-full rounded-sm shadow-2xl flex flex-col max-h-[85vh] border border-zinc-200 dark:border-zinc-700 relative" onClick={(e) => e.stopPropagation()}>
+        <button 
+          onClick={onClose}
+          className="absolute top-3 right-3 z-10 w-8 h-8 flex items-center justify-center rounded-sm bg-red-100 hover:bg-red-500 text-red-600 hover:text-white dark:bg-red-900/30 dark:hover:bg-red-600 transition-colors shadow-sm"
+        >
+          <X size={18} strokeWidth={2.5} />
+        </button>
+        
+        {/* Invoice Content (Preview) */}
+        <div className="flex-1 overflow-hidden text-black bg-slate-100 dark:bg-zinc-900 font-sans">
+          <div className="w-full h-full overflow-y-auto custom-scrollbar flex justify-center p-4 md:p-8">
+            <div className="transform origin-top scale-[0.65] sm:scale-[0.85] md:scale-[0.85] lg:scale-[0.9] xl:scale-[0.95] print:transform-none print:scale-100 transition-transform h-max pb-12 w-[210mm]">
+             <Receipt 
+               isPrintable={false}
+               data={{
+                 id: draftOrderId,
+                 clientName: clientName || 'General Cash Sale',
+                 area: area || 'Samnabad',
+                 contactNumber: contactNumber || '-',
+                 bookerName: bookerName || 'Irfan',
+                 createdAt: new Date().toISOString(),
+                 items: cart,
+                 total: total
+               }} 
+             />
+            </div>
+         </div>
+        </div>
+        
+        {/* Action Bar */}
+        <div className="bg-zinc-100 border-t border-zinc-200 dark:border-zinc-700 p-4 flex flex-col sm:flex-row justify-end gap-3 rounded-b-sm">
+           {isDispatched ? (
+             <>
+               <button 
+                 onClick={onClose}
+                 className="px-6 py-2.5 rounded-sm font-semibold text-zinc-600 bg-white dark:bg-slate-800 border border-zinc-300 hover:bg-zinc-50 dark:bg-zinc-900 transition-colors"
+               >
+                 Close
+               </button>
+                  <button 
+                    onClick={() => {
+                      window.print();
+                    }}
+                    className="px-4 py-2.5 rounded-sm font-semibold text-zinc-700 bg-white border border-zinc-300 hover:bg-zinc-50 transition-colors flex items-center justify-center gap-2 shadow-sm"
+                  >
+                   <Printer size={18} />
+                   Print Receipt
+                 </button>
+                  <button 
+                    onClick={async () => {
+                      // Bypass browser print dialog completely and force a perfect jsPDF download
+                      import('../utils/exportPdf').then(async m => {
+                        const result = await m.exportReceiptToPDF(draftOrderId, false);
+                        if (result) {
+                          try {
+                            if ('__TAURI__' in window) {
+                              const { BaseDirectory } = await import('@tauri-apps/api/path');
+                              const { writeBinaryFile, mkdir, exists } = await import('@tauri-apps/plugin-fs');
+                              
+                              const date = new Date();
+                              const dateFolder = `Shaheen Receipts/${String(date.getDate()).padStart(2, '0')}-${String(date.getMonth() + 1).padStart(2, '0')}-${date.getFullYear()}`;
+                              
+                              if (!(await exists('Shaheen Receipts', { baseDir: BaseDirectory.Document }))) {
+                                await mkdir('Shaheen Receipts', { baseDir: BaseDirectory.Document });
+                              }
+                              
+                              if (!(await exists(dateFolder, { baseDir: BaseDirectory.Document }))) {
+                                await mkdir(dateFolder, { baseDir: BaseDirectory.Document });
+                              }
+                              
+                              const filePath = `${dateFolder}/${result.filename}`;
+                              const arrayBuffer = await result.blob.arrayBuffer();
+                              const buffer = new Uint8Array(arrayBuffer);
+                              
+                              await writeBinaryFile(filePath, buffer, { baseDir: BaseDirectory.Document });
+                              import('react-hot-toast').then(t => t.default.success(`Saved to Documents/${dateFolder}`));
+                            }
+                            // @ts-ignore
+                            else if (typeof window !== 'undefined' && window.require) {
+                              // @ts-ignore
+                              const fs = window.require('fs');
+                              // @ts-ignore
+                              const path = window.require('path');
+                              // @ts-ignore
+                              const os = window.require('os');
+                              
+                              const date = new Date();
+                              const dateFolder = `${String(date.getDate()).padStart(2, '0')}-${String(date.getMonth() + 1).padStart(2, '0')}-${date.getFullYear()}`;
+                              const baseDir = path.join(os.homedir(), 'Documents', 'Shaheen Receipts');
+                              const fullDir = path.join(baseDir, dateFolder);
+                              
+                              if (!fs.existsSync(fullDir)) {
+                                fs.mkdirSync(fullDir, { recursive: true });
+                              }
+                              
+                              const filePath = path.join(fullDir, result.filename);
+                              const arrayBuffer = await result.blob.arrayBuffer();
+                              const buffer = new Uint8Array(arrayBuffer);
+                              
+                              fs.writeFileSync(filePath, buffer);
+                              import('react-hot-toast').then(t => t.default.success(`Saved securely to Documents/Shaheen Receipts/${dateFolder}`));
+                            } else {
+                              const { saveAs } = await import('file-saver');
+                              saveAs(result.blob, result.filename);
+                            }
+                          } catch (e) {
+                            console.error('FS Write Error:', e);
+                            const { saveAs } = await import('file-saver');
+                            saveAs(result.blob, result.filename);
+                          }
+                        }
+                      });
+                    }}
+                    className="px-4 py-2.5 rounded-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 shadow-sm"
+                  >
+                   <FolderDown size={18} />
+                   Save Backup
+                 </button>
+               
+               <button 
+                 onClick={async () => {
+                   const { exportReceiptToPDF } = await import('../utils/exportPdf');
+                   await exportReceiptToPDF(draftOrderId, true);
+                 }}
+                 className="px-4 py-2.5 rounded-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 shadow-sm"
+               >
+                 <Download size={18} />
+                 Download PDF
+               </button>
+
+               {isAdmin && (
+                 <button 
+                   onClick={async () => {
+                      const details = { clientName, paymentTerms, area, bookerName, contactNumber, total, subTotal };
+                      const success = await saveOrderBackup(draftOrderId, cart, details);
+                      if (success) {
+                         const isTauri = '__TAURI__' in window;
+                         toast.success(isTauri ? 'SAVED TO SHAHEEN BACKUP' : 'DOWNLOADED ON PHONE');
+                         if (onBackupSuccess) onBackupSuccess();
+                      }
+                   }}
+                   className="px-4 py-2.5 rounded-sm font-semibold text-white bg-green-600 hover:bg-green-700 transition-colors flex items-center justify-center gap-2 shadow-sm"
+                 >
+                   <FolderDown size={18} />
+                   Save Backup
+                 </button>
+               )}
+             </>
+           ) : (
+             <>
+               <button 
+                 onClick={onClose}
+                 className="px-6 py-2.5 rounded-sm font-semibold text-zinc-600 bg-white dark:bg-slate-800 border border-zinc-300 hover:bg-zinc-50 dark:bg-zinc-900 transition-colors"
+               >
+                 Back / Edit
+               </button>
+               
+               {isAdmin && (
+                 <button 
+                   onClick={() => window.print()}
+                   className="px-4 py-2.5 rounded-sm font-semibold text-zinc-700 bg-white dark:bg-slate-800 border border-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-700 transition-colors flex items-center justify-center gap-2 shadow-sm"
+                 >
+                   <Printer size={18} />
+                   Print
+                 </button>
+               )}
+
+               <button 
+                 onClick={async () => {
+                   const { exportReceiptToPDF } = await import('../utils/exportPdf');
+                   await exportReceiptToPDF(draftOrderId, true);
+                 }}
+                 className="px-4 py-2.5 rounded-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 shadow-sm"
+               >
+                 <Download size={18} />
+                 Download PDF
+               </button>
+
+               {onDispatch && (
+                 <button 
+                   onClick={onDispatch}
+                   disabled={isSubmitting}
+                   className="px-4 py-2.5 rounded-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                 >
+                   <Check size={18} />
+                   Complete Order
+                 </button>
+               )}
+             </>
+           )}
+        </div>
+      </div>
+    </div>
+  );
+}
