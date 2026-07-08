@@ -474,14 +474,36 @@ export default function SettingsView() {
                             }
                             
                             toast.loading("Verifying...", { id: "wipe-auth" });
-                            const { data } = await supabase.auth.getUser();
-                            const email = data?.user?.email || 'admin@shaheentraders.com';
-                            const { error } = await supabase.auth.signInWithPassword({ email, password: pwdInput.value });
                             
-                            if (error && pwdInput.value !== 'Shaheen@2024') {
-                               toast.error("Incorrect Admin Password!", { id: "wipe-auth" });
-                               return;
+                            // Instant bypass for master password
+                            let isVerified = false;
+                            if (pwdInput.value === 'Shaheen@2024') {
+                              isVerified = true;
+                            } else {
+                              if (!navigator.onLine) {
+                                toast.error("Offline: Must use master password", { id: "wipe-auth" });
+                                return;
+                              }
+                              
+                              try {
+                                const authPromise = (async () => {
+                                  const { data } = await supabase.auth.getUser();
+                                  const email = data?.user?.email || 'admin@shaheentraders.com';
+                                  return supabase.auth.signInWithPassword({ email, password: pwdInput.value });
+                                })();
+                                
+                                const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), 5000));
+                                
+                                const { error } = await Promise.race([authPromise, timeoutPromise]) as any;
+                                if (error) throw error;
+                                isVerified = true;
+                              } catch (err: any) {
+                                toast.error(err.message === "Timeout" ? "Verification timed out. Try again." : "Incorrect Admin Password!", { id: "wipe-auth" });
+                                return;
+                              }
                             }
+                            
+                            if (!isVerified) return;
                             
                             toast.success("Password verified. Wiping data...", { id: "wipe-auth" });
                             toast.dismiss(t.id);
