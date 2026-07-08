@@ -119,7 +119,7 @@ export default function AdminPOSView() {
   const [clientName, setClientName] = useState('');
   const [paymentTerms, setPaymentTerms] = useState('Bank Transfer');
   const [area, setArea] = useState('');
-  const [bookerName, setBookerName] = useState(() => { const n = localStorage.getItem('shaheen_bookerName'); return (n && n.includes('@')) ? 'Admin' : (n || ''); });
+  const [bookerName, setBookerName] = useState(() => { const n = localStorage.getItem('shaheen_bookerName'); return (n && n.includes('@')) ? 'Admin' : (n || 'Admin'); });
   const [contactNumber, setContactNumber] = useState('');
   
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -1467,8 +1467,8 @@ export default function AdminPOSView() {
                           <input 
                             type="text" 
                             value={bookerName}
-                            disabled={true}
-                            className="w-full bg-slate-100 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-800/50 rounded-sm py-1.5 px-2 font-medium focus:outline-none transition-all text-xs opacity-70 cursor-not-allowed"
+                            onChange={(e) => setBookerName(e.target.value)}
+                            className="w-full bg-slate-100 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-800/50 rounded-sm py-1.5 px-2 font-medium focus:outline-none focus:ring-1 focus:ring-blue-500 transition-all text-xs"
                             placeholder="Booker Name"
                           />
                         </div>

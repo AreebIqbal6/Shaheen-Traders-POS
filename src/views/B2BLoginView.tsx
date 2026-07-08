@@ -80,21 +80,21 @@ export default function B2BLoginView({ onLoginSuccess }: { onLoginSuccess: () =>
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-[#0a0a0c] flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md text-center">
-        <div className="mx-auto h-24 w-24 mb-6 transform hover:scale-105 transition-transform duration-300">
-          <img src="/logo_transparent.png" alt="Shaheen Traders Booker Portal" className="w-full h-full object-contain drop-shadow-sm" />
+    <div className="min-h-screen bg-slate-50 dark:bg-[#0a0a0c] flex items-center justify-center p-4 sm:p-6 lg:p-8" style={{ zoom: 0.9 }}>
+      <div className="w-full max-w-[400px]">
+        <div className="text-center mb-8">
+          <div className="mx-auto h-20 w-20 mb-5 transform hover:scale-105 transition-transform duration-300">
+            <img src="/logo_transparent.png" alt="Shaheen Traders Booker Portal" className="w-full h-full object-contain drop-shadow-sm" />
+          </div>
+          <h2 className="text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+            Booker Portal
+          </h2>
+          <p className="mt-2 text-sm text-slate-600 dark:text-slate-400 font-medium">
+            Secure Field Agent Access
+          </p>
         </div>
-        <h2 className="text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
-          Booker Portal
-        </h2>
-        <p className="mt-2 text-sm text-slate-600 dark:text-slate-400 font-medium">
-          Secure Field Agent Access
-        </p>
-      </div>
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white dark:bg-zinc-900/60 backdrop-blur-md py-8 px-4 shadow-2xl sm:rounded-2xl sm:px-10 border border-slate-100 dark:border-zinc-800/50/50">
+        <div className="bg-white dark:bg-zinc-900/60 backdrop-blur-md py-8 px-6 shadow-2xl rounded-2xl border border-slate-100 dark:border-zinc-800/50/50">
           
           <div className="mb-6 bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 p-3 rounded-lg flex items-center gap-2 text-xs font-bold uppercase tracking-wide border border-amber-200 dark:border-amber-800/30">
              <WifiOff size={16} /> Offline Login Supported
