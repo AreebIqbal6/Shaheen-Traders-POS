@@ -176,22 +176,7 @@ export default function OrderPreviewModal({
                    Download PDF
                  </button>
 
-               {isAdmin && (
-                 <button 
-                   onClick={async () => {
-                      const details = { clientName, paymentTerms, area, bookerName, contactNumber, total, subTotal };
-                      const success = await saveOrderBackup(draftOrderId, cart, details);
-                      if (success) {
-                         toast.success('Backup saved successfully');
-                         if (onBackupSuccess) onBackupSuccess();
-                      }
-                   }}
-                   className="px-4 py-2.5 rounded-sm font-semibold text-white bg-green-600 hover:bg-green-700 transition-colors flex items-center justify-center gap-2 shadow-sm"
-                 >
-                   <FolderDown size={18} />
-                   Save Backup
-                 </button>
-               )}
+
              </>
            ) : (
              <>
@@ -220,7 +205,17 @@ export default function OrderPreviewModal({
 
                {onDispatch && (
                  <button 
-                   onClick={onDispatch}
+                   onClick={async () => {
+                     if (isAdmin) {
+                       const details = { clientName, paymentTerms, area, bookerName, contactNumber, total, subTotal };
+                       const success = await saveOrderBackup(draftOrderId, cart, details);
+                       if (success) {
+                         toast.success('Backup saved successfully');
+                         if (onBackupSuccess) onBackupSuccess();
+                       }
+                     }
+                     onDispatch();
+                   }}
                    disabled={isSubmitting}
                    className="px-4 py-2.5 rounded-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
                  >
