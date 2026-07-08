@@ -185,6 +185,9 @@ export default function AdminPOSView() {
       
       // Pull latest records, strictly preventing duplicates
       await fetchOrders();
+
+      // Also refresh bookers from cloud
+      await pullBookersFromCloud();
       
       toast.success('Successfully synced items, records, and triggered PC backups!');
     } catch (err: any) {
@@ -211,6 +214,54 @@ export default function AdminPOSView() {
   useEffect(() => {
     localStorage.setItem('shaheen_orders', JSON.stringify(pastOrders));
   }, [pastOrders]);
+
+  // Auto-pull products from Supabase on mount (cross-device sync)
+  const pullProductsFromCloud = useCallback(async () => {
+    try {
+      const { data: cloudProducts, error } = await supabase.from('products').select('*');
+      if (error || !cloudProducts) return;
+      
+      setProducts(prev => {
+        const localById = new Map(prev.map(p => [p.id, p]));
+        const merged = [...prev];
+        for (const cp of cloudProducts) {
+          const mapped = {
+            ...cp,
+            sku: cp.sku || generateSKU(cp.name, cp.barcode),
+            pcsPerBox: cp.pcs_per_box || cp.pcsPerBox || 12,
+            boxPerCtn: cp.box_per_ctn || cp.boxPerCtn || 6
+          };
+          if (localById.has(cp.id)) {
+            // Update existing product with cloud data
+            const idx = merged.findIndex(p => p.id === cp.id);
+            if (idx !== -1) merged[idx] = { ...merged[idx], ...mapped };
+          } else {
+            // New product from another device
+            merged.push(mapped);
+          }
+        }
+        return merged;
+      });
+    } catch (err) {
+      console.warn('Failed to pull products from cloud:', err);
+    }
+  }, []);
+
+  // Auto-pull bookers from Supabase on mount (cross-device sync)
+  const pullBookersFromCloud = useCallback(async () => {
+    try {
+      const { data, error } = await supabase.from('bookers').select('*').order('created_at', { ascending: false });
+      if (error || !data) return;
+      localStorage.setItem('shaheen_bookers', JSON.stringify(data));
+    } catch (err) {
+      console.warn('Failed to pull bookers from cloud:', err);
+    }
+  }, []);
+
+  useEffect(() => {
+    pullProductsFromCloud();
+    pullBookersFromCloud();
+  }, [pullProductsFromCloud, pullBookersFromCloud]);
 
   useEffect(() => {
     localStorage.setItem('shaheen_our_order', JSON.stringify(ourOrderList));
@@ -438,10 +489,12 @@ export default function AdminPOSView() {
 
     const handleOnline = () => {
       syncOfflineStatusUpdates();
+      pullProductsFromCloud();
+      pullBookersFromCloud();
     };
     window.addEventListener('online', handleOnline);
 
-    const channel = supabase.channel('public:orders')
+    const ordersChannel = supabase.channel('public:orders')
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'orders' },
@@ -454,9 +507,21 @@ export default function AdminPOSView() {
       )
       .subscribe();
 
+    // Realtime listener for products — syncs across devices instantly
+    const productsChannel = supabase.channel('public:products')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'products' },
+        () => {
+          pullProductsFromCloud();
+        }
+      )
+      .subscribe();
+
     return () => {
       window.removeEventListener('online', handleOnline);
-      supabase.removeChannel(channel);
+      supabase.removeChannel(ordersChannel);
+      supabase.removeChannel(productsChannel);
     };
   }, []);
 
