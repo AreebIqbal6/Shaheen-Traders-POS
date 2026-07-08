@@ -13,6 +13,12 @@ export default function B2BAuthWrapper({ children }: { children: React.ReactNode
       
       if (activeBooker) {
         setIsAuthenticated(true);
+      } else {
+        // Fallback: check real supabase session (Admin)
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          setIsAuthenticated(true);
+        }
       }
       setIsLoading(false);
     };

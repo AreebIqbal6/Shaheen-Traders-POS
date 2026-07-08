@@ -1,10 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { Users, Plus, Save, X, Phone, Mail, MapPin, User, Key, Hash, Edit2, AlertTriangle, Navigation, LogIn, ArrowLeft } from 'lucide-react';
+import { Users, Plus, Save, X, Phone, Mail, MapPin, User, Key, Hash, Edit2, AlertTriangle } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { hashPassword } from '../utils/cryptoUtils';
-import TrackingMap from '../components/TrackingMap';
-import B2BShopView from './B2BShopView';
 
 export interface Booker {
   id?: string;
@@ -33,75 +31,6 @@ export default function BookersView() {
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
   const [address, setAddress] = useState('');
-  
-  // Tracking & Impersonation State
-  const [trackingBooker, setTrackingBooker] = useState<Booker | null>(null);
-  const [liveLocation, setLiveLocation] = useState<{ lat: number, lng: number, updated_at: string } | null>(null);
-  const [mapError, setMapError] = useState('');
-  const [impersonatingBooker, setImpersonatingBooker] = useState<Booker | null>(null);
-
-  const fetchLiveLocation = async (uname: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('booker_locations')
-        .select('lat, lng, updated_at')
-        .eq('booker_name', uname)
-        .maybeSingle();
-      
-      if (error) throw error;
-      if (data) {
-         setLiveLocation(data);
-         setMapError('');
-      } else {
-         setMapError('No active location found for this booker.');
-      }
-    } catch (err) {
-      console.error(err);
-      setMapError('Failed to fetch location.');
-    }
-  };
-
-  useEffect(() => {
-    let interval: any;
-    if (trackingBooker) {
-      fetchLiveLocation(trackingBooker.username);
-      interval = setInterval(() => {
-        fetchLiveLocation(trackingBooker.username);
-      }, 10000);
-    }
-    return () => clearInterval(interval);
-  }, [trackingBooker]);
-
-  const handleOneClickLogin = (bkr: Booker) => {
-    toast((t) => (
-      <span className="flex flex-col gap-2">
-        <span className="font-semibold text-slate-900">Login as {bkr.name}?</span>
-        <span className="text-xs text-slate-500">You will be switched to the Booker Portal inline.</span>
-        <div className="flex gap-2 justify-end mt-2">
-          <button 
-            className="px-3 py-1 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded text-xs font-bold" 
-            onClick={() => toast.dismiss(t.id)}
-          >Cancel</button>
-          <button 
-            className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs font-bold"
-            onClick={() => {
-              toast.dismiss(t.id);
-              localStorage.setItem('shaheen_active_booker', JSON.stringify(bkr));
-              localStorage.setItem('shaheen_bookerName', bkr.name);
-              setImpersonatingBooker(bkr);
-            }}
-          >Yes, Login</button>
-        </div>
-      </span>
-    ), { duration: 5000 });
-  };
-
-  const handleStopImpersonating = () => {
-    localStorage.removeItem('shaheen_active_booker');
-    localStorage.removeItem('shaheen_bookerName');
-    setImpersonatingBooker(null);
-  };
-
 
   useEffect(() => {
     fetchBookers();
@@ -272,28 +201,6 @@ export default function BookersView() {
     }
   };
 
-  if (impersonatingBooker) {
-    return (
-      <div className="flex flex-col h-full bg-slate-50 relative animate-in fade-in duration-300">
-         <div className="bg-slate-900 text-white p-3 flex justify-between items-center z-[100] shadow-md sticky top-0">
-            <div className="flex items-center gap-3">
-               <span className="relative flex h-3 w-3">
-                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                 <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
-               </span>
-               <span className="font-bold text-sm tracking-wide">Impersonating: {impersonatingBooker.name}</span>
-            </div>
-            <button onClick={handleStopImpersonating} className="flex items-center gap-2 bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-sm text-xs font-bold transition-colors">
-               <ArrowLeft size={14} /> Back to Admin
-            </button>
-         </div>
-         <div className="flex-1 overflow-hidden relative">
-            <B2BShopView isImpersonating={true} />
-         </div>
-      </div>
-    );
-  }
-
   return (
     <div className="flex-1 overflow-y-auto p-4 md:p-8 bg-slate-50 dark:bg-[#0a0a0c]/30">
       <div className="max-w-4xl mx-auto">
@@ -427,33 +334,13 @@ export default function BookersView() {
                           {bkr.address || <span className="italic opacity-50">Not provided</span>}
                         </td>
                         <td className="p-4 align-top text-right">
-                          <div className="flex items-center justify-end gap-1">
-                            <button 
-                              onClick={() => {
-                                setTrackingBooker(bkr);
-                                setLiveLocation(null);
-                                setMapError('');
-                              }}
-                              className="p-2 text-emerald-500 hover:text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 rounded-sm transition-colors"
-                              title="Track Live Location"
-                            >
-                              <Navigation size={16} />
-                            </button>
-                            <button 
-                              onClick={() => handleOneClickLogin(bkr)}
-                              className="p-2 text-blue-500 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-sm transition-colors"
-                              title="1-Click Login"
-                            >
-                              <LogIn size={16} />
-                            </button>
-                            <button 
-                              onClick={() => openEditForm(bkr)}
-                              className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-sm transition-colors"
-                              title="Edit Booker"
-                            >
-                              <Edit2 size={16} />
-                            </button>
-                          </div>
+                          <button 
+                            onClick={() => openEditForm(bkr)}
+                            className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-sm transition-colors"
+                            title="Edit Booker"
+                          >
+                            <Edit2 size={16} />
+                          </button>
                         </td>
                       </tr>
                     ))}
@@ -477,30 +364,13 @@ export default function BookersView() {
                           </span>
                         </div>
                       </div>
-                      <div className="flex gap-1 shrink-0">
-                        <button 
-                          onClick={() => {
-                            setTrackingBooker(bkr);
-                            setLiveLocation(null);
-                            setMapError('');
-                          }}
-                          className="p-2 text-emerald-500 hover:text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 rounded-sm transition-colors"
-                        >
-                          <Navigation size={16} />
-                        </button>
-                        <button 
-                          onClick={() => handleOneClickLogin(bkr)}
-                          className="p-2 text-blue-500 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-sm transition-colors"
-                        >
-                          <LogIn size={16} />
-                        </button>
-                        <button 
-                          onClick={() => openEditForm(bkr)}
-                          className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-sm transition-colors"
-                        >
-                          <Edit2 size={16} />
-                        </button>
-                      </div>
+                      <button 
+                        onClick={() => openEditForm(bkr)}
+                        className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-sm transition-colors shrink-0"
+                        title="Edit Booker"
+                      >
+                        <Edit2 size={16} />
+                      </button>
                     </div>
                     <div className="flex flex-col gap-1 text-xs text-slate-500 dark:text-slate-400">
                       {bkr.phone && <span className="flex items-center gap-1.5"><Phone size={11} /> {bkr.phone}</span>}
@@ -514,53 +384,6 @@ export default function BookersView() {
           )}
         </div>
       </div>
-      
-      {/* Tracking Modal */}
-      {trackingBooker && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
-          <div className="bg-white dark:bg-[#0a0a0c] border border-slate-200 dark:border-zinc-800 rounded-lg shadow-2xl w-full max-w-4xl h-[80vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
-            <div className="p-4 border-b border-slate-200 dark:border-zinc-800 flex justify-between items-center bg-slate-50 dark:bg-[#121214]">
-              <div>
-                <h3 className="font-bold text-slate-900 dark:text-slate-50 flex items-center gap-2">
-                  <Navigation size={18} className="text-emerald-500" /> Live Tracking: {trackingBooker.name}
-                </h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Location auto-updates every 10 seconds.</p>
-              </div>
-              <button 
-                onClick={() => setTrackingBooker(null)}
-                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-2 rounded-sm"
-              >
-                <X size={20} />
-              </button>
-            </div>
-            
-            <div className="flex-1 bg-slate-100 dark:bg-zinc-900 relative">
-              {mapError ? (
-                <div className="absolute inset-0 flex items-center justify-center text-slate-500 font-medium p-6 text-center">
-                  <div>
-                    <MapPin size={48} className="mx-auto mb-4 opacity-30" />
-                    <p>{mapError}</p>
-                    <p className="text-sm mt-2 opacity-70">The booker needs to open the B2B portal to start tracking.</p>
-                  </div>
-                </div>
-              ) : !liveLocation ? (
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500"></div>
-                </div>
-              ) : (
-                <TrackingMap 
-                  lat={liveLocation.lat} 
-                  lng={liveLocation.lng} 
-                  bookerName={trackingBooker.name}
-                  lastSeen={new Date(liveLocation.updated_at).toLocaleTimeString()}
-                  isOffline={new Date().getTime() - new Date(liveLocation.updated_at).getTime() > 30000} // offline if >30s old
-                />
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-      
     </div>
   );
 }

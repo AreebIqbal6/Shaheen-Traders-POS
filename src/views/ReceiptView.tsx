@@ -3,7 +3,6 @@ import { useParams, Link } from 'react-router-dom';
 import Receipt, { type ReceiptData } from '../components/Receipt';
 import { supabase } from '../lib/supabase';
 import { ChevronLeft, Printer, FolderDown } from 'lucide-react';
-import { createPortal } from 'react-dom';
 import { saveOrderBackup } from '../utils/exportManager';
 import toast from 'react-hot-toast';
 
@@ -136,7 +135,7 @@ export default function ReceiptView() {
          <div className="bg-white p-8 rounded-xl shadow-sm border border-red-100 max-w-sm w-full">
             <h1 className="text-xl font-bold text-red-600 mb-2">Receipt Error</h1>
             <p className="text-slate-600 mb-6">{error || 'Receipt could not be found.'}</p>
-            <Link to="/booker" className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-md font-semibold inline-block transition-colors">Return Home</Link>
+            <Link to="/booker" className="bg-slate-900 text-white px-6 py-2 rounded-md font-semibold inline-block">Return Home</Link>
          </div>
       </div>
     );

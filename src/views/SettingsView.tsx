@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Store, Receipt, Printer, Database, Download, Upload, FolderDown, FolderSearch, AlertTriangle } from 'lucide-react';
+import { Store, Receipt, Printer, Database, Download, Upload, FolderDown, FolderSearch } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { open, save } from '@tauri-apps/plugin-dialog';
 import { writeTextFile, readTextFile } from '@tauri-apps/plugin-fs';
@@ -182,7 +182,7 @@ export default function SettingsView() {
                    localStorage.setItem('shaheen_outlet_location', outletLocation.trim());
                    localStorage.setItem('shaheen_address', address.trim());
                    toast.success('Store Information Saved!');
-                 }} className="bg-blue-600 text-white px-5 py-2 rounded-sm font-semibold shadow-sm hover:bg-blue-700 transition-colors text-[12px]">
+                 }} className="bg-zinc-900 text-zinc-50 px-5 py-2 rounded-sm font-semibold shadow-sm hover:bg-zinc-800 transition-colors text-[12px]">
                    Save Store Info
                  </button>
               </div>
@@ -209,7 +209,7 @@ export default function SettingsView() {
                       setAutoPrintReceipt(newVal);
                       localStorage.setItem('shaheen_autoprint', String(newVal));
                     }}
-                    className={`w-10 h-5 rounded-full relative cursor-pointer shadow-inner transition-colors ${autoPrintReceipt ? 'bg-blue-600' : 'bg-zinc-200'}`}>
+                    className={`w-10 h-5 rounded-full relative cursor-pointer shadow-inner transition-colors ${autoPrintReceipt ? 'bg-zinc-900' : 'bg-zinc-200'}`}>
                     <div className={`w-3.5 h-3.5 bg-white dark:bg-zinc-900/60 backdrop-blur-md rounded-full absolute top-[3px] shadow-sm transition-all ${autoPrintReceipt ? 'right-1' : 'left-1'}`}></div>
                   </div>
                 </div>
@@ -224,7 +224,7 @@ export default function SettingsView() {
                       setGlobalBarcode(newVal);
                       localStorage.setItem('shaheen_globalbarcode', String(newVal));
                     }}
-                    className={`w-10 h-5 rounded-full relative cursor-pointer shadow-inner transition-colors ${globalBarcode ? 'bg-blue-600' : 'bg-zinc-200'}`}>
+                    className={`w-10 h-5 rounded-full relative cursor-pointer shadow-inner transition-colors ${globalBarcode ? 'bg-zinc-900' : 'bg-zinc-200'}`}>
                     <div className={`w-3.5 h-3.5 bg-white dark:bg-zinc-900/60 backdrop-blur-md rounded-full absolute top-[3px] shadow-sm transition-all ${globalBarcode ? 'right-1' : 'left-1'}`}></div>
                   </div>
                 </div>
@@ -239,7 +239,7 @@ export default function SettingsView() {
                       setCashDrawerKick(newVal);
                       localStorage.setItem('shaheen_cashdrawerkick', String(newVal));
                     }}
-                    className={`w-10 h-5 rounded-full relative cursor-pointer shadow-inner transition-colors ${cashDrawerKick ? 'bg-blue-600' : 'bg-zinc-200'}`}>
+                    className={`w-10 h-5 rounded-full relative cursor-pointer shadow-inner transition-colors ${cashDrawerKick ? 'bg-zinc-900' : 'bg-zinc-200'}`}>
                     <div className={`w-3.5 h-3.5 bg-white dark:bg-zinc-900/60 backdrop-blur-md rounded-full absolute top-[3px] shadow-sm transition-all ${cashDrawerKick ? 'right-1' : 'left-1'}`}></div>
                   </div>
                 </div>
@@ -276,7 +276,7 @@ export default function SettingsView() {
                           
                           if (filePath) {
                             await writeTextFile(filePath, JSON.stringify(data));
-                            toast.success('Backup saved successfully');
+                            toast.success('Backup exported successfully!');
                           }
                         } else {
                           const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
@@ -288,7 +288,7 @@ export default function SettingsView() {
                           a.click();
                           document.body.removeChild(a);
                           URL.revokeObjectURL(url);
-                          toast.success('Backup saved successfully');
+                          toast.success('Backup exported successfully!');
                         }
                       } catch (err) {
                         console.error(err);
@@ -421,33 +421,11 @@ export default function SettingsView() {
             </div>
 
             <div className="flex justify-end mt-2">
-             <button onClick={handleSave} className="bg-blue-600 text-white px-6 py-2.5 rounded-sm font-semibold shadow-sm hover:bg-blue-700 transition-colors text-[13px]">
+             <button onClick={handleSave} className="bg-zinc-900 text-zinc-50 px-6 py-2.5 rounded-sm font-semibold shadow-sm hover:bg-zinc-800 transition-colors text-[13px]">
                Save Configurations
              </button>
           </div>
 
-          <div className="mt-8 pt-6 border-t border-red-200 dark:border-red-900/30">
-            <h3 className="text-[13px] font-bold text-red-600 mb-2 flex items-center gap-2">
-              <AlertTriangle size={16} /> Danger Zone
-            </h3>
-            <div className="bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-900/30 rounded-sm p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-              <div>
-                <h4 className="text-[13px] font-semibold text-slate-900 dark:text-slate-100">Factory Reset System</h4>
-                <p className="text-[11px] text-slate-500 mt-1">This will permanently delete all offline orders, locally cached products, cart items, and settings from this device. Do this only before handing the system to the client.</p>
-              </div>
-              <button 
-                onClick={() => {
-                  if (window.confirm("Are you absolutely sure you want to factory reset this device? ALL local data will be wiped immediately.")) {
-                    localStorage.clear();
-                    window.location.reload();
-                  }
-                }}
-                className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-sm font-bold text-[12px] shadow-sm transition-colors whitespace-nowrap shrink-0"
-              >
-                Wipe Local Data
-              </button>
-            </div>
-          </div>
         </div>
       </div>
     </div>

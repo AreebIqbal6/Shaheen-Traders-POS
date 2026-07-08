@@ -57,20 +57,8 @@ export default function ProductsView({ products, setProducts }: ProductsViewProp
   const inventoryValue = products.reduce((acc, p) => acc + (p.price * p.stock), 0);
 
 
-  const [minStockDict, setMinStockDict] = useState<Record<string, number>>({});
-
-  useEffect(() => {
-    setMinStockDict(JSON.parse(localStorage.getItem('shaheen_min_stock') || '{}'));
-  }, []);
-
-  const saveMinStock = (id: string, minStock: number) => {
-    const newDict = { ...minStockDict, [id]: minStock };
-    setMinStockDict(newDict);
-    localStorage.setItem('shaheen_min_stock', JSON.stringify(newDict));
-  };
-
-  const [formData, setFormData] = useState<Partial<Product> & { minStock?: number }>({
-    barcode: '', name: '', price: 0, stock: 0, minStock: 5
+  const [formData, setFormData] = useState<Partial<Product>>({
+    barcode: '', name: '', price: 0, stock: 0
   });
 
   const filteredProducts = products.filter(p => {
@@ -84,10 +72,10 @@ export default function ProductsView({ products, setProducts }: ProductsViewProp
   const handleOpenModal = (product?: Product) => {
     if (product) {
       setEditingProduct(product);
-      setFormData({ ...product, minStock: minStockDict[product.id] ?? 5 });
+      setFormData(product);
     } else {
       setEditingProduct(null);
-      setFormData({ barcode: '', name: '', price: 0, stock: 0, sku: '', minStock: 5 });
+      setFormData({ barcode: '', name: '', price: 0, stock: 0, sku: '' });
     }
     setIsModalOpen(true);
   };
@@ -109,16 +97,10 @@ export default function ProductsView({ products, setProducts }: ProductsViewProp
        finalFormData.sku = generateSKU(finalFormData.name || '', finalFormData.barcode || '');
     }
 
-    const mStock = finalFormData.minStock ?? 5;
-    delete finalFormData.minStock;
-
     if (editingProduct) {
-      saveMinStock(editingProduct.id, mStock);
       setProducts(prev => prev.map(p => p.id === editingProduct.id ? { ...p, ...finalFormData } as Product : p));
     } else {
-      const newId = Date.now().toString() + Math.random().toString();
-      saveMinStock(newId, mStock);
-      setProducts(prev => [...prev, { ...finalFormData, id: newId } as Product]);
+      setProducts(prev => [...prev, { ...finalFormData, id: Date.now().toString() + Math.random() } as Product]);
     }
     setIsModalOpen(false);
   };
@@ -296,9 +278,8 @@ export default function ProductsView({ products, setProducts }: ProductsViewProp
             </thead>
             <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
               {filteredProducts.map(product => {
-                const mStock = minStockDict[product.id] ?? 5;
-                const isCrit = product.stock <= mStock;
-                const isWarn = product.stock > mStock && product.stock <= mStock + 5;
+                const isCrit = product.stock <= 2;
+                const isWarn = product.stock > 2 && product.stock <= 10;
                 
                 return (
                   <tr key={product.id} className="hover:bg-[rgba(255,255,255,0.03)] transition-colors group">
@@ -338,9 +319,8 @@ export default function ProductsView({ products, setProducts }: ProductsViewProp
           {/* Mobile Card View */}
           <div className="md:hidden flex flex-col divide-y divide-slate-200 dark:divide-slate-700">
              {filteredProducts.map(product => {
-                const mStock = minStockDict[product.id] ?? 5;
-                const isCrit = product.stock <= mStock;
-                const isWarn = product.stock > mStock && product.stock <= mStock + 5;
+                const isCrit = product.stock <= 2;
+                const isWarn = product.stock > 2 && product.stock <= 10;
                 
                 return (
                 <div key={product.id} className="p-4 flex flex-col gap-2 hover:bg-[rgba(255,255,255,0.03)] transition-colors">
@@ -490,15 +470,6 @@ export default function ProductsView({ products, setProducts }: ProductsViewProp
                       className="w-full bg-white dark:bg-zinc-900/60 backdrop-blur-md border border-slate-200 dark:border-zinc-800/50 rounded-lg px-3 py-2.5 focus:outline-none focus:border-blue-500 transition-all font-mono font-bold text-[13px] text-slate-900 dark:text-slate-50"
                     />
                   </div>
-                  <div className="flex-1">
-                    <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-1.5 block">Min Stock (Alert)</label>
-                    <input 
-                      type="number" 
-                      value={formData.minStock ?? 5} 
-                      onChange={e => setFormData({...formData, minStock: parseInt(e.target.value) || 0})}
-                      className="w-full bg-white dark:bg-zinc-900/60 backdrop-blur-md border border-slate-200 dark:border-zinc-800/50 rounded-lg px-3 py-2.5 focus:outline-none focus:border-amber-500 transition-all font-mono font-bold text-[13px] text-amber-600 dark:text-amber-500"
-                    />
-                  </div>
                 </div>
 
                 {/* UOM Conversions */}
@@ -537,8 +508,8 @@ export default function ProductsView({ products, setProducts }: ProductsViewProp
                       />
                       <select id="quick-stock-unit" className="flex-1 bg-white dark:bg-zinc-900/60 border border-blue-200 dark:border-blue-800 rounded px-2 py-2 text-[13px] focus:outline-none focus:border-blue-500 text-slate-900 dark:text-white">
                         <option value="Pcs">Pieces</option>
-                        <option value="Box" disabled={!formData.pcsPerBox}>Boxes {!formData.pcsPerBox ? '(Set Pcs/Box first)' : ''}</option>
-                        <option value="Ctn" disabled={!(formData.pcsPerBox && formData.boxPerCtn)}>Cartons {!(formData.pcsPerBox && formData.boxPerCtn) ? '(Set Box/Ctn first)' : ''}</option>
+                        {formData.pcsPerBox ? <option value="Box">Boxes</option> : null}
+                        {formData.pcsPerBox && formData.boxPerCtn ? <option value="Ctn">Cartons</option> : null}
                       </select>
                       <button 
                         onClick={(e) => {

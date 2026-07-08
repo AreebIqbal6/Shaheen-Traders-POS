@@ -272,7 +272,7 @@ export default function Receipt({ data, className = '', isPrintable = true }: Re
                   </div>
                   <div className="text-[10px] font-semibold text-slate-500 pt-1.5 uppercase tracking-widest flex flex-col items-end gap-0.5">
                       <span>PAGE {pageNumber} OF {totalPages}</span>
-                      <span>Powered by Areeb Iqbal</span>
+                      <span>SOFTWARE BY AREEB IQBAL</span>
                   </div>
                 </div>
               ) : (

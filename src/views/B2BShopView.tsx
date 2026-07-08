@@ -1,5 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { playNotificationSound } from '../utils/audio';
+import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { ShoppingCart, Store, CreditCard, Search, ArrowRight, Package, User, LogOut, History, WifiOff, RefreshCw, CheckCircle2, FileText, Smartphone } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -27,12 +26,16 @@ interface CartItem extends Product {
   basePrice?: number;
 }
 
-// Fallback mock data removed for production
-interface B2BShopViewProps {
-  isImpersonating?: boolean;
-}
+// Fallback mock data in case Supabase is using placeholders
+const mockB2BProducts: Product[] = [
+  { id: '1', name: 'Premium Rice 50kg', price: 12500, stock: 100, barcode: '8901234567890', category: 'Grains' },
+  { id: '2', name: 'Cooking Oil 16L Tin', price: 8400, stock: 50, barcode: '8901234567891', category: 'Oils' },
+  { id: '3', name: 'Refined Sugar 50kg', price: 6800, stock: 200, barcode: '8901234567892', category: 'Commodities' },
+  { id: '4', name: 'Wheat Flour 20kg', price: 2900, stock: 150, barcode: '8901234567893', category: 'Grains' },
+  { id: '5', name: 'Detergent Powder 5kg', price: 1850, stock: 80, barcode: '8901234567894', category: 'Cleaning' },
+];
 
-export default function B2BShopView({ isImpersonating = false }: B2BShopViewProps) {
+export default function B2BShopView() {
   const [activeTab, setActiveTabState] = useState<'shop' | 'cart' | 'checkout' | 'dashboard'>(() => {
     return (localStorage.getItem('b2b_activeTab') as any) || 'shop';
   });
@@ -176,55 +179,28 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
 
   // --- Background Location Tracker ---
   useEffect(() => {
-    const activeBookerStr = localStorage.getItem('shaheen_active_booker');
-    if (!activeBookerStr) return;
-    const activeBooker = JSON.parse(activeBookerStr);
-    const bookerUsername = activeBooker.username;
-
+    const bookerName = localStorage.getItem('shaheen_bookerName');
     // Only track if logged in and not Admin
-    if (!bookerUsername || bookerUsername.includes('@')) return;
+    if (!bookerName || bookerName.includes('@')) return;
 
     if (!navigator.geolocation) {
       console.warn('Geolocation is not supported by this browser.');
       return;
     }
 
-    // Request WakeLock to keep screen on and tracker running continuously
-    let wakeLock: any = null;
-    const requestWakeLock = async () => {
-      try {
-        if ('wakeLock' in navigator) {
-          wakeLock = await (navigator as any).wakeLock.request('screen');
-        }
-      } catch (err) {
-        console.warn('Wake Lock error:', err);
-      }
-    };
-    requestWakeLock();
-
     let isUpdating = false;
-    let latestPosition: GeolocationPosition | null = null;
 
-    // watchPosition keeps the GPS radio alive and refining accuracy
-    const watchId = navigator.geolocation.watchPosition(
-      (position) => {
-        latestPosition = position;
-      },
-      (error) => console.error('Geolocation error:', error),
-      { enableHighAccuracy: true, maximumAge: 0, timeout: 20000 } // maximumAge: 0 forces fresh GPS data
-    );
-
-    const pushLocation = async () => {
-      if (!latestPosition || isUpdating) return;
+    const updateLocation = async (position: GeolocationPosition) => {
+      if (isUpdating) return;
       isUpdating = true;
       try {
-        const { latitude, longitude } = latestPosition.coords;
+        const { latitude, longitude } = position.coords;
         
         // Check if booker already has a record
         const { data: existing } = await supabase
           .from('booker_locations')
           .select('id')
-          .eq('booker_name', bookerUsername)
+          .eq('booker_name', bookerName)
           .maybeSingle();
 
         if (existing) {
@@ -235,24 +211,25 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
         } else {
            await supabase
              .from('booker_locations')
-             .insert({ booker_name: bookerUsername, lat: latitude, lng: longitude });
+             .insert({ booker_name: bookerName, lat: latitude, lng: longitude });
         }
       } catch (error) {
-        console.error('Failed to push location:', error);
+        console.error('Failed to update location:', error);
       } finally {
         isUpdating = false;
       }
     };
 
-    // Heartbeat every 10 seconds regardless of movement
-    const intervalId = setInterval(pushLocation, 10000);
+    const watchId = navigator.geolocation.watchPosition(
+      updateLocation,
+      (error) => console.error('Geolocation error:', error),
+      { enableHighAccuracy: true, maximumAge: 10000, timeout: 5000 }
+    );
 
     return () => {
       navigator.geolocation.clearWatch(watchId);
-      clearInterval(intervalId);
-      if (wakeLock) wakeLock.release().catch(() => {});
     };
-  }, []); // Empty array ensures GPS lock is maintained continuously
+  }, []);
   // ------------------------------------
 
   const handleCancelOrder = async (orderId: string) => {
@@ -314,7 +291,7 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
         throw error;
       }
       if (!data || data.length === 0) {
-        setProducts([]);
+        setProducts(mockB2BProducts);
       } else {
         const mappedData = data.map((p: any) => ({
           ...p,
@@ -332,7 +309,7 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
       if (cached) {
         setProducts(JSON.parse(cached));
       } else {
-        setProducts([]);
+        setProducts(mockB2BProducts);
       }
     } finally {
       setIsLoading(false);
@@ -380,7 +357,6 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
   );
 
   const handleCheckoutSuccess = () => {
-    playNotificationSound();
     setIsCheckoutSuccess(true);
     setCart([]);
     setActiveTab('shop'); 
@@ -406,8 +382,7 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
   }
 
   return (
-    <>
-      <div className="flex flex-col h-full w-full bg-slate-50 dark:bg-[#0a0a0c] text-slate-900 dark:text-slate-50 font-sans print:hidden">
+    <div className="flex flex-col h-[100dvh] w-full bg-slate-50 dark:bg-[#0a0a0c] text-slate-900 dark:text-slate-50 font-sans">
       
       {/* Top Header */}
       <div className="bg-white dark:bg-zinc-900/60 backdrop-blur-md px-4 py-4 flex items-center justify-between border-b border-slate-200 dark:border-zinc-800/50 shrink-0 sticky top-0 z-10">
@@ -649,18 +624,17 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
                 </div>
               </div>
               
-              {!isImpersonating && (
-                <button
-                  onClick={() => {
-                    localStorage.removeItem('shaheen_active_booker');
-                    localStorage.removeItem('shaheen_bookerName');
-                    window.location.reload();
-                  }}
-                  className="w-full py-2.5 mt-2 bg-red-500/10 text-red-400 border border-red-500/20 rounded-lg font-bold text-sm flex justify-center items-center gap-2 hover:bg-red-500/20 transition-colors"
-                >
-                  <LogOut size={16} /> Sign Out
-                </button>
-              )}
+              <button 
+                onClick={async () => {
+                  // Bookers are strictly local/offline-first authenticated, so we don't clear supabase auth here.
+                  localStorage.removeItem('shaheen_active_booker');
+                  localStorage.removeItem('shaheen_bookerName');
+                  window.location.reload();
+                }}
+                className="w-full py-2.5 mt-2 bg-red-500/10 text-red-400 border border-red-500/20 rounded-lg font-bold text-sm flex justify-center items-center gap-2 hover:bg-red-500/20 transition-colors"
+              >
+                <LogOut size={16} /> Sign Out
+              </button>
             </div>
 
             <div className="flex-1 flex flex-col">
@@ -746,12 +720,10 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
             </div>
 
             <div className="mt-auto pt-4 text-center pb-4">
-               <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 tracking-wider">Powered by Areeb Iqbal</p>
+               <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 tracking-wider">B2B SOFTWARE MADE BY AREEB IQBAL</p>
             </div>
           </div>
         )}
-      </div>
-
       </div>
 
       <SimpleOrderViewModal 
@@ -777,8 +749,8 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
         />
       )}
 
-      {/* Mobile Bottom Navigation - ALWAYS VISIBLE (But hidden during print) */}
-      <div className={`${isImpersonating ? 'absolute' : 'fixed'} bottom-0 left-0 right-0 w-full bg-white/90 dark:bg-[#0a0a0c]/90 backdrop-blur-xl border-t border-slate-200 dark:border-zinc-900 flex justify-around items-center pt-3 pb-[calc(1rem+env(safe-area-inset-bottom))] px-2 z-30 shadow-none print:hidden`}>
+      {/* Mobile Bottom Navigation - ALWAYS VISIBLE */}
+      <div className="fixed bottom-0 left-0 right-0 w-full bg-white/90 dark:bg-[#0a0a0c]/90 backdrop-blur-xl border-t border-slate-200 dark:border-zinc-900 flex justify-around items-center pt-3 pb-6 md:pb-3 px-2 z-30 shadow-none">
         <button 
           onClick={() => setActiveTab('shop')} 
           className={`flex flex-col items-center p-2 transition-colors flex-1 ${activeTab === 'shop' ? 'text-blue-600 dark:text-blue-400' : 'text-slate-500 hover:text-slate-900 dark:hover:text-slate-100'}`}
@@ -821,6 +793,6 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
           <span className="text-xs font-bold mt-1">Profile</span>
         </button>
       </div>
-    </>
+    </div>
   );
 }

@@ -47,24 +47,8 @@ export default function TrackersView() {
 
   useEffect(() => {
     fetchLocations();
-    
-    // Subscribe to realtime changes in booker_locations
-    const channel = supabase
-      .channel('public:booker_locations')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'booker_locations' },
-        (payload) => {
-          // You can also optimistically update local state here instead of re-fetching, 
-          // but for simplicity and consistency, re-fetching works well for small lists.
-          fetchLocations();
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
+    const interval = setInterval(fetchLocations, 10000);
+    return () => clearInterval(interval);
   }, []);
 
   const formatTime = (dateString: string) => {
