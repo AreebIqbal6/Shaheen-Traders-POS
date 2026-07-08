@@ -512,6 +512,28 @@ export default function SettingsView() {
                             localStorage.clear();
                             sessionStorage.clear();
                             
+                            // Deep wipe caches, indexedDB, and service workers
+                            if ('caches' in window) {
+                              try {
+                                const cacheKeys = await caches.keys();
+                                await Promise.all(cacheKeys.map(key => caches.delete(key)));
+                              } catch (e) {}
+                            }
+                            if ('indexedDB' in window && indexedDB.databases) {
+                              try {
+                                const dbs = await indexedDB.databases();
+                                dbs.forEach(db => { if (db.name) indexedDB.deleteDatabase(db.name); });
+                              } catch (e) {}
+                            }
+                            if ('serviceWorker' in navigator) {
+                              try {
+                                const registrations = await navigator.serviceWorker.getRegistrations();
+                                for (let registration of registrations) {
+                                  await registration.unregister();
+                                }
+                              } catch (e) {}
+                            }
+                            
                             setTimeout(() => {
                               window.location.href = '/';
                             }, 500);

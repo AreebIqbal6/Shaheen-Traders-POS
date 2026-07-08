@@ -184,6 +184,21 @@ export default function AdminPOSView() {
       // Sync offline records
       await syncOfflineStatusUpdates();
       
+      // Sync Bookers
+      const offlineBookers = JSON.parse(localStorage.getItem('shaheen_offline_bookers') || '[]');
+      if (offlineBookers.length > 0) {
+         await supabase.from('bookers').upsert(offlineBookers);
+         localStorage.removeItem('shaheen_offline_bookers');
+      }
+      
+      const deletedBookers = JSON.parse(localStorage.getItem('shaheen_deleted_bookers') || '[]');
+      if (deletedBookers.length > 0) {
+         for (const bNum of deletedBookers) {
+           await supabase.from('bookers').delete().eq('booker_number', bNum);
+         }
+         localStorage.removeItem('shaheen_deleted_bookers');
+      }
+      
       // Pull latest records, strictly preventing duplicates
       await fetchOrders();
 
@@ -1841,7 +1856,7 @@ export default function AdminPOSView() {
       )}
 
       {/* Main Content Area */}
-      <main className="flex-1 flex flex-col h-[100dvh] overflow-hidden bg-white dark:bg-[#0a0a0c] relative z-10 md:pt-0 pt-[53px]">
+      <main className="flex-1 flex flex-col overflow-hidden bg-white dark:bg-[#0a0a0c] relative z-10 md:pt-0 pt-[53px]">
         {renderContent()}
       </main>
 

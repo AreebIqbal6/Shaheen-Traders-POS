@@ -111,8 +111,18 @@ export default function BookersView() {
       syncOfflineBookers();
     };
     window.addEventListener('online', handleOnline);
+    
+    // Auto sync UI with localStorage every 5 seconds
+    const interval = setInterval(() => {
+      const cached = localStorage.getItem('shaheen_bookers');
+      if (cached) {
+        setBookers(JSON.parse(cached));
+      }
+    }, 5000);
+    
     return () => {
       window.removeEventListener('online', handleOnline);
+      clearInterval(interval);
     };
   }, []);
 
@@ -311,6 +321,13 @@ export default function BookersView() {
                   const offlineBookers = JSON.parse(offlineStr);
                   const newOffline = offlineBookers.filter((b: any) => b.booker_number !== bookerNumber);
                   localStorage.setItem('shaheen_offline_bookers', JSON.stringify(newOffline));
+                }
+                
+                // Track for auto-sync queue
+                const deletedQueue = JSON.parse(localStorage.getItem('shaheen_deleted_bookers') || '[]');
+                if (!deletedQueue.includes(bookerNumber)) {
+                  deletedQueue.push(bookerNumber);
+                  localStorage.setItem('shaheen_deleted_bookers', JSON.stringify(deletedQueue));
                 }
                 
                 toast.success('Booker removed successfully');
