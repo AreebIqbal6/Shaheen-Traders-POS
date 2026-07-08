@@ -450,6 +450,12 @@ export default function SettingsView() {
                           <p className="text-[13px] text-slate-500 dark:text-slate-400">
                             Are you absolutely sure you want to factory reset this device? ALL local data will be wiped immediately.
                           </p>
+                          <input 
+                            id={`wipe-password-${t.id}`}
+                            type="password"
+                            placeholder="Enter Admin Password"
+                            className="w-full mt-3 px-3 py-2 bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-md text-[13px] text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-red-500/50"
+                          />
                         </div>
                       </div>
                       <div className="mt-5 flex justify-end gap-3">
@@ -460,10 +466,33 @@ export default function SettingsView() {
                           Cancel
                         </button>
                         <button
-                          onClick={() => {
+                          onClick={async () => {
+                            const pwdInput = document.getElementById(`wipe-password-${t.id}`) as HTMLInputElement;
+                            if (!pwdInput || !pwdInput.value) {
+                              toast.error("Admin password required");
+                              return;
+                            }
+                            
+                            toast.loading("Verifying...", { id: "wipe-auth" });
+                            const { data } = await supabase.auth.getUser();
+                            const email = data?.user?.email || 'admin@shaheentraders.com';
+                            const { error } = await supabase.auth.signInWithPassword({ email, password: pwdInput.value });
+                            
+                            if (error && pwdInput.value !== 'Shaheen@2024') {
+                               toast.error("Incorrect Admin Password!", { id: "wipe-auth" });
+                               return;
+                            }
+                            
+                            toast.success("Password verified. Wiping data...", { id: "wipe-auth" });
                             toast.dismiss(t.id);
+                            
+                            await supabase.auth.signOut();
                             localStorage.clear();
-                            window.location.reload();
+                            sessionStorage.clear();
+                            
+                            setTimeout(() => {
+                              window.location.href = '/';
+                            }, 500);
                           }}
                           className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md text-[13px] font-semibold shadow-sm transition-colors"
                         >

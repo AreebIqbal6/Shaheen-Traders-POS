@@ -143,12 +143,13 @@ export default function AdminPOSView() {
   }, [bookerName]);
   const [isSyncing, setIsSyncing] = useState(false);
 
-  const handleSyncToCloud = async () => {
+  const handleSyncToCloud = async (e?: any) => {
+    const silent = e === true;
     if (!navigator.onLine) {
-      toast.error('Cannot sync while offline. Please check your internet connection.');
+      if (!silent) toast.error('Cannot sync while offline. Please check your internet connection.');
       return;
     }
-    setIsSyncing(true);
+    if (!silent) setIsSyncing(true);
     try {
       const productsToSync = products.map(p => ({
         id: p.id,
@@ -189,14 +190,27 @@ export default function AdminPOSView() {
       // Also refresh bookers from cloud
       await pullBookersFromCloud();
       
-      toast.success('Successfully synced items, records, and triggered PC backups!');
+      if (!silent) toast.success('Successfully synced items, records, and triggered PC backups!');
     } catch (err: any) {
       console.error('Sync error:', err);
-      toast.error('Failed to sync to cloud: ' + err.message);
+      if (!silent) toast.error('Failed to sync to cloud: ' + err.message);
     } finally {
-      setIsSyncing(false);
+      if (!silent) setIsSyncing(false);
     }
   };
+
+  // Background Auto-Sync every 5 seconds
+  const syncRef = useRef(handleSyncToCloud);
+  useEffect(() => {
+    syncRef.current = handleSyncToCloud;
+  });
+  useEffect(() => {
+    const timer = setInterval(() => {
+      if (syncRef.current) syncRef.current(true);
+    }, 5000);
+    return () => clearInterval(timer);
+  }, []);
+
   
   // Light Mode Engine (Forced)
   const [isDarkMode, setIsDarkMode] = useState(false);
@@ -1525,7 +1539,7 @@ export default function AdminPOSView() {
   };
 
   if (isAuthChecking) {
-    return <div className="flex h-screen w-full bg-slate-50 dark:bg-[#0a0a0c] items-center justify-center font-sans text-slate-500">Checking terminal security...</div>;
+    return <div className="fixed inset-0 bg-slate-50 dark:bg-[#0a0a0c] flex items-center justify-center font-sans text-slate-500">Checking terminal security...</div>;
   }
 
   if (!isAuthenticated) {
