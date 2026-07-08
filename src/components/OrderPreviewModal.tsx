@@ -1,7 +1,8 @@
 import { useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import type { Product } from '../views/ProductsView';
 import Receipt from './Receipt';
-import { FolderDown, Globe, Printer, X, Check } from 'lucide-react';
+import { FolderDown, Globe, Printer, X, Check, Download } from 'lucide-react';
 import { saveOrderBackup } from '../utils/exportManager';
 import toast from 'react-hot-toast';
 
@@ -61,7 +62,6 @@ export default function OrderPreviewModal({
   const isAdmin = window.location.pathname.startsWith('/admin');
   return (
     <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex flex-col items-center justify-center z-50 p-4" onClick={onClose}>
-      {/* Container matching Image 3 proportions */}
       <div className="bg-white dark:bg-slate-800 w-[800px] max-w-full rounded-sm shadow-2xl flex flex-col max-h-[85vh] border border-zinc-200 dark:border-zinc-700 relative" onClick={(e) => e.stopPropagation()}>
         <button 
           onClick={onClose}
@@ -72,10 +72,10 @@ export default function OrderPreviewModal({
         
         {/* Invoice Content (Preview) */}
         <div className="flex-1 overflow-hidden text-black bg-slate-100 dark:bg-zinc-900 font-sans">
-          <div className="w-full h-full overflow-y-auto custom-scrollbar flex justify-center p-4 md:p-8">
-            <div className="transform origin-top scale-[0.65] sm:scale-[0.85] md:scale-[0.85] lg:scale-[0.9] xl:scale-[0.95] print:transform-none print:scale-100 transition-transform h-max pb-12 w-[210mm]">
+          <div className="w-full h-full overflow-auto custom-scrollbar p-4 md:p-8">
+            <div className="flex justify-center w-full min-w-[800px] mx-auto pb-8">
              <Receipt 
-               isPrintable={false}
+               isPrintable={true}
                data={{
                  id: draftOrderId,
                  clientName: clientName || 'General Cash Sale',
@@ -92,15 +92,10 @@ export default function OrderPreviewModal({
         </div>
         
         {/* Action Bar */}
-        <div className="bg-zinc-100 border-t border-zinc-200 dark:border-zinc-700 p-4 flex flex-col sm:flex-row justify-end gap-3 rounded-b-sm">
+        <div className="bg-zinc-100 border-t border-zinc-200 dark:border-zinc-700 p-4 flex flex-col sm:flex-row justify-end gap-3 rounded-b-sm print:hidden">
            {isDispatched ? (
              <>
-               <button 
-                 onClick={onClose}
-                 className="px-6 py-2.5 rounded-sm font-semibold text-zinc-600 bg-white dark:bg-slate-800 border border-zinc-300 hover:bg-zinc-50 dark:bg-zinc-900 transition-colors"
-               >
-                 Close
-               </button>
+
                   <button 
                     onClick={() => {
                       window.print();
@@ -137,7 +132,7 @@ export default function OrderPreviewModal({
                               const buffer = new Uint8Array(arrayBuffer);
                               
                               await writeBinaryFile(filePath, buffer, { baseDir: BaseDirectory.Document });
-                              import('react-hot-toast').then(t => t.default.success(`Saved to Documents/${dateFolder}`));
+                              toast.success(`Saved to Documents/${dateFolder}`);
                             }
                             // @ts-ignore
                             else if (typeof window !== 'undefined' && window.require) {
@@ -177,20 +172,9 @@ export default function OrderPreviewModal({
                     }}
                     className="px-4 py-2.5 rounded-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 shadow-sm"
                   >
-                   <FolderDown size={18} />
-                   Save Backup
+                   <Download size={18} />
+                   Download PDF
                  </button>
-               
-               <button 
-                 onClick={async () => {
-                   const { exportReceiptToPDF } = await import('../utils/exportPdf');
-                   await exportReceiptToPDF(draftOrderId, true);
-                 }}
-                 className="px-4 py-2.5 rounded-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 shadow-sm"
-               >
-                 <Download size={18} />
-                 Download PDF
-               </button>
 
                {isAdmin && (
                  <button 
@@ -212,12 +196,7 @@ export default function OrderPreviewModal({
              </>
            ) : (
              <>
-               <button 
-                 onClick={onClose}
-                 className="px-6 py-2.5 rounded-sm font-semibold text-zinc-600 bg-white dark:bg-slate-800 border border-zinc-300 hover:bg-zinc-50 dark:bg-zinc-900 transition-colors"
-               >
-                 Back / Edit
-               </button>
+
                
                {isAdmin && (
                  <button 
@@ -230,15 +209,15 @@ export default function OrderPreviewModal({
                )}
 
                <button 
-                 onClick={async () => {
-                   const { exportReceiptToPDF } = await import('../utils/exportPdf');
-                   await exportReceiptToPDF(draftOrderId, true);
-                 }}
-                 className="px-4 py-2.5 rounded-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 shadow-sm"
-               >
-                 <Download size={18} />
-                 Download PDF
-               </button>
+                onClick={async () => {
+                  const { exportReceiptToPDF } = await import('../utils/exportPdf');
+                  await exportReceiptToPDF(draftOrderId, true);
+                }}
+                className="px-4 py-2.5 rounded-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 shadow-sm"
+              >
+                <Download size={18} />
+                Download PDF
+              </button>
 
                {onDispatch && (
                  <button 
@@ -254,6 +233,26 @@ export default function OrderPreviewModal({
            )}
         </div>
       </div>
+
+      {/* DEDICATED PRINT COMPONENT (Portaled directly to body to escape all CSS layout contexts) */}
+      {createPortal(
+        <div className="hidden print:block w-full m-0 p-0 text-black bg-white absolute top-0 left-0 z-[999999]">
+          <Receipt 
+            isPrintable={true}
+            data={{
+              id: draftOrderId,
+              clientName: clientName || 'General Cash Sale',
+              area: area || 'Samnabad',
+              contactNumber: contactNumber || '-',
+              bookerName: bookerName || 'Irfan',
+              createdAt: new Date().toISOString(),
+              items: cart,
+              total: total
+            }} 
+          />
+        </div>,
+        document.body
+      )}
     </div>
   );
 }
