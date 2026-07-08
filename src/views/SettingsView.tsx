@@ -508,35 +508,48 @@ export default function SettingsView() {
                             toast.success("Password verified. Wiping data...", { id: "wipe-auth" });
                             toast.dismiss(t.id);
                             
-                            await supabase.auth.signOut();
+                            (window as any).__wiping = true;
+                            
+                            // Fire and forget signOut, it might hang offline
+                            supabase.auth.signOut().catch(() => {});
+                            
                             localStorage.clear();
                             sessionStorage.clear();
                             
-                            // Deep wipe caches, indexedDB, and service workers
-                            if ('caches' in window) {
-                              try {
-                                const cacheKeys = await caches.keys();
-                                await Promise.all(cacheKeys.map(key => caches.delete(key)));
-                              } catch (e) {}
-                            }
-                            if ('indexedDB' in window && indexedDB.databases) {
-                              try {
-                                const dbs = await indexedDB.databases();
-                                dbs.forEach(db => { if (db.name) indexedDB.deleteDatabase(db.name); });
-                              } catch (e) {}
-                            }
-                            if ('serviceWorker' in navigator) {
-                              try {
-                                const registrations = await navigator.serviceWorker.getRegistrations();
-                                for (let registration of registrations) {
-                                  await registration.unregister();
+                            // Deep wipe caches, indexedDB, and service workers without blocking
+                            Promise.allSettled([
+                              (async () => {
+                                if ('caches' in window) {
+                                  const cacheKeys = await caches.keys();
+                                  await Promise.all(cacheKeys.map(key => caches.delete(key)));
                                 }
-                              } catch (e) {}
-                            }
+                              })(),
+                              (async () => {
+                                if ('indexedDB' in window && indexedDB.databases) {
+                                  const dbs = await indexedDB.databases();
+                                  dbs.forEach(db => { if (db.name) indexedDB.deleteDatabase(db.name); });
+                                }
+                              })(),
+                              (async () => {
+                                if ('serviceWorker' in navigator) {
+                                  const registrations = await navigator.serviceWorker.getRegistrations();
+                                  for (let registration of registrations) {
+                                    await registration.unregister();
+                                  }
+                                }
+                              })()
+                            ]).finally(() => {
+                               localStorage.clear();
+                               sessionStorage.clear();
+                               window.location.href = '/';
+                            });
                             
+                            // Absolute fallback reload
                             setTimeout(() => {
+                              localStorage.clear();
+                              sessionStorage.clear();
                               window.location.href = '/';
-                            }, 500);
+                            }, 1500);
                           }}
                           className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md text-[13px] font-semibold shadow-sm transition-colors"
                         >

@@ -144,6 +144,7 @@ export default function AdminPOSView() {
   const [isSyncing, setIsSyncing] = useState(false);
 
   const handleSyncToCloud = async (e?: any) => {
+    if ((window as any).__wiping) return;
     const silent = e === true;
     if (!navigator.onLine) {
       if (!silent) toast.error('Cannot sync while offline. Please check your internet connection.');
