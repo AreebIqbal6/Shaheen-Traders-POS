@@ -1109,15 +1109,13 @@ export default function AdminPOSView() {
                         }}
                         className="w-full bg-transparent border-none outline-none text-[15px] font-medium text-slate-900 dark:text-slate-50 placeholder-slate-400 min-w-0 text-ellipsis"
                       />
-                      {/Android|webOS|iPhone|iPad|iPod/i.test(navigator.userAgent) && (
-                        <button 
+                      <button 
                           onClick={() => setIsCameraOpen(true)}
-                          className="p-1 rounded-sm focus:outline-none bg-white dark:bg-zinc-900/60 backdrop-blur-md"
+                          className="p-1 rounded-sm focus:outline-none bg-white dark:bg-zinc-900/60 backdrop-blur-md shrink-0"
                           title="Open Camera Scanner"
                         >
                           <ScanBarcode size={22} className={`${isScannerFocused ? 'text-green-500 drop-shadow-[0_0_2px_rgba(34,197,94,0.5)]' : 'text-red-500'} transition-all`} />
                         </button>
-                      )}
                     </div>
                   </div>
 
