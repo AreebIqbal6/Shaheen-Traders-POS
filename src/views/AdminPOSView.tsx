@@ -1525,7 +1525,7 @@ export default function AdminPOSView() {
   };
 
   if (isAuthChecking) {
-    return <div className="flex h-screen w-screen bg-slate-50 dark:bg-[#0a0a0c] items-center justify-center font-sans text-slate-500">Checking terminal security...</div>;
+    return <div className="flex h-screen w-full bg-slate-50 dark:bg-[#0a0a0c] items-center justify-center font-sans text-slate-500">Checking terminal security...</div>;
   }
 
   if (!isAuthenticated) {

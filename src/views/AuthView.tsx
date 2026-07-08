@@ -40,7 +40,7 @@ export default function AuthView({ onLogin }: AuthViewProps) {
   };
 
   return (
-    <div className="flex h-screen w-screen bg-slate-50 dark:bg-[#0a0a0c] items-center justify-center font-sans">
+    <div className="flex h-screen w-full bg-slate-50 dark:bg-[#0a0a0c] items-center justify-center font-sans">
       <div className="bg-white dark:bg-zinc-900/60 backdrop-blur-md border border-slate-200 dark:border-zinc-800/50 rounded-lg shadow-sm p-10 w-[440px] max-w-[90%] flex flex-col items-center">
         
         {/* Logo */}

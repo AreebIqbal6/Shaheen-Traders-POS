@@ -3,11 +3,37 @@ import toast from 'react-hot-toast';
 
 export default function StatusView() {
   const handleReset = () => {
-    if (confirm("Are you sure you want to wipe local data? This action cannot be undone.")) {
-      localStorage.clear();
-      toast.success("Local data wiped successfully.");
-      window.location.reload();
-    }
+    toast.custom((t) => (
+      <div className={`${t.visible ? 'animate-enter' : 'animate-leave'} max-w-md w-full bg-[#1e1e1e] shadow-lg rounded-lg pointer-events-auto flex flex-col ring-1 ring-black ring-opacity-5 p-5`}>
+        <div className="flex-1 pt-0.5">
+          <p className="text-[15px] font-bold text-white mb-1">
+            Wipe Local Data
+          </p>
+          <p className="text-[13px] text-gray-300">
+            Are you sure you want to wipe local data? This action cannot be undone.
+          </p>
+        </div>
+        <div className="mt-5 flex justify-end gap-3">
+          <button
+            onClick={() => toast.dismiss(t.id)}
+            className="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-md text-[13px] font-semibold transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={() => {
+              toast.dismiss(t.id);
+              localStorage.clear();
+              toast.success("Local data wiped successfully.");
+              window.location.reload();
+            }}
+            className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md text-[13px] font-semibold shadow-sm transition-colors"
+          >
+            Reset data
+          </button>
+        </div>
+      </div>
+    ), { duration: Infinity, position: 'top-center' });
   };
 
   return (

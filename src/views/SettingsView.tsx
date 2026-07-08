@@ -437,10 +437,41 @@ export default function SettingsView() {
               </div>
               <button 
                 onClick={() => {
-                  if (window.confirm("Are you absolutely sure you want to factory reset this device? ALL local data will be wiped immediately.")) {
-                    localStorage.clear();
-                    window.location.reload();
-                  }
+                  toast.custom((t) => (
+                    <div className={`${t.visible ? 'animate-enter' : 'animate-leave'} max-w-md w-full bg-white dark:bg-zinc-900 shadow-lg rounded-lg pointer-events-auto flex flex-col ring-1 ring-black ring-opacity-5 p-5`}>
+                      <div className="flex items-start gap-4">
+                        <div className="flex-shrink-0">
+                          <AlertTriangle className="h-8 w-8 text-red-600" />
+                        </div>
+                        <div className="flex-1 pt-0.5">
+                          <p className="text-[15px] font-bold text-slate-900 dark:text-slate-100 mb-1">
+                            Factory Reset System
+                          </p>
+                          <p className="text-[13px] text-slate-500 dark:text-slate-400">
+                            Are you absolutely sure you want to factory reset this device? ALL local data will be wiped immediately.
+                          </p>
+                        </div>
+                      </div>
+                      <div className="mt-5 flex justify-end gap-3">
+                        <button
+                          onClick={() => toast.dismiss(t.id)}
+                          className="bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-800 dark:text-slate-200 px-4 py-2 rounded-md text-[13px] font-semibold transition-colors"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          onClick={() => {
+                            toast.dismiss(t.id);
+                            localStorage.clear();
+                            window.location.reload();
+                          }}
+                          className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md text-[13px] font-semibold shadow-sm transition-colors"
+                        >
+                          Yes, Wipe Data
+                        </button>
+                      </div>
+                    </div>
+                  ), { duration: Infinity, position: 'top-center' });
                 }}
                 className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-sm font-bold text-[12px] shadow-sm transition-colors whitespace-nowrap shrink-0"
               >
