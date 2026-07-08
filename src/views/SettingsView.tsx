@@ -510,6 +510,19 @@ export default function SettingsView() {
                             
                             (window as any).__wiping = true;
                             
+                            if (navigator.onLine) {
+                              toast.loading("Wiping cloud database...", { id: "wipe-auth" });
+                              try {
+                                await Promise.allSettled([
+                                  supabase.from('orders').delete().not('id', 'is', null),
+                                  supabase.from('products').delete().not('id', 'is', null),
+                                  supabase.from('bookers').delete().not('id', 'is', null),
+                                  supabase.from('booker_locations').delete().not('booker_name', 'is', null)
+                                ]);
+                              } catch (e) {}
+                              toast.success("Database wiped. Clearing local cache...", { id: "wipe-auth" });
+                            }
+                            
                             // Fire and forget signOut, it might hang offline
                             supabase.auth.signOut().catch(() => {});
                             
