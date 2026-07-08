@@ -752,33 +752,8 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
         )}
       </div>
 
-      </div>
-
-      <SimpleOrderViewModal 
-        isOpen={!!simpleViewOrder}
-        onClose={() => setSimpleViewOrder(null)}
-        order={simpleViewOrder}
-      />
-
-      {previewOrder && (
-        <OrderPreviewModal
-          isOpen={true}
-          isDispatched={true}
-          onClose={() => setPreviewOrder(null)}
-          cart={previewOrder.items || []}
-          total={previewOrder.total || previewOrder.total_amount || 0}
-          clientName={previewOrder.client_name || previewOrder.clientName || previewOrder.shop_name || 'B2B Client'}
-          paymentTerms={previewOrder.payment_terms || 'CASH'}
-          draftOrderId={previewOrder.receipt_number || ('ORD-' + (previewOrder.id || '').toString().slice(-6).toUpperCase())}
-          area={previewOrder.area || 'N/A'}
-          bookerName={previewOrder.booker_name || JSON.parse(localStorage.getItem('shaheen_active_booker') || '{}')?.name || 'Self'}
-          contactNumber={previewOrder.client_phone || previewOrder.contact_number || previewOrder.contactNumber || 'N/A'}
-          subTotal={previewOrder.subTotal || previewOrder.total || previewOrder.total_amount || 0}
-        />
-      )}
-
-      {/* Mobile Bottom Navigation - ALWAYS VISIBLE (But hidden during print) */}
-      <div className={`${isImpersonating ? 'absolute' : 'fixed'} bottom-0 left-0 right-0 w-full bg-white/90 dark:bg-[#0a0a0c]/90 backdrop-blur-xl border-t border-slate-200 dark:border-zinc-900 flex justify-around items-center pt-3 pb-[calc(1rem+env(safe-area-inset-bottom))] px-2 z-30 shadow-none print:hidden`}>
+      {/* Mobile Bottom Navigation - ALWAYS VISIBLE */}
+      <div className={`mt-auto sticky bottom-0 w-full bg-white/90 dark:bg-[#0a0a0c]/90 backdrop-blur-xl border-t border-slate-200 dark:border-zinc-900 flex justify-around items-center pt-3 pb-[calc(1rem+env(safe-area-inset-bottom))] px-2 z-30 shadow-none print:hidden shrink-0`}>
         <button 
           onClick={() => setActiveTab('shop')} 
           className={`flex flex-col items-center p-2 transition-colors flex-1 ${activeTab === 'shop' ? 'text-blue-600 dark:text-blue-400' : 'text-slate-500 hover:text-slate-900 dark:hover:text-slate-100'}`}
@@ -821,6 +796,32 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
           <span className="text-xs font-bold mt-1">Profile</span>
         </button>
       </div>
+      </div>
+
+      <SimpleOrderViewModal 
+        isOpen={!!simpleViewOrder}
+        onClose={() => setSimpleViewOrder(null)}
+        order={simpleViewOrder}
+      />
+
+      {previewOrder && (
+        <OrderPreviewModal
+          isOpen={true}
+          isDispatched={true}
+          onClose={() => setPreviewOrder(null)}
+          cart={previewOrder.items || []}
+          total={previewOrder.total || previewOrder.total_amount || 0}
+          clientName={previewOrder.client_name || previewOrder.clientName || previewOrder.shop_name || 'B2B Client'}
+          paymentTerms={previewOrder.payment_terms || 'CASH'}
+          draftOrderId={previewOrder.receipt_number || ('ORD-' + (previewOrder.id || '').toString().slice(-6).toUpperCase())}
+          area={previewOrder.area || 'N/A'}
+          bookerName={previewOrder.booker_name || JSON.parse(localStorage.getItem('shaheen_active_booker') || '{}')?.name || 'Self'}
+          contactNumber={previewOrder.client_phone || previewOrder.contact_number || previewOrder.contactNumber || 'N/A'}
+          subTotal={previewOrder.subTotal || previewOrder.total || previewOrder.total_amount || 0}
+        />
+      )}
+
+
     </>
   );
 }
