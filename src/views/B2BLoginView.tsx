@@ -80,7 +80,7 @@ export default function B2BLoginView({ onLoginSuccess }: { onLoginSuccess: () =>
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-[#0a0a0c] flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+    <div className="min-h-screen w-full bg-slate-50 dark:bg-[#0a0a0c] flex flex-col items-center justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md text-center">
         <div className="mx-auto h-24 w-24 mb-6 transform hover:scale-105 transition-transform duration-300">
           <img src="/logo_transparent.png" alt="Shaheen Traders Booker Portal" className="w-full h-full object-contain drop-shadow-sm" />

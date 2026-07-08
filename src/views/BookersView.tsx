@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { Users, Plus, Save, X, Phone, Mail, MapPin, User, Key, Hash, Edit2, AlertTriangle, Navigation, LogIn, ArrowLeft } from 'lucide-react';
+import { Users, Plus, Save, X, Phone, Mail, MapPin, User, Key, Hash, Edit2, AlertTriangle, Navigation, LogIn, ArrowLeft, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { hashPassword } from '../utils/cryptoUtils';
 import TrackingMap from '../components/TrackingMap';
@@ -272,6 +272,62 @@ export default function BookersView() {
     }
   };
 
+  const handleDeleteBooker = (bookerNumber: string) => {
+    toast.custom((t) => (
+      <div className={`${t.visible ? 'animate-enter' : 'animate-leave'} max-w-md w-full bg-white dark:bg-zinc-900 shadow-lg rounded-lg pointer-events-auto flex flex-col ring-1 ring-black ring-opacity-5 p-5`}>
+        <div className="flex items-start gap-4">
+          <div className="flex-shrink-0">
+            <AlertTriangle className="h-8 w-8 text-red-600" />
+          </div>
+          <div className="flex-1 pt-0.5">
+            <p className="text-[15px] font-bold text-slate-900 dark:text-slate-100 mb-1">
+              Delete Booker
+            </p>
+            <p className="text-[13px] text-slate-500 dark:text-slate-400">
+              Are you sure you want to remove this booker? This action cannot be undone.
+            </p>
+          </div>
+        </div>
+        <div className="mt-5 flex justify-end gap-3">
+          <button
+            onClick={() => toast.dismiss(t.id)}
+            className="bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-800 dark:text-slate-200 px-4 py-2 rounded-md text-[13px] font-semibold transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={async () => {
+              toast.dismiss(t.id);
+              try {
+                const { error } = await supabase.from('bookers').delete().eq('booker_number', bookerNumber);
+                if (error) console.error("Supabase delete failed:", error);
+                
+                const updatedBookers = bookers.filter(b => b.booker_number !== bookerNumber);
+                setBookers(updatedBookers);
+                localStorage.setItem('shaheen_bookers', JSON.stringify(updatedBookers));
+                
+                const offlineStr = localStorage.getItem('shaheen_offline_bookers');
+                if (offlineStr) {
+                  const offlineBookers = JSON.parse(offlineStr);
+                  const newOffline = offlineBookers.filter((b: any) => b.booker_number !== bookerNumber);
+                  localStorage.setItem('shaheen_offline_bookers', JSON.stringify(newOffline));
+                }
+                
+                toast.success('Booker removed successfully');
+              } catch (err: any) {
+                toast.error('Failed to remove booker');
+              }
+            }}
+            className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md text-[13px] font-semibold shadow-sm transition-colors"
+          >
+            Delete
+          </button>
+        </div>
+      </div>
+    ), { duration: Infinity, position: 'top-center' });
+  };
+
+
   if (impersonatingBooker) {
     return (
       <div className="flex flex-col h-full bg-slate-50 relative animate-in fade-in duration-300">
@@ -453,6 +509,13 @@ export default function BookersView() {
                             >
                               <Edit2 size={16} />
                             </button>
+                            <button 
+                              onClick={() => handleDeleteBooker(bkr.booker_number)}
+                              className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-sm transition-colors"
+                              title="Delete Booker"
+                            >
+                              <Trash2 size={16} />
+                            </button>
                           </div>
                         </td>
                       </tr>
@@ -499,6 +562,12 @@ export default function BookersView() {
                           className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-sm transition-colors"
                         >
                           <Edit2 size={16} />
+                        </button>
+                        <button 
+                          onClick={() => handleDeleteBooker(bkr.booker_number)}
+                          className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-sm transition-colors"
+                        >
+                          <Trash2 size={16} />
                         </button>
                       </div>
                     </div>
