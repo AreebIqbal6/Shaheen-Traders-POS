@@ -12,6 +12,7 @@ html, body, #root {
   overflow-x: hidden !important;
 }
 
+
 .font-mono {
   font-family: 'JetBrains Mono', monospace;
 }
@@ -29,6 +30,13 @@ html, body, #root {
 @media print {
   @page { size: A4 portrait; margin: 0; }
   html.dark { filter: none !important; background-color: white !important; }
+  html, body, #root {
+    height: auto !important;
+    min-height: auto !important;
+    overflow: visible !important;
+    display: block !important;
+    position: static !important;
+  }
 }
 
 @layer base {

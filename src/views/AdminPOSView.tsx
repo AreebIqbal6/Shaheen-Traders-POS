@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import { LayoutDashboard, ShoppingBag, Package, Settings, Search, Trash2, Printer, ScanBarcode, BarChart3, Bell, X, AlertTriangle, FileText, User, Building, Moon, Sun, Grid, ShoppingCart, CreditCard, MapPin, LogOut, ClipboardList, Menu, Users, ChevronDown, Phone, Map as MapIcon } from 'lucide-react';
+import { playNotificationSound } from '../utils/audio';
+import { LayoutDashboard, ShoppingBag, Package, Settings, Search, Trash2, Printer, ScanBarcode, BarChart3, Bell, X, AlertTriangle, FileText, User, Building, Moon, Sun, Grid, ShoppingCart, CreditCard, MapPin, LogOut, ClipboardList, Menu, Users, ChevronDown, Phone, Map as MapIcon, PieChart, BookOpen } from 'lucide-react';
 import ProductsView from './ProductsView';
 import type { Product } from './ProductsView';
-import DispatchHistory from './DispatchHistory';
 import SettingsView from './SettingsView';
 import AuthView from './AuthView';
 import BookersView from './BookersView';
@@ -11,10 +11,13 @@ import OrderPreviewModal from '../components/OrderPreviewModal';
 import SimpleOrderViewModal from '../components/SimpleOrderViewModal';
 import Receipt from '../components/Receipt';
 import CameraScanner from '../components/CameraScanner';
+import DashboardView from './DashboardView';
+import LedgerView from './LedgerView';
 import CashManagementView from './CashManagementView';
 import { QRCodeSVG } from 'qrcode.react';
 import Barcode from 'react-barcode';
 import { generateOrderExcel } from '../utils/excel';
+import { saveOrderBackup } from '../utils/exportManager';
 import toast from 'react-hot-toast';
 import { toWords } from 'number-to-words';
 import { supabase } from '../lib/supabase';
@@ -46,13 +49,13 @@ export interface OurOrderItem {
   quantityNeeded: number;
 }
 
-import { mockProducts } from '../mockData';
+// Mock data removed for production
 import { generateSKU } from './ProductsView';
 
 export default function AdminPOSView() {
   const [products, setProducts] = useState<Product[]>(() => {
     const saved = localStorage.getItem('shaheen_products');
-    const loaded: Product[] = saved ? JSON.parse(saved) : mockProducts;
+    const loaded: Product[] = saved ? JSON.parse(saved) : [];
     return loaded.map(p => ({ 
       ...p, 
       sku: p.sku || generateSKU(p.name, p.barcode),
@@ -78,7 +81,7 @@ export default function AdminPOSView() {
     return saved ? JSON.parse(saved) : [];
   });
   const [activeMenu, setActiveMenuState] = useState(() => {
-    return localStorage.getItem('shaheen_admin_activeMenu') || 'Register';
+    return localStorage.getItem('shaheen_admin_activeMenu') || 'Dashboard';
   });
   
   const setActiveMenu = (menu: string) => {
@@ -116,7 +119,7 @@ export default function AdminPOSView() {
   const [clientName, setClientName] = useState('');
   const [paymentTerms, setPaymentTerms] = useState('Bank Transfer');
   const [area, setArea] = useState('');
-  const [bookerName, setBookerName] = useState(() => { const n = localStorage.getItem('shaheen_bookerName'); return (n && n.includes('@')) ? 'Admin' : (n || ''); });
+  const [bookerName, setBookerName] = useState(() => { const n = localStorage.getItem('shaheen_bookerName'); return (n && n.includes('@')) ? 'Admin' : (n || 'Admin'); });
   const [contactNumber, setContactNumber] = useState('');
   
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -160,7 +163,33 @@ export default function AdminPOSView() {
       const { error } = await supabase.from('products').upsert(productsToSync);
       if (error) throw error;
       
-      toast.success('Successfully synced catalog to cloud!');
+      // Pull products from cloud (picks up products added on other devices)
+      const { data: cloudProducts, error: pullError } = await supabase.from('products').select('*');
+      if (!pullError && cloudProducts && cloudProducts.length > 0) {
+        const localIds = new Set(products.map(p => p.id));
+        const newFromCloud = cloudProducts
+          .filter((cp: any) => !localIds.has(cp.id))
+          .map((cp: any) => ({
+            ...cp,
+            sku: cp.sku || generateSKU(cp.name, cp.barcode),
+            pcsPerBox: cp.pcs_per_box || cp.pcsPerBox || 12,
+            boxPerCtn: cp.box_per_ctn || cp.boxPerCtn || 6
+          }));
+        if (newFromCloud.length > 0) {
+          setProducts(prev => [...prev, ...newFromCloud]);
+        }
+      }
+
+      // Sync offline records
+      await syncOfflineStatusUpdates();
+      
+      // Pull latest records, strictly preventing duplicates
+      await fetchOrders();
+
+      // Also refresh bookers from cloud
+      await pullBookersFromCloud();
+      
+      toast.success('Successfully synced items, records, and triggered PC backups!');
     } catch (err: any) {
       console.error('Sync error:', err);
       toast.error('Failed to sync to cloud: ' + err.message);
@@ -185,6 +214,54 @@ export default function AdminPOSView() {
   useEffect(() => {
     localStorage.setItem('shaheen_orders', JSON.stringify(pastOrders));
   }, [pastOrders]);
+
+  // Auto-pull products from Supabase on mount (cross-device sync)
+  const pullProductsFromCloud = useCallback(async () => {
+    try {
+      const { data: cloudProducts, error } = await supabase.from('products').select('*');
+      if (error || !cloudProducts) return;
+      
+      setProducts(prev => {
+        const localById = new Map(prev.map(p => [p.id, p]));
+        const merged = [...prev];
+        for (const cp of cloudProducts) {
+          const mapped = {
+            ...cp,
+            sku: cp.sku || generateSKU(cp.name, cp.barcode),
+            pcsPerBox: cp.pcs_per_box || cp.pcsPerBox || 12,
+            boxPerCtn: cp.box_per_ctn || cp.boxPerCtn || 6
+          };
+          if (localById.has(cp.id)) {
+            // Update existing product with cloud data
+            const idx = merged.findIndex(p => p.id === cp.id);
+            if (idx !== -1) merged[idx] = { ...merged[idx], ...mapped };
+          } else {
+            // New product from another device
+            merged.push(mapped);
+          }
+        }
+        return merged;
+      });
+    } catch (err) {
+      console.warn('Failed to pull products from cloud:', err);
+    }
+  }, []);
+
+  // Auto-pull bookers from Supabase on mount (cross-device sync)
+  const pullBookersFromCloud = useCallback(async () => {
+    try {
+      const { data, error } = await supabase.from('bookers').select('*').order('created_at', { ascending: false });
+      if (error || !data) return;
+      localStorage.setItem('shaheen_bookers', JSON.stringify(data));
+    } catch (err) {
+      console.warn('Failed to pull bookers from cloud:', err);
+    }
+  }, []);
+
+  useEffect(() => {
+    pullProductsFromCloud();
+    pullBookersFromCloud();
+  }, [pullProductsFromCloud, pullBookersFromCloud]);
 
   useEffect(() => {
     localStorage.setItem('shaheen_our_order', JSON.stringify(ourOrderList));
@@ -234,6 +311,76 @@ export default function AdminPOSView() {
   // Incoming Orders System
   const [incomingOrders, setIncomingOrders] = useState<any[]>([]);
   const [permanentlyHiddenOrders, setPermanentlyHiddenOrders] = useState<string[]>([]);
+  const [autoBackedUpOrders, setAutoBackedUpOrders] = useState<string[]>([]);
+
+  // Automated PC Background Sync
+  useEffect(() => {
+    const isTauri = '__TAURI__' in window;
+    if (!isTauri || incomingOrders.length === 0) return;
+
+    let autoBackedUp: string[] = [];
+    try {
+      autoBackedUp = JSON.parse(localStorage.getItem('shaheen_auto_backed_up') || '[]');
+    } catch {
+      autoBackedUp = [];
+    }
+    
+    // Initialize the state once on mount or when incomingOrders changes
+    setAutoBackedUpOrders(autoBackedUp);
+    
+    let hasNewBackups = false;
+
+    incomingOrders.forEach(async (order) => {
+      const orderId = order.receipt_number || order.id;
+      if (orderId && !autoBackedUp.includes(orderId.toString())) {
+        autoBackedUp.push(orderId.toString());
+        hasNewBackups = true;
+        
+        const details = {
+          clientName: order.client_name,
+          area: order.area,
+          contactNumber: order.contact_number,
+          bookerName: order.booker_name,
+          total: order.total
+        };
+        
+        try {
+          await saveOrderBackup(orderId.toString(), order.items || [], details);
+          toast.success(`Auto-backed up ${orderId} to PC.`);
+          
+          // Modify Option A: Remove from queue and add to History
+          supabase.from('orders').update({ status: 'COMPLETED' }).eq('id', order.id || orderId).then(({ error }) => {
+            if (error) console.error("Failed to complete auto-backed up order in Supabase:", error);
+          });
+          
+          setPermanentlyHiddenOrders(prev => [...prev, orderId.toString()]);
+          
+          const newPastOrder: Order = {
+            receiptNumber: order.receipt_number || order.id,
+            date: new Date(order.created_at || new Date()),
+            items: order.items || [],
+            clientName: order.client_name,
+            area: order.area,
+            contactNumber: order.contact_number,
+            bookerName: order.booker_name,
+            total: order.total
+          };
+          setPastOrders(prev => {
+             if (prev.some(p => p.receiptNumber === newPastOrder.receiptNumber)) return prev;
+             return [newPastOrder, ...prev];
+          });
+          
+        } catch (e) {
+          console.error(`Auto backup failed for ${orderId}:`, e);
+        }
+      }
+    });
+
+    if (hasNewBackups) {
+      localStorage.setItem('shaheen_auto_backed_up', JSON.stringify(autoBackedUp));
+      setAutoBackedUpOrders([...autoBackedUp]);
+    }
+  }, [incomingOrders]);
 
   const fetchOrders = async () => {
     try {
@@ -278,6 +425,13 @@ export default function AdminPOSView() {
           ...o,
           items: (o.items || []).map((i: any) => ({ ...i, sku: i.sku || generateSKU(i.name, i.barcode) }))
         }));
+        // Deduplicate: if the offline order already exists in allOrders (Supabase), remove it from pendingOffline
+        const existingIds = new Set(allOrders.map((o: any) => o.id).filter(Boolean));
+        const existingReceipts = new Set(allOrders.map((o: any) => o.receipt_number).filter(Boolean));
+        
+        pendingOffline = pendingOffline.filter((o: any) => 
+           !(o.id && existingIds.has(o.id)) && !(o.receipt_number && existingReceipts.has(o.receipt_number))
+        );
         
         allOrders = [...pendingOffline, ...allOrders];
       }
@@ -335,22 +489,39 @@ export default function AdminPOSView() {
 
     const handleOnline = () => {
       syncOfflineStatusUpdates();
+      pullProductsFromCloud();
+      pullBookersFromCloud();
     };
     window.addEventListener('online', handleOnline);
 
-    const channel = supabase.channel('public:orders')
+    const ordersChannel = supabase.channel('public:orders')
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'orders' },
-        () => {
+        (payload) => {
+          if (payload.eventType === 'INSERT') {
+            playNotificationSound();
+          }
           fetchOrders();
+        }
+      )
+      .subscribe();
+
+    // Realtime listener for products — syncs across devices instantly
+    const productsChannel = supabase.channel('public:products')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'products' },
+        () => {
+          pullProductsFromCloud();
         }
       )
       .subscribe();
 
     return () => {
       window.removeEventListener('online', handleOnline);
-      supabase.removeChannel(channel);
+      supabase.removeChannel(ordersChannel);
+      supabase.removeChannel(productsChannel);
     };
   }, []);
 
@@ -401,6 +572,11 @@ export default function AdminPOSView() {
                 }
                 setIncomingOrders(prev => prev.filter(o => o.id !== order.id && o.receipt_number !== order.receipt_number));
                 setPermanentlyHiddenOrders(prev => [...prev, order.id || order.receipt_number]);
+                
+                const cancelled = JSON.parse(localStorage.getItem('shaheen_cancelled_orders') || '[]');
+                cancelled.push({ ...order, cancelledAt: new Date().toISOString() });
+                localStorage.setItem('shaheen_cancelled_orders', JSON.stringify(cancelled));
+                
                 toast.success('Order Cancelled');
               } catch (e: any) {
                 toast.error('Failed to cancel order: ' + e.message);
@@ -410,6 +586,41 @@ export default function AdminPOSView() {
         </div>
       </span>
     ), { duration: 5000 });
+  };
+
+  const handleRestoreOrder = async (order: any) => {
+    try {
+      if (order.id) {
+        await supabase.from('orders').update({ status: 'PENDING' }).eq('id', order.id);
+      } else if (order.receipt_number) {
+        let offline = JSON.parse(localStorage.getItem('shaheen_offline_orders') || '[]');
+        let idx = offline.findIndex((o: any) => o.receipt_number === order.receipt_number);
+        if (idx !== -1) {
+          offline[idx].status = 'PENDING';
+          localStorage.setItem('shaheen_offline_orders', JSON.stringify(offline));
+        }
+      }
+      
+      let cancelled = JSON.parse(localStorage.getItem('shaheen_cancelled_orders') || '[]');
+      cancelled = cancelled.filter((o: any) => {
+        const id1 = String(order.id || '').toLowerCase();
+        const id2 = String(o.id || '').toLowerCase();
+        const r1 = String(order.receipt_number || order.receiptNumber || '').toLowerCase();
+        const r2 = String(o.receipt_number || o.receiptNumber || '').toLowerCase();
+        
+        if (id1 && id2 && id1 === id2) return false;
+        if (r1 && r2 && r1 === r2) return false;
+        return true;
+      });
+      localStorage.setItem('shaheen_cancelled_orders', JSON.stringify(cancelled));
+      
+      setPermanentlyHiddenOrders(prev => prev.filter(id => id !== order.id && id !== order.receipt_number));
+      setIncomingOrders(prev => [{...order, status: 'PENDING'}, ...prev]);
+      
+      toast.success('Order Restored to Queue');
+    } catch (e: any) {
+      toast.error('Failed to restore order: ' + e.message);
+    }
   };
 
   const handleAcceptOrder = async (order: any) => {
@@ -739,13 +950,16 @@ export default function AdminPOSView() {
     }
   };
 
+  const minStockDict = JSON.parse(localStorage.getItem('shaheen_min_stock') || '{}');
+  const hasCriticalStock = products.some(p => p.stock <= (minStockDict[p.id] ?? 5));
+
   const sidebarItems = [
     { name: 'Register', icon: <LayoutDashboard size={22} /> },
-    { name: 'Inventory', icon: <Package size={22} /> },
-    { name: 'History', icon: <BarChart3 size={22} /> },
+    { name: 'Dashboard', icon: <PieChart size={22} /> },
+    { name: 'Inventory', icon: <Package size={22} />, hasAlert: hasCriticalStock },
     { name: 'Bookers', icon: <Users size={22} /> },
     { name: 'Our Order', icon: <ClipboardList size={22} /> },
-    { name: 'Booker Portal', icon: <Package size={22} /> }, // Using Package as fallback for ExternalLink
+    { name: 'Ledger', icon: <BookOpen size={22} /> },
   ];
 
   // Routing Switch
@@ -768,14 +982,16 @@ export default function AdminPOSView() {
 
   const renderContent = () => {
     switch (activeMenu) {
+      case 'Dashboard':
+        return <DashboardView pastOrders={pastOrders} products={products} onRestoreOrder={handleRestoreOrder} />;
+      case 'Ledger':
+        return <LedgerView pastOrders={pastOrders} />;
       case 'Trackers':
         return <TrackersView />;
       case 'Inventory':
         return <ProductsView products={products} setProducts={setProducts} />;
       case 'Bookers':
         return <BookersView />;
-      case 'Booker Portal':
-        return <iframe src="/booker" className="w-full h-full border-none bg-slate-50 dark:bg-[#0a0a0c]" title="Booker Portal" />;
       case 'Our Order':
         return (
           <div className="p-8 flex flex-col h-full bg-slate-50 dark:bg-[#0a0a0c] overflow-y-auto">
@@ -844,8 +1060,6 @@ export default function AdminPOSView() {
              </div>
           </div>
         );
-      case 'History':
-        return <DispatchHistory pastOrders={pastOrders} />;
       case 'Orders': 
         return (
           <div className="flex-1 flex flex-col h-full bg-slate-50 dark:bg-[#0a0a0c] overflow-y-auto p-6">
@@ -863,9 +1077,16 @@ export default function AdminPOSView() {
                          <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 dark:bg-blue-400/5 rounded-bl-full -z-0 transition-transform group-hover:scale-110 pointer-events-none"></div>
                          <div className="flex justify-between items-start mb-2 relative z-10">
                             <span className="font-bold text-slate-900 dark:text-slate-50 text-sm">{order.client_name || 'B2B Client'}</span>
-                            <span className="text-xs font-bold px-2 py-1 rounded-md bg-blue-100 text-blue-700">
-                              NEW
-                            </span>
+                            <div className="flex gap-2">
+                              {autoBackedUpOrders.includes((order.id || order.receipt_number)?.toString()) && (
+                                <span className="text-xs font-bold px-2 py-1 rounded-md bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400">
+                                  PC BACKED UP
+                                </span>
+                              )}
+                              <span className="text-xs font-bold px-2 py-1 rounded-md bg-blue-100 text-blue-700">
+                                NEW
+                              </span>
+                            </div>
                          </div>
                          <div className="flex flex-col gap-1 text-xs text-slate-500 dark:text-slate-400 font-medium mb-3">
                             <span className="flex items-center gap-1"><MapPin size={12} /> Area: {order.area || 'N/A'}</span>
@@ -890,12 +1111,6 @@ export default function AdminPOSView() {
                                     className="px-3 py-1.5 bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 font-semibold text-xs rounded-md shadow-sm transition-colors"
                                   >
                                     View
-                                  </button>
-                                  <button 
-                                    onClick={() => setReceiptOrderDetails(order)}
-                                    className="px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white font-semibold text-xs rounded-md shadow-sm transition-colors"
-                                  >
-                                    Receipt
                                   </button>
                                   <button 
                                     onClick={() => handleAcceptOrder(order)}
@@ -976,15 +1191,13 @@ export default function AdminPOSView() {
                         }}
                         className="w-full bg-transparent border-none outline-none text-[15px] font-medium text-slate-900 dark:text-slate-50 placeholder-slate-400 min-w-0 text-ellipsis"
                       />
-                      {/Android|webOS|iPhone|iPad|iPod/i.test(navigator.userAgent) && (
-                        <button 
+                      <button 
                           onClick={() => setIsCameraOpen(true)}
-                          className="p-1 rounded-sm focus:outline-none bg-white dark:bg-zinc-900/60 backdrop-blur-md"
+                          className="p-1 rounded-sm focus:outline-none bg-white dark:bg-zinc-900/60 backdrop-blur-md shrink-0"
                           title="Open Camera Scanner"
                         >
                           <ScanBarcode size={22} className={`${isScannerFocused ? 'text-green-500 drop-shadow-[0_0_2px_rgba(34,197,94,0.5)]' : 'text-red-500'} transition-all`} />
                         </button>
-                      )}
                     </div>
                   </div>
 
@@ -1254,8 +1467,8 @@ export default function AdminPOSView() {
                           <input 
                             type="text" 
                             value={bookerName}
-                            disabled={true}
-                            className="w-full bg-slate-100 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-800/50 rounded-sm py-1.5 px-2 font-medium focus:outline-none transition-all text-xs opacity-70 cursor-not-allowed"
+                            onChange={(e) => setBookerName(e.target.value)}
+                            className="w-full bg-slate-100 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-800/50 rounded-sm py-1.5 px-2 font-medium focus:outline-none focus:ring-1 focus:ring-blue-500 transition-all text-xs"
                             placeholder="Booker Name"
                           />
                         </div>
@@ -1361,7 +1574,10 @@ export default function AdminPOSView() {
                       : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-100 font-medium'
                   }`}
                 >
-                  {React.cloneElement(item.icon as React.ReactElement, { size: 20 })}
+                  <div className="relative flex">
+                    {React.cloneElement(item.icon as React.ReactElement, { size: 20 })}
+                    {item.hasAlert && <div className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full border border-white dark:border-zinc-900 shadow-sm animate-pulse"></div>}
+                  </div>
                   <span className="text-[15px] whitespace-nowrap">{item.name}</span>
                 </button>
               ))}
@@ -1402,14 +1618,14 @@ export default function AdminPOSView() {
             
             {/* Mobile Action Buttons */}
             <div className="p-4 border-t border-slate-200 dark:border-zinc-900 flex flex-col gap-3 pb-8 shrink-0 bg-slate-50 dark:bg-[#0a0a0c]/50">
-                <button 
-                  onClick={handleSyncToCloud}
-                  disabled={isSyncing}
-                  className={`w-full flex flex-col items-center justify-center py-2.5 rounded-lg transition-all ${isSyncing ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400' : 'bg-slate-100 dark:bg-zinc-900/60 backdrop-blur-md text-slate-700 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'}`}
-                >
-                  <CloudUpload size={18} className={isSyncing ? "animate-pulse mb-1" : "mb-1"} />
-                  <span className="text-[10px] font-bold uppercase tracking-wider">{isSyncing ? 'Syncing...' : 'Sync to Cloud'}</span>
-                </button>
+              <button 
+                onClick={handleSyncToCloud}
+                disabled={isSyncing}
+                className={`w-full flex items-center justify-center gap-2 py-3 rounded-lg font-bold transition-all shadow-sm ${isSyncing ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400' : 'bg-blue-600 hover:bg-blue-700 text-white'}`}
+              >
+                <CloudUpload size={18} className={isSyncing ? "animate-pulse" : ""} />
+                <span className="text-sm uppercase tracking-wider">{isSyncing ? 'Syncing...' : 'Sync All'}</span>
+              </button>
               <button 
                 onClick={() => {
                   supabase.auth.signOut();
@@ -1421,7 +1637,7 @@ export default function AdminPOSView() {
                 <span className="text-[12px] uppercase tracking-wider">Log Out</span>
               </button>
               <div className="mt-2 text-center">
-                <p className="text-[10px] font-medium text-slate-400 tracking-wider">Software by Areeb Iqbal</p>
+                <p className="text-[10px] font-medium text-slate-400 tracking-wider">Powered by Areeb Iqbal</p>
               </div>
             </div>
 
@@ -1451,7 +1667,10 @@ export default function AdminPOSView() {
                   : 'text-slate-600 dark:text-zinc-400 hover:bg-slate-100 dark:hover:bg-zinc-800/50 hover:text-slate-900 dark:hover:text-zinc-50'
               }`}
             >
-              {React.cloneElement(item.icon as React.ReactElement, { size: 15, className: `shrink-0 ${activeMenu === item.name ? 'opacity-100' : 'opacity-60'}` })}
+              <div className={`relative flex shrink-0 ${activeMenu === item.name ? 'opacity-100' : 'opacity-60'}`}>
+                {React.cloneElement(item.icon as React.ReactElement, { size: 15 })}
+                {item.hasAlert && <div className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full border border-white dark:border-zinc-900 shadow-sm animate-pulse"></div>}
+              </div>
               <span className="whitespace-nowrap">{item.name}</span>
             </button>
           ))}
@@ -1480,7 +1699,11 @@ export default function AdminPOSView() {
             )}
           </button>
 
-          {/* Settings Tab (Moved to Nav) */}
+        </nav>
+
+        {/* Action Buttons Container */}
+        <div className="mt-auto pt-2 border-t border-slate-200 dark:border-zinc-800/50 flex flex-col gap-2 p-2">
+          
           <button 
             onClick={() => setActiveMenu('Settings')}
             className={`flex items-center gap-[9px] px-[9px] py-2 rounded-md transition-all text-[13px] font-medium w-full text-left relative overflow-hidden ${
@@ -1492,19 +1715,14 @@ export default function AdminPOSView() {
             <Settings size={15} className={`shrink-0 ${activeMenu === 'Settings' ? 'opacity-100' : 'opacity-60'}`} />
             <span className="whitespace-nowrap">Settings</span>
           </button>
-        </nav>
 
-        {/* Action Buttons Container */}
-        <div className="mt-auto pt-2.5 border-t border-slate-200 dark:border-zinc-800/50 flex flex-col gap-[1px]">
-          
-          {/* Sync to Cloud */}
           <button 
             onClick={handleSyncToCloud}
             disabled={isSyncing}
-            className={`flex items-center gap-[9px] px-[9px] py-2 rounded-md transition-all text-[12.5px] font-medium w-full text-left relative overflow-hidden text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:text-slate-50 disabled:opacity-50`}
+            className={`flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg transition-all text-[12.5px] font-bold w-full relative overflow-hidden shadow-sm ${isSyncing ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400' : 'bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50'}`}
           >
-            <CloudUpload size={15} className={`shrink-0 opacity-60 ${isSyncing ? "animate-pulse text-blue-600 dark:text-blue-400" : ""}`} />
-            <span className="whitespace-nowrap">{isSyncing ? 'Syncing...' : 'Sync'}</span>
+            <CloudUpload size={16} className={`shrink-0 ${isSyncing ? "animate-pulse" : ""}`} />
+            <span className="whitespace-nowrap uppercase tracking-wider">{isSyncing ? 'Syncing...' : 'Sync All'}</span>
           </button>
 
           <button 
@@ -1512,13 +1730,13 @@ export default function AdminPOSView() {
               supabase.auth.signOut();
               setIsAuthenticated(false);
             }}
-            className="flex items-center gap-[9px] px-[9px] py-2 rounded-md transition-all text-[12.5px] font-medium w-full text-left relative overflow-hidden text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:text-slate-50"
+            className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg transition-all text-[12.5px] font-bold w-full relative overflow-hidden text-red-600 dark:text-red-500 bg-red-50 dark:bg-red-500/10 hover:bg-red-100 dark:hover:bg-red-500/20"
           >
-            <LogOut size={15} className="shrink-0 opacity-60" />
-            <span className="whitespace-nowrap">Sign out</span>
+            <LogOut size={16} className="shrink-0" />
+            <span className="whitespace-nowrap uppercase tracking-wider">Sign out</span>
           </button>
           
-          <p className="text-[9.5px] text-slate-500 dark:text-slate-500 text-center pt-2.5 tracking-wider">SOFTWARE BY AREEB IQBAL</p>
+          <p className="text-[9.5px] text-slate-500 dark:text-slate-500 text-center pt-2.5 tracking-wider">Powered by Areeb Iqbal</p>
         </div>
       </aside>
 
@@ -1547,9 +1765,16 @@ export default function AdminPOSView() {
                          <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 dark:bg-blue-400/5 rounded-bl-full -z-0 transition-transform group-hover:scale-110 pointer-events-none"></div>
                          <div className="flex justify-between items-start mb-2 relative z-10">
                             <span className="font-bold text-slate-900 dark:text-slate-50 text-sm">{order.client_name || 'B2B Client'}</span>
-                            <span className="text-xs font-bold px-2 py-1 rounded-md bg-blue-100 text-blue-700">
-                              NEW
-                            </span>
+                            <div className="flex gap-2">
+                              {autoBackedUpOrders.includes((order.id || order.receipt_number)?.toString()) && (
+                                <span className="text-xs font-bold px-2 py-1 rounded-md bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400">
+                                  PC BACKED UP
+                                </span>
+                              )}
+                              <span className="text-xs font-bold px-2 py-1 rounded-md bg-blue-100 text-blue-700">
+                                NEW
+                              </span>
+                            </div>
                          </div>
                          <div className="flex flex-col gap-1 text-xs text-slate-500 dark:text-slate-400 font-medium mb-3">
                             <span className="flex items-center gap-1"><MapPin size={12} /> Area: {order.area || 'N/A'}</span>
@@ -1575,12 +1800,7 @@ export default function AdminPOSView() {
                                   >
                                     View
                                   </button>
-                                  <button 
-                                    onClick={() => setReceiptOrderDetails(order)}
-                                    className="px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white font-semibold text-xs rounded-md shadow-sm transition-colors"
-                                  >
-                                    Receipt
-                                  </button>
+
                                   <button 
                                     onClick={() => handleAcceptOrder(order)}
                                     className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs rounded-md shadow-sm transition-colors"
@@ -1707,21 +1927,6 @@ export default function AdminPOSView() {
           />
         )}
       </div>
-
-      {/* Hidden Print Receipt Component (A4 Format) */}
-      <Receipt 
-        className="hidden print:block w-full m-0 p-0 text-black bg-white"
-        data={{
-          id: receiptOrderDetails ? (receiptOrderDetails.receipt_number || receiptOrderDetails.id) : (lastReceiptNumber || draftOrderId || 'ORD-123'),
-          clientName: receiptOrderDetails ? (receiptOrderDetails.client_name || receiptOrderDetails.clientName || receiptOrderDetails.shop_name || 'Walk-in') : (clientName || 'General Cash Sale'),
-          area: receiptOrderDetails ? (receiptOrderDetails.area || 'N/A') : (area || ''),
-          contactNumber: receiptOrderDetails ? (receiptOrderDetails.client_phone || receiptOrderDetails.contact_number || receiptOrderDetails.contactNumber || 'N/A') : (contactNumber || '-'),
-          bookerName: receiptOrderDetails ? (receiptOrderDetails.booker_name || receiptOrderDetails.bookerName || 'Self') : (bookerName || 'Admin'),
-          createdAt: receiptOrderDetails ? (receiptOrderDetails.created_at || new Date().toISOString()) : new Date().toISOString(),
-          items: receiptOrderDetails ? (receiptOrderDetails.items || []) : cart,
-          total: receiptOrderDetails ? (receiptOrderDetails.total || receiptOrderDetails.total_amount || 0) : total
-        }}
-      />
     </>
   );
 }
