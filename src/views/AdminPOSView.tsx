@@ -163,6 +163,23 @@ export default function AdminPOSView() {
       const { error } = await supabase.from('products').upsert(productsToSync);
       if (error) throw error;
       
+      // Pull products from cloud (picks up products added on other devices)
+      const { data: cloudProducts, error: pullError } = await supabase.from('products').select('*');
+      if (!pullError && cloudProducts && cloudProducts.length > 0) {
+        const localIds = new Set(products.map(p => p.id));
+        const newFromCloud = cloudProducts
+          .filter((cp: any) => !localIds.has(cp.id))
+          .map((cp: any) => ({
+            ...cp,
+            sku: cp.sku || generateSKU(cp.name, cp.barcode),
+            pcsPerBox: cp.pcs_per_box || cp.pcsPerBox || 12,
+            boxPerCtn: cp.box_per_ctn || cp.boxPerCtn || 6
+          }));
+        if (newFromCloud.length > 0) {
+          setProducts(prev => [...prev, ...newFromCloud]);
+        }
+      }
+
       // Sync offline records
       await syncOfflineStatusUpdates();
       
