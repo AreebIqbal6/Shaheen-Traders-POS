@@ -410,20 +410,57 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
       <div className="flex flex-col h-full w-full bg-slate-50 dark:bg-[#0a0a0c] text-slate-900 dark:text-slate-50 font-sans print:hidden">
       
       {/* Top Header */}
-      <div className="bg-white dark:bg-zinc-900/60 backdrop-blur-md px-4 py-4 flex items-center justify-between border-b border-slate-200 dark:border-zinc-800/50 shrink-0 sticky top-0 z-10">
-        <div className="flex items-center gap-3 cursor-pointer" onClick={() => setActiveTabState('shop')}>
-           <div className="w-8 h-8 flex items-center justify-center shrink-0">
-             <img src="/logo_transparent.png" alt="S" className="w-full h-full object-contain drop-shadow-sm" />
-           </div>
-           <div>
-             <h1 className="font-bold text-[18px] leading-tight text-slate-900 dark:text-slate-50 tracking-tight hover:text-blue-600 transition-colors">Shaheen Wholesale</h1>
-             <p className="text-[10px] text-blue-500 font-bold uppercase tracking-wider">B2B Portal</p>
-           </div>
+      <div className="bg-white dark:bg-zinc-900/60 backdrop-blur-md px-4 py-4 border-b border-slate-200 dark:border-zinc-800/50 shrink-0 sticky top-0 z-10 w-full">
+        <div className="w-full max-w-6xl mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-3 cursor-pointer" onClick={() => setActiveTabState('shop')}>
+             <div className="w-8 h-8 flex items-center justify-center shrink-0">
+               <img src="/logo_transparent.png" alt="S" className="w-full h-full object-contain drop-shadow-sm" />
+             </div>
+             <div>
+               <h1 className="font-bold text-[18px] leading-tight text-slate-900 dark:text-slate-50 tracking-tight hover:text-blue-600 transition-colors">Shaheen Wholesale</h1>
+               <p className="text-[10px] text-blue-500 font-bold uppercase tracking-wider">B2B Portal</p>
+             </div>
+          </div>
+          
+          <div className="hidden md:flex items-center gap-8">
+            <button 
+              onClick={() => setActiveTab('shop')} 
+              className={`font-bold text-[14px] transition-colors flex items-center gap-2 ${activeTab === 'shop' ? 'text-blue-600' : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100'}`}
+            >
+              <Store size={18} /> Shop
+            </button>
+            <button 
+              onClick={() => setActiveTab('cart')} 
+              className={`font-bold text-[14px] transition-colors flex items-center gap-2 relative ${activeTab === 'cart' ? 'text-blue-600' : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100'}`}
+            >
+              <ShoppingCart size={18} /> Cart
+              {cart.length > 0 && (
+                <span className="absolute -top-2 -right-3 bg-blue-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-sm border border-blue-500 shadow-sm">
+                  {cart.length}
+                </span>
+              )}
+            </button>
+            <button 
+              onClick={() => {
+                if (cart.length > 0) setActiveTab('checkout');
+                else toast.error('Please add items to your cart first.');
+              }} 
+              className={`font-bold text-[14px] transition-colors flex items-center gap-2 ${activeTab === 'checkout' ? 'text-blue-600' : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100'}`}
+            >
+              <CreditCard size={18} /> Checkout
+            </button>
+            <button 
+              onClick={() => setActiveTab('dashboard')} 
+              className={`font-bold text-[14px] transition-colors flex items-center gap-2 ${activeTab === 'dashboard' ? 'text-blue-600' : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100'}`}
+            >
+              <User size={18} /> Profile
+            </button>
+          </div>
         </div>
       </div>
 
       {/* Main Content Area */}
-      <div className="flex-1 pb-32 overflow-y-auto">
+      <div className="flex-1 pb-32 overflow-y-auto w-full max-w-6xl mx-auto md:pb-8">
         {activeTab === 'shop' && (
           <div className="p-4">
              {/* Search Bar */}
@@ -778,7 +815,7 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
       )}
 
       {/* Mobile Bottom Navigation - ALWAYS VISIBLE (But hidden during print) */}
-      <div className={`${isImpersonating ? 'absolute' : 'fixed'} bottom-0 left-0 right-0 w-full bg-white/90 dark:bg-[#0a0a0c]/90 backdrop-blur-xl border-t border-slate-200 dark:border-zinc-900 flex justify-around items-center pt-3 pb-[calc(1rem+env(safe-area-inset-bottom))] px-2 z-30 shadow-none print:hidden`}>
+      <div className={`md:hidden ${isImpersonating ? 'absolute' : 'fixed'} bottom-0 left-0 right-0 w-full bg-white/90 dark:bg-[#0a0a0c]/90 backdrop-blur-xl border-t border-slate-200 dark:border-zinc-900 flex justify-around items-center pt-3 pb-[calc(1rem+env(safe-area-inset-bottom))] px-2 z-30 shadow-none print:hidden`}>
         <button 
           onClick={() => setActiveTab('shop')} 
           className={`flex flex-col items-center p-2 transition-colors flex-1 ${activeTab === 'shop' ? 'text-blue-600 dark:text-blue-400' : 'text-slate-500 hover:text-slate-900 dark:hover:text-slate-100'}`}
