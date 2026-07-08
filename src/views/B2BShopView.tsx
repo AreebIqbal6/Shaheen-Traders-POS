@@ -407,7 +407,7 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
 
   return (
     <>
-      <div className="flex flex-col h-full w-full max-w-[500px] mx-auto bg-slate-50 dark:bg-[#0a0a0c] text-slate-900 dark:text-slate-50 font-sans print:hidden shadow-2xl sm:border-x border-slate-200 dark:border-zinc-800/50 relative">
+      <div className="flex flex-col h-full w-full bg-slate-50 dark:bg-[#0a0a0c] text-slate-900 dark:text-slate-50 font-sans print:hidden">
       
       {/* Top Header */}
       <div className="bg-white dark:bg-zinc-900/60 backdrop-blur-md px-4 py-4 flex items-center justify-between border-b border-slate-200 dark:border-zinc-800/50 shrink-0 sticky top-0 z-10">
@@ -457,7 +457,7 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
                  ))}
                </div>
              ) : (
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                 <div className="grid grid-cols-[repeat(auto-fill,minmax(145px,1fr))] gap-3">
                    {filteredProducts.map(product => (
                      <div 
                        key={product.id} 
@@ -752,8 +752,33 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
         )}
       </div>
 
-      {/* Mobile Bottom Navigation - ALWAYS VISIBLE */}
-      <div className={`mt-auto sticky bottom-0 w-full bg-white/90 dark:bg-[#0a0a0c]/90 backdrop-blur-xl border-t border-slate-200 dark:border-zinc-900 flex justify-around items-center pt-3 pb-[calc(1rem+env(safe-area-inset-bottom))] px-2 z-30 shadow-none print:hidden shrink-0`}>
+      </div>
+
+      <SimpleOrderViewModal 
+        isOpen={!!simpleViewOrder}
+        onClose={() => setSimpleViewOrder(null)}
+        order={simpleViewOrder}
+      />
+
+      {previewOrder && (
+        <OrderPreviewModal
+          isOpen={true}
+          isDispatched={true}
+          onClose={() => setPreviewOrder(null)}
+          cart={previewOrder.items || []}
+          total={previewOrder.total || previewOrder.total_amount || 0}
+          clientName={previewOrder.client_name || previewOrder.clientName || previewOrder.shop_name || 'B2B Client'}
+          paymentTerms={previewOrder.payment_terms || 'CASH'}
+          draftOrderId={previewOrder.receipt_number || ('ORD-' + (previewOrder.id || '').toString().slice(-6).toUpperCase())}
+          area={previewOrder.area || 'N/A'}
+          bookerName={previewOrder.booker_name || JSON.parse(localStorage.getItem('shaheen_active_booker') || '{}')?.name || 'Self'}
+          contactNumber={previewOrder.client_phone || previewOrder.contact_number || previewOrder.contactNumber || 'N/A'}
+          subTotal={previewOrder.subTotal || previewOrder.total || previewOrder.total_amount || 0}
+        />
+      )}
+
+      {/* Mobile Bottom Navigation - ALWAYS VISIBLE (But hidden during print) */}
+      <div className={`${isImpersonating ? 'absolute' : 'fixed'} bottom-0 left-0 right-0 w-full bg-white/90 dark:bg-[#0a0a0c]/90 backdrop-blur-xl border-t border-slate-200 dark:border-zinc-900 flex justify-around items-center pt-3 pb-[calc(1rem+env(safe-area-inset-bottom))] px-2 z-30 shadow-none print:hidden`}>
         <button 
           onClick={() => setActiveTab('shop')} 
           className={`flex flex-col items-center p-2 transition-colors flex-1 ${activeTab === 'shop' ? 'text-blue-600 dark:text-blue-400' : 'text-slate-500 hover:text-slate-900 dark:hover:text-slate-100'}`}
@@ -796,32 +821,6 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
           <span className="text-xs font-bold mt-1">Profile</span>
         </button>
       </div>
-      </div>
-
-      <SimpleOrderViewModal 
-        isOpen={!!simpleViewOrder}
-        onClose={() => setSimpleViewOrder(null)}
-        order={simpleViewOrder}
-      />
-
-      {previewOrder && (
-        <OrderPreviewModal
-          isOpen={true}
-          isDispatched={true}
-          onClose={() => setPreviewOrder(null)}
-          cart={previewOrder.items || []}
-          total={previewOrder.total || previewOrder.total_amount || 0}
-          clientName={previewOrder.client_name || previewOrder.clientName || previewOrder.shop_name || 'B2B Client'}
-          paymentTerms={previewOrder.payment_terms || 'CASH'}
-          draftOrderId={previewOrder.receipt_number || ('ORD-' + (previewOrder.id || '').toString().slice(-6).toUpperCase())}
-          area={previewOrder.area || 'N/A'}
-          bookerName={previewOrder.booker_name || JSON.parse(localStorage.getItem('shaheen_active_booker') || '{}')?.name || 'Self'}
-          contactNumber={previewOrder.client_phone || previewOrder.contact_number || previewOrder.contactNumber || 'N/A'}
-          subTotal={previewOrder.subTotal || previewOrder.total || previewOrder.total_amount || 0}
-        />
-      )}
-
-
     </>
   );
 }
