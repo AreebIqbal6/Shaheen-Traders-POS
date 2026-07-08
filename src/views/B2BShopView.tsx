@@ -411,7 +411,7 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
       
       {/* Top Header */}
       <div className="bg-white dark:bg-zinc-900/60 backdrop-blur-md px-4 py-4 border-b border-slate-200 dark:border-zinc-800/50 shrink-0 sticky top-0 z-10 w-full">
-        <div className="w-full max-w-6xl mx-auto flex items-center justify-between">
+        <div className="w-full max-w-4xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3 cursor-pointer" onClick={() => setActiveTabState('shop')}>
              <div className="w-8 h-8 flex items-center justify-center shrink-0">
                <img src="/logo_transparent.png" alt="S" className="w-full h-full object-contain drop-shadow-sm" />
@@ -460,7 +460,7 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
       </div>
 
       {/* Main Content Area */}
-      <div className="flex-1 pb-32 overflow-y-auto w-full max-w-6xl mx-auto md:pb-8">
+      <div className="flex-1 pb-32 overflow-y-auto w-full max-w-4xl mx-auto md:pb-8">
         {activeTab === 'shop' && (
           <div className="p-4">
              {/* Search Bar */}
