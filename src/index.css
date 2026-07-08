@@ -12,6 +12,12 @@ html, body, #root {
   overflow-x: hidden !important;
 }
 
+@media (min-width: 1024px) {
+  html {
+    zoom: 0.85;
+  }
+}
+
 
 .font-mono {
   font-family: 'JetBrains Mono', monospace;
