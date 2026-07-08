@@ -182,8 +182,7 @@ export default function OrderPreviewModal({
                       const details = { clientName, paymentTerms, area, bookerName, contactNumber, total, subTotal };
                       const success = await saveOrderBackup(draftOrderId, cart, details);
                       if (success) {
-                         const isTauri = '__TAURI__' in window;
-                         toast.success(isTauri ? 'SAVED TO SHAHEEN BACKUP' : 'DOWNLOADED ON PHONE');
+                         toast.success('Backup saved successfully');
                          if (onBackupSuccess) onBackupSuccess();
                       }
                    }}

@@ -276,7 +276,7 @@ export default function SettingsView() {
                           
                           if (filePath) {
                             await writeTextFile(filePath, JSON.stringify(data));
-                            toast.success('Backup exported successfully!');
+                            toast.success('Backup saved successfully');
                           }
                         } else {
                           const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
@@ -288,7 +288,7 @@ export default function SettingsView() {
                           a.click();
                           document.body.removeChild(a);
                           URL.revokeObjectURL(url);
-                          toast.success('Backup exported successfully!');
+                          toast.success('Backup saved successfully');
                         }
                       } catch (err) {
                         console.error(err);
