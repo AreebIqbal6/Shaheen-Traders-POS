@@ -17,6 +17,14 @@ const RootRedirect = () => {
 };
 
 export default function App() {
+  const [remountKey, setRemountKey] = React.useState(0);
+  
+  React.useEffect(() => {
+    const handler = () => setRemountKey(k => k + 1);
+    window.addEventListener('force_remount', handler);
+    return () => window.removeEventListener('force_remount', handler);
+  }, []);
+
   return (
     <>
       <Toaster 
@@ -33,7 +41,7 @@ export default function App() {
       <OfflineIndicator />
       <Routes>
         <Route path="/" element={<RootRedirect />} />
-        <Route path="/admin/*" element={<AdminPOSView />} />
+        <Route path="/admin/*" element={<AdminPOSView key={`admin-${remountKey}`} />} />
         <Route path="/booker" element={<B2BAuthWrapper><B2BShopView /></B2BAuthWrapper>} />
         <Route path="/receipt/:orderId" element={<B2BAuthWrapper><ReceiptView /></B2BAuthWrapper>} />
       </Routes>
