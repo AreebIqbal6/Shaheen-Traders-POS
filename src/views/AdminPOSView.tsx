@@ -876,7 +876,8 @@ export default function AdminPOSView() {
           let multiplier = 1;
           if (item.uom === 'Box') multiplier = product?.pcsPerBox || 1;
           if (item.uom === 'Ctn') multiplier = (product?.pcsPerBox || 1) * (product?.boxPerCtn || 1);
-          return !product || product.stock < (item.quantity * multiplier);
+        });
+
       if (insufficientItems.length > 0) {
         const itemNames = insufficientItems.map(i => i.name).join(', ');
         toast.error(`Insufficient stock for: ${itemNames}. Please restock inventory first.`);
