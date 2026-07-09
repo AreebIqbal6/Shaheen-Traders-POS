@@ -554,15 +554,15 @@ export default function SettingsView() {
                             ]).finally(() => {
                                localStorage.clear();
                                sessionStorage.clear();
-                               window.location.href = '/';
+                               window.location.reload();
                             });
                             
                             // Absolute fallback reload
                             setTimeout(() => {
                               localStorage.clear();
                               sessionStorage.clear();
-                              window.location.href = '/';
-                            }, 1500);
+                              window.location.reload();
+                            }, 8000);
                           }}
                           className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md text-[13px] font-semibold shadow-sm transition-colors"
                         >
