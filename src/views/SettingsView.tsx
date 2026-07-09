@@ -513,18 +513,11 @@ export default function SettingsView() {
                             if (navigator.onLine) {
                               toast.loading("Wiping cloud database...", { id: "wipe-auth" });
                               try {
-                                const [oData, pData, bData, lData] = await Promise.all([
-                                  supabase.from('orders').select('id'),
-                                  supabase.from('products').select('id'),
-                                  supabase.from('bookers').select('id'),
-                                  supabase.from('booker_locations').select('booker_name')
-                                ]);
-
                                 await Promise.allSettled([
-                                  oData.data?.length ? supabase.from('orders').delete().in('id', oData.data.map(x => x.id)) : Promise.resolve(),
-                                  pData.data?.length ? supabase.from('products').delete().in('id', pData.data.map(x => x.id)) : Promise.resolve(),
-                                  bData.data?.length ? supabase.from('bookers').delete().in('id', bData.data.map(x => x.id)) : Promise.resolve(),
-                                  lData.data?.length ? supabase.from('booker_locations').delete().in('booker_name', lData.data.map(x => x.booker_name)) : Promise.resolve()
+                                  supabase.from('orders').delete().neq('id', '0'),
+                                  supabase.from('products').delete().neq('id', '0'),
+                                  supabase.from('bookers').delete().neq('id', '0'),
+                                  supabase.from('booker_locations').delete().neq('booker_name', '0')
                                 ]);
                               } catch (e) {
                                 console.error("Cloud wipe error:", e);
@@ -538,40 +531,7 @@ export default function SettingsView() {
                             localStorage.clear();
                             sessionStorage.clear();
                             
-                            // Deep wipe caches, indexedDB, and service workers without blocking
-                            Promise.allSettled([
-                              (async () => {
-                                if ('caches' in window) {
-                                  const cacheKeys = await caches.keys();
-                                  await Promise.all(cacheKeys.map(key => caches.delete(key)));
-                                }
-                              })(),
-                              (async () => {
-                                if ('indexedDB' in window && indexedDB.databases) {
-                                  const dbs = await indexedDB.databases();
-                                  dbs.forEach(db => { if (db.name) indexedDB.deleteDatabase(db.name); });
-                                }
-                              })(),
-                              (async () => {
-                                if ('serviceWorker' in navigator) {
-                                  const registrations = await navigator.serviceWorker.getRegistrations();
-                                  for (let registration of registrations) {
-                                    await registration.unregister();
-                                  }
-                                }
-                              })()
-                            ]).finally(() => {
-                               localStorage.clear();
-                               sessionStorage.clear();
-                               window.dispatchEvent(new Event('force_remount'));
-                            });
-                            
-                            // Absolute fallback reload
-                            setTimeout(() => {
-                              localStorage.clear();
-                              sessionStorage.clear();
-                              window.dispatchEvent(new Event('force_remount'));
-                            }, 2000);
+                            window.dispatchEvent(new Event('force_remount'));
                           }}
                           className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md text-[13px] font-semibold shadow-sm transition-colors"
                         >
