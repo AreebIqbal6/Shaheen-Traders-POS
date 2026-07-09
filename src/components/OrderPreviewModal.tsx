@@ -62,7 +62,7 @@ export default function OrderPreviewModal({
   const isAdmin = window.location.pathname.startsWith('/admin');
   return (
     <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex flex-col items-center justify-center z-50 p-4" onClick={onClose}>
-      <div className="bg-white dark:bg-slate-800 w-[800px] max-w-full rounded-sm shadow-2xl flex flex-col max-h-[85vh] border border-zinc-200 dark:border-zinc-700 relative" onClick={(e) => e.stopPropagation()}>
+      <div className="bg-white dark:bg-slate-800 w-[900px] max-w-full rounded-sm shadow-2xl flex flex-col max-h-[85vh] border border-zinc-200 dark:border-zinc-700 relative" onClick={(e) => e.stopPropagation()}>
         <button 
           onClick={onClose}
           className="absolute top-3 right-3 z-10 w-8 h-8 flex items-center justify-center rounded-sm bg-red-100 hover:bg-red-500 text-red-600 hover:text-white dark:bg-red-900/30 dark:hover:bg-red-600 transition-colors shadow-sm"
@@ -73,7 +73,7 @@ export default function OrderPreviewModal({
         {/* Invoice Content (Preview) */}
         <div className="flex-1 overflow-hidden text-black bg-slate-100 dark:bg-zinc-900 font-sans">
           <div className="w-full h-full overflow-auto custom-scrollbar p-4 md:p-8">
-            <div className="flex justify-center w-full min-w-[800px] mx-auto pb-8">
+            <div className="flex justify-center w-full mx-auto pb-8">
              <Receipt 
                isPrintable={true}
                data={{
