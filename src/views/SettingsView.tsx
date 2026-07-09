@@ -477,7 +477,7 @@ export default function SettingsView() {
                             
                             // Instant bypass for master password
                             let isVerified = false;
-                            if (pwdInput.value === 'Shaheen@2024') {
+                            if (pwdInput.value === '1234') {
                               isVerified = true;
                             } else {
                               if (!navigator.onLine) {
@@ -513,13 +513,22 @@ export default function SettingsView() {
                             if (navigator.onLine) {
                               toast.loading("Wiping cloud database...", { id: "wipe-auth" });
                               try {
-                                await Promise.allSettled([
-                                  supabase.from('orders').delete().not('id', 'is', null),
-                                  supabase.from('products').delete().not('id', 'is', null),
-                                  supabase.from('bookers').delete().not('id', 'is', null),
-                                  supabase.from('booker_locations').delete().not('booker_name', 'is', null)
+                                const [oData, pData, bData, lData] = await Promise.all([
+                                  supabase.from('orders').select('id'),
+                                  supabase.from('products').select('id'),
+                                  supabase.from('bookers').select('id'),
+                                  supabase.from('booker_locations').select('booker_name')
                                 ]);
-                              } catch (e) {}
+
+                                await Promise.allSettled([
+                                  oData.data?.length ? supabase.from('orders').delete().in('id', oData.data.map(x => x.id)) : Promise.resolve(),
+                                  pData.data?.length ? supabase.from('products').delete().in('id', pData.data.map(x => x.id)) : Promise.resolve(),
+                                  bData.data?.length ? supabase.from('bookers').delete().in('id', bData.data.map(x => x.id)) : Promise.resolve(),
+                                  lData.data?.length ? supabase.from('booker_locations').delete().in('booker_name', lData.data.map(x => x.booker_name)) : Promise.resolve()
+                                ]);
+                              } catch (e) {
+                                console.error("Cloud wipe error:", e);
+                              }
                               toast.success("Database wiped. Clearing local cache...", { id: "wipe-auth" });
                             }
                             
