@@ -75,3 +75,9 @@ html, body, #root {
 .animate-pop {
   animation: popIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
+
+@layer utilities {
+  .hide-horizontal-scrollbar::-webkit-scrollbar:horizontal {
+    display: none;
+  }
+}
