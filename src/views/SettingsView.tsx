@@ -514,10 +514,10 @@ export default function SettingsView() {
                               toast.loading("Wiping cloud database...", { id: "wipe-auth" });
                               try {
                                 await Promise.allSettled([
-                                  supabase.from('orders').delete().neq('id', '0'),
-                                  supabase.from('products').delete().neq('id', '0'),
-                                  supabase.from('bookers').delete().neq('id', '0'),
-                                  supabase.from('booker_locations').delete().neq('booker_name', '0')
+                                  supabase.from('orders').delete().not('id', 'is', null),
+                                  supabase.from('products').delete().not('id', 'is', null),
+                                  supabase.from('bookers').delete().not('id', 'is', null),
+                                  supabase.from('booker_locations').delete().not('booker_name', 'is', null)
                                 ]);
                               } catch (e) {
                                 console.error("Cloud wipe error:", e);

@@ -15,7 +15,7 @@ interface CartItem extends Product {
 interface OrderPreviewModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onDispatch?: () => void;
+  onDispatch?: () => Promise<boolean | void> | void;
   onBackupSuccess?: () => void;
   cart: CartItem[];
   total: number;
@@ -206,15 +206,26 @@ export default function OrderPreviewModal({
                {onDispatch && (
                  <button 
                    onClick={async () => {
+                     setIsSubmitting(true);
+                     let backupSuccess = true;
                      if (isAdmin) {
                        const details = { clientName, paymentTerms, area, bookerName, contactNumber, total, subTotal };
-                       const success = await saveOrderBackup(draftOrderId, cart, details);
-                       if (success) {
-                         toast.success('Backup saved successfully');
-                         if (onBackupSuccess) onBackupSuccess();
-                       }
+                       backupSuccess = await saveOrderBackup(draftOrderId, cart, details);
                      }
-                     onDispatch();
+                     
+                     if (onDispatch) {
+                        const dispatchResult = await onDispatch();
+                        
+                        if (dispatchResult !== false && backupSuccess) {
+                           toast.success('Order has been saved and is completed successfully');
+                           if (onBackupSuccess) onBackupSuccess();
+                        } else if (dispatchResult !== false && !backupSuccess) {
+                           // Dispatch worked but local file backup failed (rare edge case on desktop)
+                           toast.success('Order completed (Local backup file failed)');
+                           if (onBackupSuccess) onBackupSuccess();
+                        }
+                     }
+                     setIsSubmitting(false);
                    }}
                    disabled={isSubmitting}
                    className="px-4 py-2.5 rounded-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"

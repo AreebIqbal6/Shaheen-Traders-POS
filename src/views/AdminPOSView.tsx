@@ -877,13 +877,11 @@ export default function AdminPOSView() {
           if (item.uom === 'Box') multiplier = product?.pcsPerBox || 1;
           if (item.uom === 'Ctn') multiplier = (product?.pcsPerBox || 1) * (product?.boxPerCtn || 1);
           return !product || product.stock < (item.quantity * multiplier);
-        });
-
-        if (insufficientItems.length > 0) {
+      if (insufficientItems.length > 0) {
         const itemNames = insufficientItems.map(i => i.name).join(', ');
         toast.error(`Insufficient stock for: ${itemNames}. Please restock inventory first.`);
         setIsSubmitting(false);
-        return; // Block dispatch
+        return false; // Block dispatch
       }
 
       // Tauri / Browser mode
@@ -958,25 +956,15 @@ export default function AdminPOSView() {
       // setIsReceiptOpen(false);
       setIsCheckoutSuccess(true);
       setIsSubmitting(false);
-      // Wait a moment before clearing to show success
-      // setTimeout(() => {
-      //   setIsCheckoutSuccess(false);
-      //   setIsSubmitting(false);
-      //   setCart([]);
-      //   setClientName('');
-      //   setArea('');
-      //   setBookerName((() => { const n = localStorage.getItem('shaheen_bookerName'); return (n && n.includes('@')) ? 'Admin' : (n || ''); })());
-      //   setContactNumber('');
-      //   setPaymentTerms('CASH');
-      // }, 2000);
+      
+      return true;
     } // close else
-    
-    toast.success("Order dispatched successfully!");
     
     } catch (e) {
       console.error(e);
       toast.error("An error occurred during dispatch.");
       setIsSubmitting(false);
+      return false;
     }
   };
 
