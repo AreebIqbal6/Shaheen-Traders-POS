@@ -841,6 +841,24 @@ export default function AdminPOSView() {
     if (!draftOrderId) {
       setDraftOrderId('ORD-' + Math.floor(100000 + Math.random() * 900000));
     }
+
+    // Stock Enforcement Check
+    const insufficientItems = cart.filter(item => {
+      const product = products.find(p => p.barcode === item.barcode || p.id === item.id);
+      let multiplier = 1;
+      if (item.uom === 'Box') multiplier = product?.pcsPerBox || 1;
+      if (item.uom === 'Ctn') multiplier = (product?.pcsPerBox || 1) * (product?.boxPerCtn || 1);
+      
+      const requiredQty = item.quantity * multiplier;
+      return (product?.stock || 0) < requiredQty;
+    });
+
+    if (insufficientItems.length > 0) {
+      const itemNames = insufficientItems.map(i => i.name).join(', ');
+      toast.error(`Insufficient stock for: ${itemNames}. Please restock inventory first.`);
+      return; // Block opening the receipt
+    }
+
     setIsReceiptOpen(true);
   };
 
@@ -891,24 +909,6 @@ export default function AdminPOSView() {
         return false;
       }
     } else {
-        // Stock Enforcement Check
-        const insufficientItems = cart.filter(item => {
-          const product = products.find(p => p.barcode === item.barcode || p.id === item.id);
-          let multiplier = 1;
-          if (item.uom === 'Box') multiplier = product?.pcsPerBox || 1;
-          if (item.uom === 'Ctn') multiplier = (product?.pcsPerBox || 1) * (product?.boxPerCtn || 1);
-          
-          const requiredQty = item.quantity * multiplier;
-          return (product?.stock || 0) < requiredQty;
-        });
-
-      if (insufficientItems.length > 0) {
-        const itemNames = insufficientItems.map(i => i.name).join(', ');
-        toast.error(`Insufficient stock for: ${itemNames}. Please restock inventory first.`);
-        setIsSubmitting(false);
-        return false; // Block dispatch
-      }
-
       // Tauri / Browser mode
       const newOrder: Order = {
         receiptNumber: draftOrderId,

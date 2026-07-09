@@ -27,6 +27,43 @@ interface CartItem extends Product {
   basePrice?: number;
 }
 
+const UomSelector = ({ item, currentProduct, updateCartUom }: { item: CartItem, currentProduct: any, updateCartUom: (id: string, uom: string) => void }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const pcsPerBox = item.pcsPerBox || currentProduct?.pcsPerBox;
+  const boxPerCtn = item.boxPerCtn || currentProduct?.boxPerCtn;
+  
+  const options = ['Pcs'];
+  if (pcsPerBox) options.push('Box');
+  if (pcsPerBox && boxPerCtn) options.push('Ctn');
+
+  return (
+    <div className="relative">
+      <div 
+        onClick={() => setIsOpen(!isOpen)}
+        className="flex items-center gap-1 bg-transparent text-[11px] font-semibold text-slate-700 dark:text-slate-300 ml-2 mr-1 pr-1 cursor-pointer select-none border-b border-transparent hover:border-slate-300 dark:hover:border-zinc-600 transition-colors"
+      >
+        {item.uom || 'Pcs'} <span className="text-[8px] opacity-70">▼</span>
+      </div>
+      {isOpen && (
+        <>
+          <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)}></div>
+          <div className="absolute top-full left-0 mt-1 bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded shadow-lg z-50 overflow-hidden flex flex-col min-w-[60px] animate-pop">
+            {options.map(opt => (
+              <div 
+                key={opt} 
+                onClick={() => { updateCartUom(item.cartId, opt as any); setIsOpen(false); }}
+                className={`px-3 py-2 text-[12px] font-semibold cursor-pointer ${item.uom === opt ? 'bg-blue-600 text-white' : 'hover:bg-slate-100 dark:hover:bg-zinc-700 text-slate-800 dark:text-slate-200'}`}
+              >
+                {opt}
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+};
+
 // Fallback mock data removed for production
 interface B2BShopViewProps {
   isImpersonating?: boolean;
@@ -527,15 +564,7 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
                            <div className="flex justify-between items-center mt-1 border-t border-slate-700/50 pt-2">
                               <span className="text-[11px] text-slate-500 font-semibold font-mono">Rs {item.price.toLocaleString()} / {item.uom || 'each'}</span>
                               <div className="flex items-center gap-0.5 bg-slate-50 dark:bg-[#0a0a0c] border border-slate-200 dark:border-zinc-800/50 rounded-lg p-0.5 h-7">
-                                 <select 
-                                   value={item.uom || 'Pcs'}
-                                   onChange={(e) => updateCartUom(item.cartId, e.target.value as any)}
-                                   className="bg-transparent text-[11px] font-semibold text-slate-700 dark:text-slate-300 ml-2 mr-1 pr-1 focus:outline-none cursor-pointer appearance-none"
-                                 >
-                                   <option value="Pcs">Pcs</option>
-                                   {pcsPerBox && <option value="Box">Box</option>}
-                                   {pcsPerBox && boxPerCtn && <option value="Ctn">Ctn</option>}
-                                 </select>
+                                 <UomSelector item={item} currentProduct={currentProduct} updateCartUom={updateCartUom} />
                            <button 
                              onClick={() => updateCartQuantity(item.cartId, -1)}
                              className="w-8 h-8 flex items-center justify-center text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-slate-50 rounded-md transition-colors text-sm leading-none"
