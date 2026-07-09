@@ -528,11 +528,34 @@ export default function SettingsView() {
                             // Fire and forget signOut, it might hang offline
                             supabase.auth.signOut().catch(() => {});
                             
-                            localStorage.clear();
-                            sessionStorage.clear();
-                            (window as any).__wiping = false;
+                            // Restore exact handover manual spec: clear all storage and hard reload
+                            const timeout = new Promise(resolve => setTimeout(resolve, 1500));
+                            const deepWipe = Promise.allSettled([
+                              (async () => {
+                                if ('caches' in window) {
+                                  const keys = await caches.keys();
+                                  await Promise.all(keys.map(k => caches.delete(k)));
+                                }
+                              })(),
+                              (async () => {
+                                if ('indexedDB' in window && indexedDB.databases) {
+                                  const dbs = await indexedDB.databases();
+                                  dbs.forEach(db => { if (db.name) indexedDB.deleteDatabase(db.name); });
+                                }
+                              })(),
+                              (async () => {
+                                if ('serviceWorker' in navigator) {
+                                  const regs = await navigator.serviceWorker.getRegistrations();
+                                  for (const reg of regs) await reg.unregister();
+                                }
+                              })()
+                            ]);
                             
-                            window.dispatchEvent(new Event('force_remount'));
+                            Promise.race([deepWipe, timeout]).finally(() => {
+                              localStorage.clear();
+                              sessionStorage.clear();
+                              window.location.reload();
+                            });
                           }}
                           className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md text-[13px] font-semibold shadow-sm transition-colors"
                         >
