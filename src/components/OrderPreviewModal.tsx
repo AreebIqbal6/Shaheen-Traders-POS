@@ -75,7 +75,7 @@ export default function OrderPreviewModal({
         
         {/* Invoice Content (Preview) */}
         <div className="flex-1 overflow-hidden text-black bg-slate-100 dark:bg-zinc-900 font-sans">
-          <div className="w-full h-full overflow-auto custom-scrollbar hide-horizontal-scrollbar p-4 md:p-8">
+          <div className="w-full h-full overflow-y-auto overflow-x-hidden custom-scrollbar p-4 md:p-8">
             <div className="flex justify-center w-full mx-auto pb-8">
              <Receipt 
                isPrintable={true}

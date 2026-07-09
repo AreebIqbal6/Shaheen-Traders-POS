@@ -78,6 +78,7 @@ export const saveOrderBackup = async (orderId: string, cart: any[], details: any
           }
         }
       }
+    } else {
       // WEB BROWSER MODE FALLBACK
       // First, attempt to use the new File System Access API
       try {
