@@ -530,6 +530,7 @@ export default function SettingsView() {
                             
                             localStorage.clear();
                             sessionStorage.clear();
+                            (window as any).__wiping = false;
                             
                             window.dispatchEvent(new Event('force_remount'));
                           }}
