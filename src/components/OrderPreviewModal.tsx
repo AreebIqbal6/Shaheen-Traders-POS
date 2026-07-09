@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import type { Product } from '../views/ProductsView';
 import Receipt from './Receipt';
@@ -47,6 +47,9 @@ export default function OrderPreviewModal({
   isSubmitting,
   isDispatched
 }: OrderPreviewModalProps) {
+  const [isLocalSubmitting, setIsLocalSubmitting] = useState(false);
+  const submitting = isSubmitting || isLocalSubmitting;
+
   useEffect(() => {
     if (isOpen) {
       const originalTitle = document.title;
@@ -206,7 +209,7 @@ export default function OrderPreviewModal({
                {onDispatch && (
                  <button 
                    onClick={async () => {
-                     setIsSubmitting(true);
+                     setIsLocalSubmitting(true);
                      let backupSuccess = true;
                      if (isAdmin) {
                        const details = { clientName, paymentTerms, area, bookerName, contactNumber, total, subTotal };
@@ -225,9 +228,9 @@ export default function OrderPreviewModal({
                            if (onBackupSuccess) onBackupSuccess();
                         }
                      }
-                     setIsSubmitting(false);
+                     setIsLocalSubmitting(false);
                    }}
-                   disabled={isSubmitting}
+                   disabled={submitting}
                    className="px-4 py-2.5 rounded-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
                  >
                    <Check size={18} />
