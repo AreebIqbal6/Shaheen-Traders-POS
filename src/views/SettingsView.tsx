@@ -77,16 +77,16 @@ export default function SettingsView() {
         }
       } else {
         if ('showDirectoryPicker' in window) {
+          const { requestBackupDirectory } = await import('../utils/fileSystem');
           const loadingId = toast.loading('Please allow folder access in the browser prompt above...', { duration: 10000 });
-          try {
-            const dirHandle = await (window as any).showDirectoryPicker();
-            toast.dismiss(loadingId);
-            const pathName = `Web Folder: ${dirHandle.name}`;
+          const dirName = await requestBackupDirectory('primary');
+          toast.dismiss(loadingId);
+          if (dirName) {
+            const pathName = `Web Folder: ${dirName}`;
             setBackupPath(pathName);
             localStorage.setItem('shaheen_backuppath', pathName);
             toast.success('Backup location updated for web!');
-          } catch (e) {
-            toast.dismiss(loadingId);
+          } else {
             toast.error('Folder selection cancelled or denied.');
           }
         } else {
@@ -118,16 +118,16 @@ export default function SettingsView() {
         }
       } else {
         if ('showDirectoryPicker' in window) {
+          const { requestBackupDirectory } = await import('../utils/fileSystem');
           const loadingId = toast.loading('Please allow folder access...', { duration: 10000 });
-          try {
-            const dirHandle = await (window as any).showDirectoryPicker();
-            toast.dismiss(loadingId);
-            const pathName = `Web Folder: ${dirHandle.name}`;
+          const dirName = await requestBackupDirectory('secondary');
+          toast.dismiss(loadingId);
+          if (dirName) {
+            const pathName = `Web Folder: ${dirName}`;
             setSecondaryBackupPath(pathName);
             localStorage.setItem('shaheen_secondary_backuppath', pathName);
             toast.success('Secondary Backup location updated for web!');
-          } catch (e) {
-            toast.dismiss(loadingId);
+          } else {
             toast.error('Folder selection cancelled or denied.');
           }
         } else {
@@ -512,17 +512,24 @@ export default function SettingsView() {
                             
                             if (navigator.onLine) {
                               toast.loading("Wiping cloud database...", { id: "wipe-auth" });
+                              let wipeErrors: string[] = [];
                               try {
-                                await Promise.allSettled([
-                                  supabase.from('orders').delete().not('id', 'is', null),
-                                  supabase.from('products').delete().not('id', 'is', null),
-                                  supabase.from('bookers').delete().not('id', 'is', null),
-                                  supabase.from('booker_locations').delete().not('booker_name', 'is', null)
-                                ]);
-                              } catch (e) {
+                                // ULTIMATE FIX: Call a server-side RPC function to truncate all tables.
+                                // This bypasses all RLS policies and foreign key constraints instantly.
+                                const { error } = await supabase.rpc('wipe_database');
+                                if (error) {
+                                  wipeErrors.push(`RPC Wipe Error: ${error.message}`);
+                                }
+                              } catch (e: any) {
                                 console.error("Cloud wipe error:", e);
+                                wipeErrors.push(e.message || 'Unknown error');
                               }
-                              toast.success("Database wiped. Clearing local cache...", { id: "wipe-auth" });
+                              if (wipeErrors.length > 0) {
+                                console.error("Wipe errors:", wipeErrors);
+                                toast.error(`Partial wipe: ${wipeErrors.join('; ')}`, { id: "wipe-auth", duration: 5000 });
+                              } else {
+                                toast.success("Database wiped! Clearing local cache...", { id: "wipe-auth" });
+                              }
                             }
                             
                             // Fire and forget signOut, it might hang offline

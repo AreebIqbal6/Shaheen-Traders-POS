@@ -55,13 +55,16 @@ import { generateSKU } from './ProductsView';
 export default function AdminPOSView() {
   const [products, setProducts] = useState<Product[]>(() => {
     const saved = localStorage.getItem('shaheen_products');
-    const loaded: Product[] = saved ? JSON.parse(saved) : [];
-    return loaded.map(p => ({ 
-      ...p, 
-      sku: p.sku || generateSKU(p.name, p.barcode),
-      pcsPerBox: p.pcsPerBox || 12,
-      boxPerCtn: p.boxPerCtn || 6
-    }));
+    const parsed = saved ? JSON.parse(saved) : [];
+    return parsed.map((p: any) => {
+      const needsNewSku = !p.sku || p.sku === p.barcode || p.sku.trim() === '';
+      return {
+        ...p,
+        sku: needsNewSku ? generateSKU(p.name, p.barcode) : p.sku,
+        pcsPerBox: p.pcsPerBox || 12,
+        boxPerCtn: p.boxPerCtn || 6
+      };
+    });
   });
 
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -152,15 +155,20 @@ export default function AdminPOSView() {
     }
     if (!silent) setIsSyncing(true);
     try {
-      const productsToSync = products.map(p => ({
-        id: p.id,
-        name: p.name,
-        price: p.price,
-        stock: p.stock,
-        barcode: p.barcode,
-        sku: p.barcode || p.id, // satisfy the strict not-null sku constraint
-        category: p.category || null
-      }));
+      const productsToSync = products.map(p => {
+        // Generate a real SKU if one doesn't exist or if it's just the barcode
+        const hasRealSku = p.sku && p.sku !== p.barcode && p.sku.trim() !== '';
+        const sku = hasRealSku ? p.sku : generateSKU(p.name || 'Product', p.barcode || '');
+        return {
+          id: p.id,
+          name: p.name || 'Unknown Product',
+          price: p.price,
+          stock: p.stock,
+          barcode: p.barcode,
+          sku: sku,
+          category: p.category || null
+        };
+      });
 
       const { error } = await supabase.from('products').upsert(productsToSync);
       if (error) throw error;
@@ -171,12 +179,15 @@ export default function AdminPOSView() {
         const localIds = new Set(products.map(p => p.id));
         const newFromCloud = cloudProducts
           .filter((cp: any) => !localIds.has(cp.id))
-          .map((cp: any) => ({
-            ...cp,
-            sku: cp.sku || generateSKU(cp.name, cp.barcode),
-            pcsPerBox: cp.pcs_per_box || cp.pcsPerBox || 12,
-            boxPerCtn: cp.box_per_ctn || cp.boxPerCtn || 6
-          }));
+          .map((cp: any) => {
+            const needsNewSku = !cp.sku || cp.sku === cp.barcode || cp.sku.trim() === '';
+            return {
+              ...cp,
+              sku: needsNewSku ? generateSKU(cp.name, cp.barcode) : cp.sku,
+              pcsPerBox: cp.pcs_per_box || cp.pcsPerBox || 12,
+              boxPerCtn: cp.box_per_ctn || cp.boxPerCtn || 6
+            };
+          });
         if (newFromCloud.length > 0) {
           setProducts(prev => [...prev, ...newFromCloud]);
         }
@@ -255,11 +266,17 @@ export default function AdminPOSView() {
         const localById = new Map(prev.map(p => [p.id, p]));
         const merged = [...prev];
         for (const cp of cloudProducts) {
+          // Check if sku from cloud is just the barcode (meaning it's not a real SKU)
+          const hasRealSku = cp.sku && cp.sku !== cp.barcode && cp.sku.trim() !== '';
+          const localProduct = localById.get(cp.id);
           const mapped = {
             ...cp,
-            sku: cp.sku || generateSKU(cp.name, cp.barcode),
-            pcsPerBox: cp.pcs_per_box || cp.pcsPerBox || 12,
-            boxPerCtn: cp.box_per_ctn || cp.boxPerCtn || 6
+            // Prefer local name if cloud name is empty
+            name: cp.name || localProduct?.name || 'Unknown Product',
+            // Generate a proper SKU if the cloud one is just the barcode
+            sku: hasRealSku ? cp.sku : (localProduct?.sku && localProduct.sku !== localProduct.barcode ? localProduct.sku : generateSKU(cp.name || 'Product', cp.barcode)),
+            pcsPerBox: cp.pcs_per_box || cp.pcsPerBox || localProduct?.pcsPerBox || 12,
+            boxPerCtn: cp.box_per_ctn || cp.boxPerCtn || localProduct?.boxPerCtn || 6
           };
           if (localById.has(cp.id)) {
             // Update existing product with cloud data
@@ -866,8 +883,12 @@ export default function AdminPOSView() {
         setLastReceiptNumber(res.orderId);
         // setIsReceiptOpen(false);
         setIsCheckoutSuccess(true);
+        setIsSubmitting(false);
+        return true;
       } else {
         toast.error("Dispatch failed: " + res?.error);
+        setIsSubmitting(false);
+        return false;
       }
     } else {
         // Stock Enforcement Check
@@ -876,6 +897,9 @@ export default function AdminPOSView() {
           let multiplier = 1;
           if (item.uom === 'Box') multiplier = product?.pcsPerBox || 1;
           if (item.uom === 'Ctn') multiplier = (product?.pcsPerBox || 1) * (product?.boxPerCtn || 1);
+          
+          const requiredQty = item.quantity * multiplier;
+          return (product?.stock || 0) < requiredQty;
         });
 
       if (insufficientItems.length > 0) {
@@ -1906,7 +1930,6 @@ export default function AdminPOSView() {
              setContactNumber('');
              setPaymentTerms('CASH');
              setIsCheckoutSuccess(false);
-             toast.success('Order Completed and Removed from Queue!');
           }}
           cart={cart}
           total={total}

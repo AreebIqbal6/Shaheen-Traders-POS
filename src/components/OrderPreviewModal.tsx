@@ -241,7 +241,7 @@ export default function OrderPreviewModal({
 
       {/* DEDICATED PRINT COMPONENT (Portaled directly to body to escape all CSS layout contexts) */}
       {createPortal(
-        <div className="hidden print:block w-full m-0 p-0 text-black bg-white absolute top-0 left-0 z-[999999]">
+        <div className="absolute top-0 -left-[9999px] opacity-0 print:opacity-100 print:left-0 w-full m-0 p-0 text-black bg-white z-[999999]">
           <Receipt 
             isPrintable={true}
             data={{

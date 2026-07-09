@@ -176,9 +176,11 @@ export default function ProductsView({ products, setProducts }: ProductsViewProp
         const line = lines[i].trim();
         if (!line) continue;
         const [barcode, name, priceStr, stockStr] = line.split(',');
+        const sku = generateSKU(name?.trim() || 'Product', barcode?.trim() || '');
         newProducts.push({
           id: Date.now().toString() + Math.random() + i,
           barcode: barcode?.trim() || '',
+          sku: sku,
           name: name?.trim() || 'Unknown Product',
           price: parseFloat(priceStr) || 0,
           stock: parseInt(stockStr) || 0
@@ -304,7 +306,7 @@ export default function ProductsView({ products, setProducts }: ProductsViewProp
                   <tr key={product.id} className="hover:bg-[rgba(255,255,255,0.03)] transition-colors group">
                     <td className="px-5 py-3 font-mono text-slate-600 dark:text-slate-400 group-hover:text-slate-900 dark:text-slate-50 transition-colors">{product.barcode}</td>
                     <td className="px-5 py-3 font-mono font-bold text-slate-900 dark:text-slate-50">{product.sku || '-'}</td>
-                    <td className="px-5 py-3 font-medium text-white flex items-center gap-2 whitespace-normal break-words min-w-[200px]">
+                    <td className="px-5 py-3 font-medium text-slate-900 dark:text-slate-50 flex items-center gap-2 whitespace-normal break-words min-w-[200px]">
                        {product.name}
                     </td>
                     <td className="px-5 py-3 text-slate-900 dark:text-slate-50 font-medium">Rs {product.price.toFixed(2)}</td>
@@ -380,13 +382,13 @@ export default function ProductsView({ products, setProducts }: ProductsViewProp
 
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-50 flex items-center justify-center p-4" onClick={() => setIsModalOpen(false)}>
-          <div className="bg-white dark:bg-zinc-900/60 backdrop-blur-md border border-slate-200 dark:border-zinc-800/50 shadow-xl rounded-2xl w-full max-w-md overflow-hidden animate-in zoom-in duration-200" onClick={(e) => e.stopPropagation()}>
-            <div className="px-6 py-5 border-b border-slate-200 dark:border-zinc-800/50 flex justify-between items-center bg-slate-100 dark:bg-zinc-900/60 backdrop-blur-md">
+          <div className="bg-white dark:bg-zinc-900/60 backdrop-blur-md border border-slate-200 dark:border-zinc-800/50 shadow-xl rounded-2xl w-full max-w-md overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in duration-200" onClick={(e) => e.stopPropagation()}>
+            <div className="px-6 py-5 border-b border-slate-200 dark:border-zinc-800/50 flex justify-between items-center bg-slate-100 dark:bg-zinc-900/60 backdrop-blur-md shrink-0">
               <h2 className="text-lg font-bold text-slate-900 dark:text-white tracking-tight">{editingProduct ? 'Edit Product' : 'Add New Product'}</h2>
               <button onClick={() => setIsModalOpen(false)} className="text-slate-600 dark:text-slate-400 hover:text-white transition-colors"><X size={18} /></button>
             </div>
             
-            <div className="p-6 flex flex-col gap-4">
+            <div className="p-6 flex flex-col gap-4 overflow-y-auto custom-scrollbar">
               
               <div className="relative">
                 <div className="flex justify-between items-center mb-1.5">
@@ -556,7 +558,7 @@ export default function ProductsView({ products, setProducts }: ProductsViewProp
                    </div>
                 </div>
               </div>
-            <div className="px-6 py-5 border-t border-slate-200 dark:border-zinc-800/50 flex justify-end gap-3 bg-slate-100 dark:bg-zinc-900/60 backdrop-blur-md">
+            <div className="px-6 py-5 border-t border-slate-200 dark:border-zinc-800/50 flex justify-end gap-3 bg-slate-100 dark:bg-zinc-900/60 backdrop-blur-md shrink-0">
               <button onClick={() => setIsModalOpen(false)} className="px-4 py-2 text-slate-600 dark:text-slate-400 font-semibold hover:text-slate-900 dark:hover:text-slate-50 rounded-lg transition-colors text-[13px]">Cancel</button>
               <button onClick={handleSave} className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all text-[13px] border-t border-slate-300 dark:border-slate-600">
                 Save Product

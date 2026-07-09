@@ -78,8 +78,63 @@ export const saveOrderBackup = async (orderId: string, cart: any[], details: any
           }
         }
       }
-    } else {
-      // WEB BROWSER MODE FALLBACK (Using Local Vite API)
+      // WEB BROWSER MODE FALLBACK
+      // First, attempt to use the new File System Access API
+      try {
+        const { getBackupDirectoryHandle } = await import('./fileSystem');
+        const primaryHandle = await getBackupDirectoryHandle('primary');
+        const secondaryHandle = await getBackupDirectoryHandle('secondary');
+
+        if (primaryHandle) {
+          const handles = [primaryHandle];
+          if (secondaryHandle) handles.push(secondaryHandle);
+
+          let savedSuccessfully = false;
+
+          for (const baseHandle of handles) {
+            try {
+              // Create structure: SHAHEEN TRADERS BACKUP / ORDER HISTORY / dateStr / orderId
+              const stBackupHandle = await baseHandle.getDirectoryHandle('SHAHEEN TRADERS BACKUP', { create: true });
+              const ohHandle = await stBackupHandle.getDirectoryHandle('ORDER HISTORY', { create: true });
+              const dateHandle = await ohHandle.getDirectoryHandle(dateStr, { create: true });
+              const orderHandle = await dateHandle.getDirectoryHandle(orderId, { create: true });
+
+              if (pdfResult) {
+                const fileHandle = await orderHandle.getFileHandle(`${orderId}.pdf`, { create: true });
+                const writable = await fileHandle.createWritable();
+                await writable.write(pdfResult.blob);
+                await writable.close();
+              }
+
+              if (excelResult.success && excelResult.buffer) {
+                const blob = new Blob([excelResult.buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+                const fileHandle = await orderHandle.getFileHandle(`${orderId}.xlsx`, { create: true });
+                const writable = await fileHandle.createWritable();
+                await writable.write(blob);
+                await writable.close();
+              }
+
+              const sqlFileHandle = await orderHandle.getFileHandle(`${orderId}.sql`, { create: true });
+              const sqlWritable = await sqlFileHandle.createWritable();
+              await sqlWritable.write(sqlContent);
+              await sqlWritable.close();
+              
+              savedSuccessfully = true;
+            } catch (err) {
+              console.error('File System Access API error on handle', baseHandle, err);
+            }
+          }
+          
+          if (savedSuccessfully) {
+             toast.success('Saved securely to selected folders!');
+             return true;
+          }
+        }
+      } catch (fsError) {
+        console.warn('File System Access API failed or unavailable', fsError);
+      }
+
+      // If handles were not set, fallback to the old Local Vite API (for localhost testing)
       const blobToBase64 = (blob: Blob): Promise<string> => {
         return new Promise((resolve, reject) => {
           const reader = new FileReader();
@@ -92,8 +147,8 @@ export const saveOrderBackup = async (orderId: string, cart: any[], details: any
         });
       };
 
-      let basePath = localStorage.getItem('shaheen_backuppath') || 'D:\\AREEB';
-      if (basePath.startsWith('Web Folder')) basePath = 'D:\\AREEB';
+      let localBasePath = localStorage.getItem('shaheen_backuppath') || 'D:\\AREEB';
+      if (localBasePath.startsWith('Web Folder')) localBasePath = 'D:\\AREEB';
 
       let pdfBase64 = null;
       let excelBase64 = null;
@@ -113,7 +168,7 @@ export const saveOrderBackup = async (orderId: string, cart: any[], details: any
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
-             basePath,
+             basePath: localBasePath,
              dateStr,
              orderId,
              pdfBase64,
@@ -126,7 +181,7 @@ export const saveOrderBackup = async (orderId: string, cart: any[], details: any
            throw new Error(`Local API save failed: ${response.statusText}`);
         }
       } catch (apiError) {
-        // FALLBACK FOR CLOUD DEPLOYMENTS (Vercel, Netlify, etc.)
+        // ULTIMATE FALLBACK FOR CLOUD DEPLOYMENTS WITH NO DIRECTORY PERMISSIONS
         console.warn('Local API failed, falling back to standard browser downloads', apiError);
         
         if (pdfResult) {

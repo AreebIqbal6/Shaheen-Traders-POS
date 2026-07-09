@@ -1,0 +1,84 @@
+{
+  "admin": {
+    "path": "/admin",
+    "local": {
+      "logs": [],
+      "errors": [],
+      "styles": {
+        "body": {
+          "fontSize": "16px",
+          "lineHeight": "24px",
+          "margin": "0px",
+          "padding": "0px",
+          "display": "block",
+          "zoom": "1"
+        },
+        "html": {
+          "fontSize": "16px",
+          "zoom": "0.85"
+        }
+      },
+      "metaViewport": "width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
+    },
+    "remote": {
+      "logs": [],
+      "errors": [],
+      "styles": {
+        "body": {
+          "fontSize": "16px",
+          "lineHeight": "24px",
+          "margin": "0px",
+          "padding": "0px",
+          "display": "block",
+          "zoom": "1"
+        },
+        "html": {
+          "fontSize": "16px",
+          "zoom": "0.85"
+        }
+      },
+      "metaViewport": "width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
+    }
+  },
+  "booker": {
+    "path": "/booker",
+    "local": {
+      "logs": [],
+      "errors": [],
+      "styles": {
+        "body": {
+          "fontSize": "16px",
+          "lineHeight": "24px",
+          "margin": "0px",
+          "padding": "0px",
+          "display": "block",
+          "zoom": "1"
+        },
+        "html": {
+          "fontSize": "16px",
+          "zoom": "0.85"
+        }
+      },
+      "metaViewport": "width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
+    },
+    "remote": {
+      "logs": [],
+      "errors": [],
+      "styles": {
+        "body": {
+          "fontSize": "16px",
+          "lineHeight": "24px",
+          "margin": "0px",
+          "padding": "0px",
+          "display": "block",
+          "zoom": "1"
+        },
+        "html": {
+          "fontSize": "16px",
+          "zoom": "0.85"
+        }
+      },
+      "metaViewport": "width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
+    }
+  }
+}

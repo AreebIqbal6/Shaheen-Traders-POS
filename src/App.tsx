@@ -31,10 +31,14 @@ export default function App() {
         position="top-center" 
         containerClassName="print:hidden"
         toastOptions={{
+          className: 'dark:bg-zinc-900 dark:text-slate-50 dark:border dark:border-zinc-800 bg-white text-slate-900 border border-slate-200',
           style: {
-            fontSize: '16px',
-            padding: '16px',
-            maxWidth: '500px'
+            fontSize: '14px',
+            padding: '12px 16px',
+            maxWidth: '500px',
+            borderRadius: '8px',
+            background: 'inherit',
+            color: 'inherit'
           }
         }}
       />

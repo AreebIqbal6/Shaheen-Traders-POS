@@ -28,9 +28,9 @@ interface ReceiptProps {
   isPrintable?: boolean;
 }
 
-// 20 items fit cleanly on one A4 page with header, details grid, grand total, amount in words, and signature
-const ITEMS_FIRST_PAGE = 20;
-const ITEMS_CONTINUATION_PAGE = 25; // Continuation pages have no header/details grid, so more room
+// 35 items fit cleanly on one A4 page with header, details grid, grand total, amount in words, and signature
+const ITEMS_FIRST_PAGE = 35;
+const ITEMS_CONTINUATION_PAGE = 45; // Continuation pages have no header/details grid, so more room
 
 export default function Receipt({ data, className = '', isPrintable = true }: ReceiptProps) {
   const receiptUrl = `${window.location.origin}/receipt/${data.id}`;
@@ -67,10 +67,9 @@ export default function Receipt({ data, className = '', isPrintable = true }: Re
   };
 
   return (
-    <div id={isPrintable ? "receipt-print-area" : undefined} className={`w-full flex flex-col gap-0 ${className}`}>
+    <div className={`receipt-container bg-slate-400 print:bg-white flex flex-col items-center ${isPrintable ? '' : 'py-8'} min-h-screen ${className}`}>
       {chunks.map((chunk, pageIndex) => {
         const isLastPage = pageIndex === chunks.length - 1;
-        const isFirstPage = pageIndex === 0;
         const pageNumber = pageIndex + 1;
         const totalPages = chunks.length;
         const serialOffset = getSerialOffset(pageIndex);
@@ -78,36 +77,42 @@ export default function Receipt({ data, className = '', isPrintable = true }: Re
         return (
           <div 
             key={pageIndex}
-            className="receipt-page bg-white text-black font-sans w-[210mm] h-[297mm] mx-auto p-[10mm] print:w-[210mm] print:h-[297mm] print:p-[10mm] print:m-0 print:break-after-page shadow-sm border border-slate-200 print:border-none print:shadow-none flex flex-col [print-color-adjust:exact] [-webkit-print-color-adjust:exact]"
-            style={{ boxSizing: 'border-box', overflow: 'hidden', pageBreakAfter: 'always' }}
+            className="receipt-page bg-white shadow-xl print:shadow-none w-[210mm] min-h-[297mm] flex flex-col mb-8 print:mb-0 relative"
+            style={{ padding: '8mm' }}
           >
-            {/* Header — only on first page */}
-            {isFirstPage && (
+            {/* Watermark Logo */}
+            <div className="absolute inset-0 flex items-center justify-center opacity-[0.03] pointer-events-none overflow-hidden z-0">
+               <img src="/logo_transparent.png" alt="Watermark" className="w-[150mm] h-[150mm] object-contain rotate-[-15deg] grayscale" />
+            </div>
+
+            <div className="flex-1 flex flex-col z-10">
+            {/* ONLY RENDER HEADER ON FIRST PAGE */}
+            {pageIndex === 0 && (
               <>
-                {/* 1. Header (Barcode + Logo + QR Code) */}
-                <div className="flex items-start justify-between mb-1 border-b border-slate-200 pb-1 print:border-b shrink-0">
-                   <div className="flex flex-col items-start w-1/3 pt-0">
-                     <Barcode 
-                       value={barcodeValue} 
-                       width={1.2} 
-                       height={24} 
-                       fontSize={12} 
-                       margin={0}
-                       displayValue={false}
-                     />
-                     <span className="text-[10px] text-slate-500 font-mono mt-0.5 font-bold tracking-widest">{displayId}</span>
-                   </div>
-                   <div className="flex flex-col items-center justify-center w-1/3">
-                     <img src="/logo_transparent.png" alt="Shaheen Logo" className="w-16 h-16 object-contain" />
-                   </div>
-                   <div className="flex flex-col items-end w-1/3 pt-0">
-                     <span className="text-[6.5px] font-bold tracking-[0.2em] text-slate-800 mb-0.5 mr-0.5">SCAN TO VERIFY</span>
-                     <QRCodeSVG value={receiptUrl} size={45} />
-                   </div>
+                {/* 1. Top Bar */}
+                <div className="flex justify-between items-start mb-2 border-b-2 border-slate-900 pb-2 print:border-b-2 shrink-0">
+                  <div className="flex flex-col items-start w-1/3 pt-1">
+                    <Barcode 
+                      value={barcodeValue} 
+                      width={1.2} 
+                      height={24} 
+                      fontSize={12} 
+                      margin={0}
+                      displayValue={false}
+                    />
+                    <span className="text-[10px] text-slate-500 font-mono mt-0.5 font-bold tracking-widest">{displayId}</span>
+                  </div>
+                  <div className="flex flex-col items-center justify-center w-1/3">
+                    <img src="/logo_transparent.png" alt="Shaheen Logo" className="w-[60px] h-[60px] object-contain drop-shadow-sm" />
+                  </div>
+                  <div className="flex flex-col items-end w-1/3 pt-1">
+                    <span className="text-[6.5px] font-bold tracking-[0.2em] text-slate-800 mb-0.5 mr-0.5 uppercase">Scan to Verify</span>
+                    <QRCodeSVG value={receiptUrl} size={45} />
+                  </div>
                 </div>
 
                 {/* 2. Title */}
-                <div className="text-center mb-1 border-b border-slate-200 pb-1 print:border-b shrink-0">
+                <div className="text-center mb-1 shrink-0">
                   <h1 className="text-2xl font-black text-[#1a202c] tracking-wider uppercase">{storeName}</h1>
                   <div className="text-[9px] font-bold text-slate-500 mt-1 uppercase tracking-widest flex items-center justify-center gap-3">
                      <span>{storeAddress}</span>
@@ -151,7 +156,7 @@ export default function Receipt({ data, className = '', isPrintable = true }: Re
             )}
 
             {/* Continuation page header — shows order ID and page info */}
-            {!isFirstPage && (
+            {pageIndex !== 0 && (
               <div className="flex items-start justify-between mb-1 border-b border-slate-200 pb-1 print:border-b shrink-0">
                  <div className="flex flex-col items-start w-1/3 pt-0">
                    <Barcode 
@@ -174,7 +179,7 @@ export default function Receipt({ data, className = '', isPrintable = true }: Re
               </div>
             )}
 
-            {!isFirstPage && (
+            {pageIndex !== 0 && (
               <>
                 {/* 2. Title */}
                 <div className="text-center mb-1 border-b border-slate-200 pb-1 print:border-b shrink-0">
@@ -225,7 +230,7 @@ export default function Receipt({ data, className = '', isPrintable = true }: Re
                 <thead>
                   <tr className="bg-slate-200 border-b-2 border-t-2 border-slate-800 text-[11px]">
                     <th className="py-0.5 px-1 font-bold text-slate-900 border-x-2 border-slate-800 text-center w-8">S.No</th>
-                    <th className="py-0.5 px-1 font-bold text-slate-900 border-x-2 border-slate-800 text-center w-[60px]">SKU</th>
+                    <th className="py-0.5 px-1 font-bold text-slate-900 border-x-2 border-slate-800 text-center w-[85px]">SKU</th>
                     <th className="py-0.5 px-1 font-bold text-slate-900 border-x-2 border-slate-800 text-center w-[80px]">Prod ID</th>
                     <th className="py-0.5 px-1 font-bold text-slate-900 border-x-2 border-slate-800">Product Name</th>
                     <th className="py-0.5 px-1 font-bold text-slate-900 border-x-2 border-slate-800 text-center w-[60px]">Quantity</th>
@@ -239,7 +244,7 @@ export default function Receipt({ data, className = '', isPrintable = true }: Re
                     return (
                       <tr key={idx} className="border-b border-slate-400 print:break-inside-avoid text-[11px]">
                         <td className="py-0 px-1 text-center text-slate-900 border-x-2 border-slate-800 font-bold">{serialNo}</td>
-                        <td className="py-0 px-1 text-center text-slate-800 border-x-2 border-slate-800 font-mono text-[9px] font-bold">{item.sku || '-'}</td>
+                        <td className="py-0 px-1 text-center text-slate-800 border-x-2 border-slate-800 font-mono text-[9px] font-bold whitespace-nowrap">{item.sku || '-'}</td>
                         <td className="py-0 px-1 text-center text-slate-800 border-x-2 border-slate-800 font-mono text-[9px] truncate max-w-[80px]">{item.barcode || item.id}</td>
                         <td className="py-0 px-1 text-slate-900 font-semibold border-x-2 border-slate-800 leading-tight">{item.name}</td>
                         <td className="py-0 px-1 text-center text-slate-900 border-x-2 border-slate-800 font-bold">{item.quantity} <span className="text-[9px] text-slate-600 font-normal">{item.uom || 'Pcs'}</span></td>
@@ -282,6 +287,7 @@ export default function Receipt({ data, className = '', isPrintable = true }: Re
               )}
             </div>
 
+          </div>
           </div>
         );
       })}

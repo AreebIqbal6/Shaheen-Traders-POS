@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { playNotificationSound } from '../utils/audio';
 import { supabase } from '../lib/supabase';
-import { ShoppingCart, Store, CreditCard, Search, ArrowRight, Package, User, LogOut, History, WifiOff, RefreshCw, CheckCircle2, FileText, Smartphone } from 'lucide-react';
+import { ShoppingCart, Store, CreditCard, Search, ArrowRight, Package, User, LogOut, History, WifiOff, RefreshCw, CheckCircle2, FileText, Smartphone, Trash2, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import B2BCheckout from '../components/B2BCheckout';
 import OrderPreviewModal from '../components/OrderPreviewModal';
@@ -506,12 +506,18 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
                  <p className="font-medium text-[15px]">Your cart is empty</p>
                </div>
              ) : (
-               <div className="flex flex-col gap-3 mb-6 flex-1">
+                <div className="flex flex-col gap-3 pb-[40px] flex-1 overflow-y-auto custom-scrollbar">
                  {cart.map(item => (
-                   <div key={item.cartId} className="bg-white dark:bg-zinc-900/60 backdrop-blur-md border border-slate-200 dark:border-zinc-800/50 rounded-xl p-3 flex flex-col gap-2">
-                     <div className="flex justify-between items-start">
-                        <h3 className="font-semibold text-slate-900 dark:text-slate-50 text-[13px] w-3/4 leading-tight truncate">{item.name}</h3>
-                        <span className="font-bold text-blue-500 dark:text-blue-400 font-mono text-[13px]">Rs {(item.price * item.quantity).toLocaleString()}</span>
+                   <div key={item.cartId} className="bg-white dark:bg-zinc-900/60 backdrop-blur-md border border-slate-200 dark:border-zinc-800/50 rounded-xl p-3 flex flex-col gap-2 relative">
+                     <div className="flex justify-between items-start pr-8">
+                        <h3 className="font-semibold text-slate-900 dark:text-slate-50 text-[13px] leading-tight">{item.name}</h3>
+                        <button 
+                           onClick={() => setCart(prev => prev.filter(i => i.cartId !== item.cartId))}
+                           className="absolute top-2 right-2 p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-colors"
+                        >
+                           <Trash2 size={16} />
+                        </button>
+                        <span className="font-bold text-blue-500 dark:text-blue-400 font-mono text-[13px] shrink-0 ml-2">Rs {(item.price * item.quantity).toLocaleString()}</span>
                      </div>
                      {(() => {
                         const currentProduct = products.find(p => p.id === item.id);
@@ -549,7 +555,7 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
              )}
 
               {cart.length > 0 && (
-               <div className="mt-auto md:sticky md:bottom-0 bg-white/80 dark:bg-[#0a0a0c]/80 backdrop-blur-xl border-t border-slate-200 dark:border-zinc-800/50 p-4 shadow-2xl mb-4 md:mb-0 -mx-4 md:mx-0 shrink-0 z-20">
+               <div className="mt-auto md:sticky md:bottom-0 bg-white/80 dark:bg-[#0a0a0c]/80 backdrop-blur-xl border-t border-slate-200 dark:border-zinc-800/50 p-4 shadow-2xl mb-[80px] md:mb-0 -mx-4 md:mx-0 shrink-0 z-20">
                   <div className="flex justify-between items-center mb-4">
                      <span className="text-sm font-semibold text-slate-400">Total Amount</span>
                      <span className="text-lg font-bold font-mono text-slate-900 dark:text-slate-50">Rs {cartTotal.toLocaleString()}</span>
