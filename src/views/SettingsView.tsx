@@ -67,7 +67,6 @@ export default function SettingsView() {
   const handleFolderSelect = async (isSecondary: boolean) => {
     try {
       if ('__TAURI__' in window) {
-        // Dynamic import prevents the TypeError during component load
         const { open } = await import('@tauri-apps/plugin-dialog');
         
         const selected = await open({
@@ -80,29 +79,39 @@ export default function SettingsView() {
           if (isSecondary) {
             setSecondaryBackupPath(selected);
             localStorage.setItem('shaheen_secondary_backuppath', selected);
+            toast.success('Secondary Backup location updated!');
           } else {
             setBackupPath(selected);
             localStorage.setItem('shaheen_backuppath', selected);
+            toast.success('Backup location updated!');
           }
-          toast.success(`${isSecondary ? 'Secondary Backup' : 'Backup'} location updated!`);
         }
       } else {
-        // Fallback for Web/Browser
         if ('showDirectoryPicker' in window) {
           toast.info('Opening folder picker...', { duration: 3000 });
           const { requestBackupDirectory } = await import('../utils/fileSystem');
           const dirName = await requestBackupDirectory(isSecondary ? 'secondary' : 'primary');
           if (dirName) {
-            const pathName = `Web Folder: ${dirName}`;
-            isSecondary ? setSecondaryBackupPath(pathName) : setBackupPath(pathName);
-            localStorage.setItem(isSecondary ? 'shaheen_secondary_backuppath' : 'shaheen_backuppath', pathName);
+            const pathName = 'Web Folder: ' + dirName;
+            if (isSecondary) {
+              setSecondaryBackupPath(pathName);
+              localStorage.setItem('shaheen_secondary_backuppath', pathName);
+            } else {
+              setBackupPath(pathName);
+              localStorage.setItem('shaheen_backuppath', pathName);
+            }
             toast.success('Location updated for web!');
           }
         } else {
           const pathName = prompt('Enter folder path:');
           if (pathName) {
-            isSecondary ? setSecondaryBackupPath(pathName) : setBackupPath(pathName);
-            localStorage.setItem(isSecondary ? 'shaheen_secondary_backuppath' : 'shaheen_backuppath', pathName);
+            if (isSecondary) {
+              setSecondaryBackupPath(pathName);
+              localStorage.setItem('shaheen_secondary_backuppath', pathName);
+            } else {
+              setBackupPath(pathName);
+              localStorage.setItem('shaheen_backuppath', pathName);
+            }
           }
         }
       }
