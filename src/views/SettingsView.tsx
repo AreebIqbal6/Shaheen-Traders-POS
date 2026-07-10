@@ -1,5 +1,6 @@
+```tsx
 import React, { useState } from 'react';
-import { Store, Receipt, Printer, Database, Download, Upload, FolderDown, FolderSearch, AlertTriangle } from 'lucide-react';
+import { Store, Receipt, Printer, Database, Download, Upload, FolderDown, FolderSearch, AlertTriangle, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { writeTextFile, readTextFile } from '@tauri-apps/plugin-fs';
 import { desktopDir } from '@tauri-apps/api/path';
@@ -63,99 +64,53 @@ export default function SettingsView() {
     toast.success('Configurations Saved Successfully!');
   };
 
-  const handleSelectFolder = async () => {
+  const handleFolderSelect = async (isSecondary: boolean) => {
     try {
       if ('__TAURI__' in window) {
+        // Dynamic import prevents the TypeError during component load
+        const { open } = await import('@tauri-apps/plugin-dialog');
+        
         const selected = await open({
           directory: true,
           multiple: false,
+          title: isSecondary ? 'Select Secondary Backup Drive' : 'Select Backup Folder',
         });
+
         if (selected && typeof selected === 'string') {
-          setBackupPath(selected);
-          localStorage.setItem('shaheen_backuppath', selected);
-          toast.success('Backup location updated and saved!');
+          if (isSecondary) {
+            setSecondaryBackupPath(selected);
+            localStorage.setItem('shaheen_secondary_backuppath', selected);
+          } else {
+            setBackupPath(selected);
+            localStorage.setItem('shaheen_backuppath', selected);
+          }
+          toast.success(`${isSecondary ? 'Secondary Backup' : 'Backup'} location updated!`);
         }
       } else {
+        // Fallback for Web/Browser
         if ('showDirectoryPicker' in window) {
-          // Show immediate feedback before browser prompt steals focus
-          toast.info('Opening folder picker...', {
-            description: 'Please grant permission to save backups in this folder.',
-            duration: 3000
-          });
+          toast.info('Opening folder picker...', { duration: 3000 });
           const { requestBackupDirectory } = await import('../utils/fileSystem');
-          const loadingId = toast.loading('Please allow folder access in the browser prompt above...', { duration: 10000 });
-          const dirName = await requestBackupDirectory('primary');
-          toast.dismiss(loadingId);
+          const dirName = await requestBackupDirectory(isSecondary ? 'secondary' : 'primary');
           if (dirName) {
             const pathName = `Web Folder: ${dirName}`;
-            setBackupPath(pathName);
-            localStorage.setItem('shaheen_backuppath', pathName);
-            toast.success('Backup location updated for web!');
-          } else {
-            toast.error('Folder selection cancelled or denied.');
+            isSecondary ? setSecondaryBackupPath(pathName) : setBackupPath(pathName);
+            localStorage.setItem(isSecondary ? 'shaheen_secondary_backuppath' : 'shaheen_backuppath', pathName);
+            toast.success('Location updated for web!');
           }
         } else {
-          const pathName = prompt('Enter a folder path for Auto-Save:');
+          const pathName = prompt('Enter folder path:');
           if (pathName) {
-            setBackupPath(pathName);
-            localStorage.setItem('shaheen_backuppath', pathName);
-            toast.success('Backup location updated for web!');
+            isSecondary ? setSecondaryBackupPath(pathName) : setBackupPath(pathName);
+            localStorage.setItem(isSecondary ? 'shaheen_secondary_backuppath' : 'shaheen_backuppath', pathName);
           }
         }
       }
     } catch (err) {
-      console.error(err);
-      toast.error('Failed to open folder picker: ' + String(err));
+      console.error("Folder picker error:", err);
+      toast.error('Failed to open folder picker.');
     }
   };
-
-  const handleFolderSelect = async (isSecondary: boolean) => {
-  try {
-    if ('__TAURI__' in window) {
-      // Dynamic import prevents the TypeError during component load
-      const { open } = await import('@tauri-apps/plugin-dialog');
-      
-      const selected = await open({
-        directory: true,
-        multiple: false,
-        title: isSecondary ? 'Select Secondary Backup Drive' : 'Select Backup Folder',
-      });
-
-      if (selected && typeof selected === 'string') {
-        if (isSecondary) {
-          setSecondaryBackupPath(selected);
-          localStorage.setItem('shaheen_secondary_backuppath', selected);
-        } else {
-          setBackupPath(selected);
-          localStorage.setItem('shaheen_backuppath', selected);
-        }
-        toast.success(`${isSecondary ? 'Secondary Backup' : 'Backup'} location updated!`);
-      }
-    } else {
-      // Fallback for Web/Browser
-      if ('showDirectoryPicker' in window) {
-        toast.info('Opening folder picker...', { duration: 3000 });
-        const { requestBackupDirectory } = await import('../utils/fileSystem');
-        const dirName = await requestBackupDirectory(isSecondary ? 'secondary' : 'primary');
-        if (dirName) {
-          const pathName = `Web Folder: ${dirName}`;
-          isSecondary ? setSecondaryBackupPath(pathName) : setBackupPath(pathName);
-          localStorage.setItem(isSecondary ? 'shaheen_secondary_backuppath' : 'shaheen_backuppath', pathName);
-          toast.success('Location updated for web!');
-        }
-      } else {
-        const pathName = prompt('Enter folder path:');
-        if (pathName) {
-          isSecondary ? setSecondaryBackupPath(pathName) : setBackupPath(pathName);
-          localStorage.setItem(isSecondary ? 'shaheen_secondary_backuppath' : 'shaheen_backuppath', pathName);
-        }
-      }
-    }
-  } catch (err) {
-    console.error("Folder picker error:", err);
-    toast.error('Failed to open folder picker.');
-  }
-};
 
   return (
     <div className="flex-1 bg-[#f8fafc] p-4 md:p-8 overflow-y-auto custom-scrollbar h-full overflow-x-hidden">
@@ -200,8 +155,6 @@ export default function SettingsView() {
               </div>
             </div>
           </div>
-
-
 
           {/* Hardware */}
           <div className="bg-white dark:bg-zinc-900/60 backdrop-blur-md border border-zinc-200 dark:border-zinc-700 rounded-sm shadow-sm overflow-hidden">
@@ -281,6 +234,8 @@ export default function SettingsView() {
                         };
                         
                         if ('__TAURI__' in window) {
+                          // Dynamic import for Tauri save dialog
+                          const { save } = await import('@tauri-apps/plugin-dialog');
                           const filePath = await save({
                             filters: [{ name: 'JSON', extensions: ['json'] }],
                             defaultPath: `shaheen_backup_${new Date().toISOString().split('T')[0]}.json`,
@@ -316,6 +271,8 @@ export default function SettingsView() {
                     onClick={async () => {
                       try {
                         if ('__TAURI__' in window) {
+                          // Dynamic import for Tauri open dialog
+                          const { open } = await import('@tauri-apps/plugin-dialog');
                           const selectedPath = await open({
                             multiple: false,
                             filters: [{ name: 'JSON', extensions: ['json'] }]
@@ -395,7 +352,7 @@ export default function SettingsView() {
                   placeholder="Click Browse to select folder..."
                   className="border-2 border-blue-300 dark:border-blue-700 rounded-md px-4 py-3 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all text-blue-900 dark:text-blue-100 font-bold w-full text-[15px] bg-white dark:bg-slate-800 shadow-inner" 
                 />
-                <button onClick={handleSelectFolder} className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-3 rounded-md font-bold flex items-center gap-2 shadow-sm whitespace-nowrap transition-colors">
+                <button onClick={() => handleFolderSelect(false)} className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-3 rounded-md font-bold flex items-center gap-2 shadow-sm whitespace-nowrap transition-colors">
                   <FolderSearch size={20} />
                   Browse
                 </button>
@@ -424,7 +381,7 @@ export default function SettingsView() {
                     placeholder="Leave empty or click Browse to select a USB drive..."
                     className="border-2 border-emerald-300 dark:border-emerald-700 rounded-md px-4 py-3 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all text-emerald-900 dark:text-emerald-100 font-bold w-full text-[15px] bg-white dark:bg-slate-800 shadow-inner" 
                   />
-                  <button onClick={handleSelectSecondaryFolder} className="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-3 rounded-md font-bold flex items-center gap-2 shadow-sm whitespace-nowrap transition-colors">
+                  <button onClick={() => handleFolderSelect(true)} className="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-3 rounded-md font-bold flex items-center gap-2 shadow-sm whitespace-nowrap transition-colors">
                     <FolderSearch size={20} />
                     Browse
                   </button>
@@ -600,3 +557,5 @@ export default function SettingsView() {
     </div>
   );
 }
+
+```
