@@ -6,7 +6,7 @@ import { writeTextFile, readTextFile } from '@tauri-apps/plugin-fs';
 import { desktopDir } from '@tauri-apps/api/path';
 import { supabase } from '../lib/supabase';
 
-export default function SettingsView() {
+function SettingsView() {
   const [backupPath, setBackupPath] = useState('');
   const [secondaryBackupPath, setSecondaryBackupPath] = useState('');
 
@@ -570,5 +570,6 @@ export default function SettingsView() {
     </div>
   );
 }
+  export default SettingsView;
 
 ```
