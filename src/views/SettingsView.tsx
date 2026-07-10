@@ -1,4 +1,3 @@
-```tsx
 import React, { useState } from 'react';
 import { Store, Receipt, Printer, Database, Download, Upload, FolderDown, FolderSearch, AlertTriangle, X } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -6,7 +5,7 @@ import { writeTextFile, readTextFile } from '@tauri-apps/plugin-fs';
 import { desktopDir } from '@tauri-apps/api/path';
 import { supabase } from '../lib/supabase';
 
-function SettingsView() {
+export default function SettingsView() {
   const [backupPath, setBackupPath] = useState('');
   const [secondaryBackupPath, setSecondaryBackupPath] = useState('');
 
@@ -31,6 +30,7 @@ function SettingsView() {
     };
     fetchDefault();
   }, []);
+
   const [address, setAddress] = useState(() => {
     return localStorage.getItem('shaheen_address') || 'Gulberg';
   });
@@ -165,7 +165,7 @@ function SettingsView() {
             </div>
           </div>
 
-         {/* Hardware */}
+          {/* Hardware */}
           <div className="bg-white dark:bg-zinc-900/60 backdrop-blur-md border border-zinc-200 dark:border-zinc-700 rounded-sm shadow-sm overflow-hidden">
             <div className="border-b border-zinc-100 bg-zinc-50 dark:bg-zinc-900 px-5 py-4 flex items-center gap-2">
               <Printer className="text-zinc-600" size={18} />
@@ -245,7 +245,6 @@ function SettingsView() {
                           cart: localStorage.getItem('shaheen_cart')
                         };
                         
-                        // Fix: Standard string concatenation instead of template literals
                         const dateString = new Date().toISOString().split('T')[0];
                         const backupFileName = 'shaheen_backup_' + dateString + '.json';
                         
@@ -286,7 +285,6 @@ function SettingsView() {
                     onClick={async () => {
                       try {
                         if ('__TAURI__' in window) {
-                          // Dynamic import for Tauri open dialog
                           const { open } = await import('@tauri-apps/plugin-dialog');
                           const selectedPath = await open({
                             multiple: false,
@@ -375,39 +373,39 @@ function SettingsView() {
             </div>
           </div>
 
-            <div className="bg-emerald-50/50 dark:bg-emerald-900/10 border-2 border-emerald-500/30 rounded-lg p-6 shadow-sm mb-6">
-              <div className="flex items-center gap-3 mb-4 text-emerald-700 dark:text-emerald-400">
-                <FolderDown size={28} />
-                <h2 className="text-lg font-bold">Secondary Backup Location (USB / External Drive)</h2>
-              </div>
+          <div className="bg-emerald-50/50 dark:bg-emerald-900/10 border-2 border-emerald-500/30 rounded-lg p-6 shadow-sm mb-6">
+            <div className="flex items-center gap-3 mb-4 text-emerald-700 dark:text-emerald-400">
+              <FolderDown size={28} />
+              <h2 className="text-lg font-bold">Secondary Backup Location (USB / External Drive)</h2>
+            </div>
+            
+            <div className="flex flex-col gap-2">
+              <p className="text-[14px] text-emerald-900/70 dark:text-emerald-200/70 mb-2 leading-relaxed max-w-3xl">
+                This is an optional secondary location. If a path is provided here, the system will simultaneously save the exact same backup files to this location as well. If the drive is disconnected, the system will skip it gracefully without throwing an error.
+                <br />
+                <span className="font-semibold text-emerald-700 dark:text-emerald-400">A "SHAHEEN BACKUP" folder will automatically be created inside this path.</span>
+              </p>
               
-              <div className="flex flex-col gap-2">
-                <p className="text-[14px] text-emerald-900/70 dark:text-emerald-200/70 mb-2 leading-relaxed max-w-3xl">
-                  This is an optional secondary location. If a path is provided here, the system will simultaneously save the exact same backup files to this location as well. If the drive is disconnected, the system will skip it gracefully without throwing an error.
-                  <br />
-                  <span className="font-semibold text-emerald-700 dark:text-emerald-400">A "SHAHEEN BACKUP" folder will automatically be created inside this path.</span>
-                </p>
-                
-                <div className="flex items-center gap-2">
-                  <input 
-                    type="text" 
-                    value={secondaryBackupPath} 
-                    onChange={e => setSecondaryBackupPath(e.target.value)}
-                    placeholder="Leave empty or click Browse to select a USB drive..."
-                    className="border-2 border-emerald-300 dark:border-emerald-700 rounded-md px-4 py-3 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all text-emerald-900 dark:text-emerald-100 font-bold w-full text-[15px] bg-white dark:bg-slate-800 shadow-inner" 
-                  />
-                  <button onClick={() => handleFolderSelect(true)} className="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-3 rounded-md font-bold flex items-center gap-2 shadow-sm whitespace-nowrap transition-colors">
-                    <FolderSearch size={20} />
-                    Browse
-                  </button>
-                </div>
+              <div className="flex items-center gap-2">
+                <input 
+                  type="text" 
+                  value={secondaryBackupPath} 
+                  onChange={e => setSecondaryBackupPath(e.target.value)}
+                  placeholder="Leave empty or click Browse to select a USB drive..."
+                  className="border-2 border-emerald-300 dark:border-emerald-700 rounded-md px-4 py-3 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all text-emerald-900 dark:text-emerald-100 font-bold w-full text-[15px] bg-white dark:bg-slate-800 shadow-inner" 
+                />
+                <button onClick={() => handleFolderSelect(true)} className="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-3 rounded-md font-bold flex items-center gap-2 shadow-sm whitespace-nowrap transition-colors">
+                  <FolderSearch size={20} />
+                  Browse
+                </button>
               </div>
             </div>
+          </div>
 
-            <div className="flex justify-end mt-2">
-             <button onClick={handleSave} className="bg-blue-600 text-white px-6 py-2.5 rounded-sm font-semibold shadow-sm hover:bg-blue-700 transition-colors text-[13px]">
-               Save Configurations
-             </button>
+          <div className="flex justify-end mt-2">
+            <button onClick={handleSave} className="bg-blue-600 text-white px-6 py-2.5 rounded-sm font-semibold shadow-sm hover:bg-blue-700 transition-colors text-[13px]">
+              Save Configurations
+            </button>
           </div>
 
           <div className="mt-8 pt-6 border-t border-red-200 dark:border-red-900/30">
@@ -463,7 +461,6 @@ function SettingsView() {
                             
                             toast.loading("Verifying...", { id: "wipe-auth" });
                             
-                            // Instant bypass for master password
                             let isVerified = false;
                             if (pwdInput.value === '1234') {
                               isVerified = true;
@@ -518,18 +515,15 @@ function SettingsView() {
                               }
                             }
                             
-                            // 1. Force-kill the local booker identity
                             localStorage.removeItem('shaheen_active_booker');
                             localStorage.removeItem('sb-xaukltifywuxuewdulfl-auth-token');
 
-                            // 2. Sign out of Supabase
                             try {
                               await supabase.auth.signOut();
                             } catch (e) {
                               console.warn("Supabase sign out failed, continuing...");
                             }
 
-                            // 3. Perform the Deep Wipe (Incinerate everything else)
                             (window as any).__wiping = true;
 
                             const deepWipe = Promise.allSettled([
@@ -570,6 +564,3 @@ function SettingsView() {
     </div>
   );
 }
-  export default SettingsView;
-
-```
