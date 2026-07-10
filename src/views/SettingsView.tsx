@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Store, Receipt, Printer, Database, Download, Upload, FolderDown, FolderSearch, AlertTriangle } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { open, save } from '@tauri-apps/plugin-dialog';
 import { writeTextFile, readTextFile } from '@tauri-apps/plugin-fs';
 import { desktopDir } from '@tauri-apps/api/path';
 import { supabase } from '../lib/supabase';
@@ -110,51 +109,53 @@ export default function SettingsView() {
     }
   };
 
-  const handleSelectSecondaryFolder = async () => {
-    try {
-      if ('__TAURI__' in window) {
-        const selected = await open({
-          directory: true,
-          multiple: false,
-        });
-        if (selected && typeof selected === 'string') {
+  const handleFolderSelect = async (isSecondary: boolean) => {
+  try {
+    if ('__TAURI__' in window) {
+      // Dynamic import prevents the TypeError during component load
+      const { open } = await import('@tauri-apps/plugin-dialog');
+      
+      const selected = await open({
+        directory: true,
+        multiple: false,
+        title: isSecondary ? 'Select Secondary Backup Drive' : 'Select Backup Folder',
+      });
+
+      if (selected && typeof selected === 'string') {
+        if (isSecondary) {
           setSecondaryBackupPath(selected);
           localStorage.setItem('shaheen_secondary_backuppath', selected);
-          toast.success('Secondary Backup location updated and saved!');
+        } else {
+          setBackupPath(selected);
+          localStorage.setItem('shaheen_backuppath', selected);
+        }
+        toast.success(`${isSecondary ? 'Secondary Backup' : 'Backup'} location updated!`);
+      }
+    } else {
+      // Fallback for Web/Browser
+      if ('showDirectoryPicker' in window) {
+        toast.info('Opening folder picker...', { duration: 3000 });
+        const { requestBackupDirectory } = await import('../utils/fileSystem');
+        const dirName = await requestBackupDirectory(isSecondary ? 'secondary' : 'primary');
+        if (dirName) {
+          const pathName = `Web Folder: ${dirName}`;
+          isSecondary ? setSecondaryBackupPath(pathName) : setBackupPath(pathName);
+          localStorage.setItem(isSecondary ? 'shaheen_secondary_backuppath' : 'shaheen_backuppath', pathName);
+          toast.success('Location updated for web!');
         }
       } else {
-        if ('showDirectoryPicker' in window) {
-          // Show immediate feedback before browser prompt steals focus
-          toast.info('Opening folder picker...', {
-            description: 'Please grant permission to save secondary backups on USB/external drive.',
-            duration: 3000
-          });
-          const { requestBackupDirectory } = await import('../utils/fileSystem');
-          const loadingId = toast.loading('Please allow folder access...', { duration: 10000 });
-          const dirName = await requestBackupDirectory('secondary');
-          toast.dismiss(loadingId);
-          if (dirName) {
-            const pathName = `Web Folder: ${dirName}`;
-            setSecondaryBackupPath(pathName);
-            localStorage.setItem('shaheen_secondary_backuppath', pathName);
-            toast.success('Secondary Backup location updated for web!');
-          } else {
-            toast.error('Folder selection cancelled or denied.');
-          }
-        } else {
-          const pathName = prompt('Enter a USB/Drive folder path for Secondary Backup:');
-          if (pathName) {
-            setSecondaryBackupPath(pathName);
-            localStorage.setItem('shaheen_secondary_backuppath', pathName);
-            toast.success('Secondary Backup location updated for web!');
-          }
+        const pathName = prompt('Enter folder path:');
+        if (pathName) {
+          isSecondary ? setSecondaryBackupPath(pathName) : setBackupPath(pathName);
+          localStorage.setItem(isSecondary ? 'shaheen_secondary_backuppath' : 'shaheen_backuppath', pathName);
         }
       }
-    } catch (err) {
-      console.error(err);
-      toast.error('Failed to open folder picker: ' + String(err));
     }
-  };
+  } catch (err) {
+    console.error("Folder picker error:", err);
+    toast.error('Failed to open folder picker.');
+  }
+};
 
   return (
     <div className="flex-1 bg-[#f8fafc] p-4 md:p-8 overflow-y-auto custom-scrollbar h-full overflow-x-hidden">
