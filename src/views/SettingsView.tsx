@@ -245,12 +245,15 @@ export default function SettingsView() {
                           cart: localStorage.getItem('shaheen_cart')
                         };
                         
+                        // Fix: Standard string concatenation instead of template literals
+                        const dateString = new Date().toISOString().split('T')[0];
+                        const backupFileName = 'shaheen_backup_' + dateString + '.json';
+                        
                         if ('__TAURI__' in window) {
-                          // Dynamic import for Tauri save dialog
                           const { save } = await import('@tauri-apps/plugin-dialog');
                           const filePath = await save({
                             filters: [{ name: 'JSON', extensions: ['json'] }],
-                            defaultPath: `shaheen_backup_${new Date().toISOString().split('T')[0]}.json`,
+                            defaultPath: backupFileName,
                           });
                           
                           if (filePath) {
@@ -262,7 +265,7 @@ export default function SettingsView() {
                           const url = URL.createObjectURL(blob);
                           const a = document.createElement('a');
                           a.href = url;
-                          a.download = `shaheen_backup_${new Date().toISOString().split('T')[0]}.json`;
+                          a.download = backupFileName;
                           document.body.appendChild(a);
                           a.click();
                           document.body.removeChild(a);
