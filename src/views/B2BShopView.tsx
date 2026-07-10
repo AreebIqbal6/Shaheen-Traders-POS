@@ -347,11 +347,11 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
     setIsLoading(true);
     try {
       const { data, error } = await supabase.from('products').select('*');
-      if (error) {
-        throw error;
-      }
+      if (error) throw error;
+
       if (!data || data.length === 0) {
         setProducts([]);
+        localStorage.removeItem('shaheen_b2b_products'); // Clear cache if DB is empty
       } else {
         const mappedData = data.map((p: any) => ({
           ...p,
@@ -359,18 +359,17 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
           pcsPerBox: p.pcs_per_box || p.pcsPerBox || 12,
           boxPerCtn: p.box_per_ctn || p.boxPerCtn || 6
         }));
+        
+        // Update cache with the latest server data
         localStorage.setItem('shaheen_b2b_products', JSON.stringify(mappedData));
         setProducts(mappedData);
       }
     } catch (err) {
-      console.warn("Failed to fetch from Supabase. Using mock data for UI testing.", err);
-      // Fallback for UI testing since we are using placeholders
-      const cached = localStorage.getItem('shaheen_b2b_products');
-      if (cached) {
-        setProducts(JSON.parse(cached));
-      } else {
-        setProducts([]);
-      }
+      console.error("Failed to fetch from Supabase:", err);
+      // OPTION: If fetch fails, DON'T show old data. Clear it instead.
+      setProducts([]); 
+      localStorage.removeItem('shaheen_b2b_products');
+      toast.error("Could not load products. Please check your connection.");
     } finally {
       setIsLoading(false);
     }
