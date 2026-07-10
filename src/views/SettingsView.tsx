@@ -165,7 +165,7 @@ export default function SettingsView() {
             </div>
           </div>
 
-          {/* Hardware */}
+         {/* Hardware */}
           <div className="bg-white dark:bg-zinc-900/60 backdrop-blur-md border border-zinc-200 dark:border-zinc-700 rounded-sm shadow-sm overflow-hidden">
             <div className="border-b border-zinc-100 bg-zinc-50 dark:bg-zinc-900 px-5 py-4 flex items-center gap-2">
               <Printer className="text-zinc-600" size={18} />
@@ -183,8 +183,9 @@ export default function SettingsView() {
                       setAutoPrintReceipt(newVal);
                       localStorage.setItem('shaheen_autoprint', String(newVal));
                     }}
-                    className={`w-10 h-5 rounded-full relative cursor-pointer shadow-inner transition-colors ${autoPrintReceipt ? 'bg-blue-600' : 'bg-zinc-200'}`}>
-                    <div className={`w-3.5 h-3.5 bg-white dark:bg-zinc-900/60 backdrop-blur-md rounded-full absolute top-[3px] shadow-sm transition-all ${autoPrintReceipt ? 'right-1' : 'left-1'}`}></div>
+                    className={"w-10 h-5 rounded-full relative cursor-pointer shadow-inner transition-colors " + (autoPrintReceipt ? "bg-blue-600" : "bg-zinc-200")}
+                  >
+                    <div className={"w-3.5 h-3.5 bg-white dark:bg-zinc-900/60 backdrop-blur-md rounded-full absolute top-[3px] shadow-sm transition-all " + (autoPrintReceipt ? "right-1" : "left-1")}></div>
                   </div>
                 </div>
                 <div className="flex items-center justify-between py-2 border-b border-zinc-100">
@@ -198,8 +199,9 @@ export default function SettingsView() {
                       setGlobalBarcode(newVal);
                       localStorage.setItem('shaheen_globalbarcode', String(newVal));
                     }}
-                    className={`w-10 h-5 rounded-full relative cursor-pointer shadow-inner transition-colors ${globalBarcode ? 'bg-blue-600' : 'bg-zinc-200'}`}>
-                    <div className={`w-3.5 h-3.5 bg-white dark:bg-zinc-900/60 backdrop-blur-md rounded-full absolute top-[3px] shadow-sm transition-all ${globalBarcode ? 'right-1' : 'left-1'}`}></div>
+                    className={"w-10 h-5 rounded-full relative cursor-pointer shadow-inner transition-colors " + (globalBarcode ? "bg-blue-600" : "bg-zinc-200")}
+                  >
+                    <div className={"w-3.5 h-3.5 bg-white dark:bg-zinc-900/60 backdrop-blur-md rounded-full absolute top-[3px] shadow-sm transition-all " + (globalBarcode ? "right-1" : "left-1")}></div>
                   </div>
                 </div>
                 <div className="flex items-center justify-between py-2">
@@ -213,8 +215,9 @@ export default function SettingsView() {
                       setCashDrawerKick(newVal);
                       localStorage.setItem('shaheen_cashdrawerkick', String(newVal));
                     }}
-                    className={`w-10 h-5 rounded-full relative cursor-pointer shadow-inner transition-colors ${cashDrawerKick ? 'bg-blue-600' : 'bg-zinc-200'}`}>
-                    <div className={`w-3.5 h-3.5 bg-white dark:bg-zinc-900/60 backdrop-blur-md rounded-full absolute top-[3px] shadow-sm transition-all ${cashDrawerKick ? 'right-1' : 'left-1'}`}></div>
+                    className={"w-10 h-5 rounded-full relative cursor-pointer shadow-inner transition-colors " + (cashDrawerKick ? "bg-blue-600" : "bg-zinc-200")}
+                  >
+                    <div className={"w-3.5 h-3.5 bg-white dark:bg-zinc-900/60 backdrop-blur-md rounded-full absolute top-[3px] shadow-sm transition-all " + (cashDrawerKick ? "right-1" : "left-1")}></div>
                   </div>
                 </div>
             </div>
