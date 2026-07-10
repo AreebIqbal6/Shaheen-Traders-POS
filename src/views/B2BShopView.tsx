@@ -361,7 +361,8 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
         }));
         
         // Update cache with the latest server data
-        localStorage.setItem('shaheen_b2b_products', JSON.stringify(mappedData));
+        // Change 'shaheen_b2b_products' to 'shaheen_b2b_products_v2'
+localStorage.setItem('shaheen_b2b_products_v2', JSON.stringify(mappedData));
         setProducts(mappedData);
       }
     } catch (err) {
