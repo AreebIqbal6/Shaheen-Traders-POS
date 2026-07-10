@@ -444,7 +444,7 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
 
   return (
     <>
-      <div className="flex flex-col h-full w-full max-w-md mx-auto relative shadow-2xl bg-slate-50 dark:bg-[#0a0a0c] text-slate-900 dark:text-slate-50 font-sans print:hidden">
+      <div className="flex flex-col h-full w-full max-w-4xl mx-auto relative shadow-2xl bg-slate-50 dark:bg-[#0a0a0c] text-slate-900 dark:text-slate-50 font-sans print:hidden">
       
       {/* Top Header */}
       <div className="bg-white dark:bg-zinc-900/60 backdrop-blur-md px-4 py-4 flex items-center justify-between border-b border-slate-200 dark:border-zinc-800/50 shrink-0 sticky top-0 z-10">
@@ -494,7 +494,7 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
                  ))}
                </div>
              ) : (
-                 <div className="grid grid-cols-[repeat(auto-fill,minmax(145px,1fr))] gap-3">
+                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 p-2">
                    {filteredProducts.map(product => (
                      <div 
                        key={product.id} 
