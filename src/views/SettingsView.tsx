@@ -426,7 +426,7 @@ export default function SettingsView() {
                     duration: 5000
                   });
                   toast.custom((t) => (
-                    <div className={`${t.visible ? 'animate-enter' : 'animate-leave'} max-w-md w-full bg-white dark:bg-zinc-900 shadow-lg rounded-lg pointer-events-auto flex flex-col ring-1 ring-black ring-opacity-5 p-5`}>
+                    <div className={(t.visible ? 'animate-enter' : 'animate-leave') + " max-w-md w-full bg-white dark:bg-zinc-900 shadow-lg rounded-lg pointer-events-auto flex flex-col ring-1 ring-black ring-opacity-5 p-5"}>
                       <div className="flex items-start gap-4">
                         <div className="flex-shrink-0">
                           <AlertTriangle className="h-8 w-8 text-red-600" />
@@ -439,7 +439,7 @@ export default function SettingsView() {
                             Are you absolutely sure you want to factory reset this device? ALL local data will be wiped immediately.
                           </p>
                           <input 
-                            id={`wipe-password-${t.id}`}
+                            id={"wipe-password-" + t.id}
                             type="password"
                             placeholder="Enter Admin Password"
                             className="w-full mt-3 px-3 py-2 bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-md text-[13px] text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-red-500/50"
@@ -455,7 +455,7 @@ export default function SettingsView() {
                         </button>
                         <button
                           onClick={async () => {
-                            const pwdInput = document.getElementById(`wipe-password-${t.id}`) as HTMLInputElement;
+                            const pwdInput = document.getElementById("wipe-password-" + t.id) as HTMLInputElement;
                             if (!pwdInput || !pwdInput.value) {
                               toast.error("Admin password required");
                               return;
@@ -502,11 +502,9 @@ export default function SettingsView() {
                               toast.loading("Wiping cloud database...", { id: "wipe-auth" });
                               let wipeErrors: string[] = [];
                               try {
-                                // ULTIMATE FIX: Call a server-side RPC function to truncate all tables.
-                                // This bypasses all RLS policies and foreign key constraints instantly.
                                 const { error } = await supabase.rpc('wipe_database');
                                 if (error) {
-                                  wipeErrors.push(`RPC Wipe Error: ${error.message}`);
+                                  wipeErrors.push("RPC Wipe Error: " + error.message);
                                 }
                               } catch (e: any) {
                                 console.error("Cloud wipe error:", e);
@@ -514,7 +512,7 @@ export default function SettingsView() {
                               }
                               if (wipeErrors.length > 0) {
                                 console.error("Wipe errors:", wipeErrors);
-                                toast.error(`Partial wipe: ${wipeErrors.join('; ')}`, { id: "wipe-auth", duration: 5000 });
+                                toast.error("Partial wipe: " + wipeErrors.join('; '), { id: "wipe-auth", duration: 5000 });
                               } else {
                                 toast.success("Database wiped! Clearing local cache...", { id: "wipe-auth" });
                               }
