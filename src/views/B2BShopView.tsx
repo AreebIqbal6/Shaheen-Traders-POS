@@ -344,37 +344,33 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
   }, []);
 
   const fetchProducts = async () => {
-    setIsLoading(true);
-    try {
-      const { data, error } = await supabase.from('products').select('*');
-      if (error) throw error;
+  setIsLoading(true);
+  try {
+    const { data, error } = await supabase.from('products').select('*');
+    if (error) throw error;
 
-      if (!data || data.length === 0) {
-        setProducts([]);
-        localStorage.removeItem('shaheen_b2b_products'); // Clear cache if DB is empty
-      } else {
-        const mappedData = data.map((p: any) => ({
-          ...p,
-          sku: p.sku || generateSKU(p.name, p.barcode),
-          pcsPerBox: p.pcs_per_box || p.pcsPerBox || 12,
-          boxPerCtn: p.box_per_ctn || p.boxPerCtn || 6
-        }));
-        
-        // Update cache with the latest server data
-        // Change 'shaheen_b2b_products' to 'shaheen_b2b_products_v2'
-localStorage.setItem('shaheen_b2b_products_v2', JSON.stringify(mappedData));
-        setProducts(mappedData);
-      }
-    } } catch (err) {
-  console.error("Connection failed:", err);
-  setProducts([]); 
-  localStorage.removeItem('shaheen_b2b_products');
-}
-    finally {
-      setIsLoading(false);
+    if (!data || data.length === 0) {
+      setProducts([]);
+      localStorage.removeItem('shaheen_b2b_products');
+    } else {
+      const mappedData = data.map((p: any) => ({
+        ...p,
+        sku: p.sku || generateSKU(p.name, p.barcode),
+        pcsPerBox: p.pcs_per_box || p.pcsPerBox || 12,
+        boxPerCtn: p.box_per_ctn || p.boxPerCtn || 6
+      }));
+      
+      localStorage.setItem('shaheen_b2b_products_v2', JSON.stringify(mappedData));
+      setProducts(mappedData);
     }
-  };
-
+  } catch (err) { // <--- Corrected: Removed the extra } here
+    console.error("Connection failed:", err);
+    setProducts([]); 
+    localStorage.removeItem('shaheen_b2b_products');
+  } finally {
+    setIsLoading(false);
+  }
+};
   const addToCart = (product: Product) => {
     setCart(prev => {
       const existing = prev.find(item => item.id === product.id);
