@@ -537,33 +537,26 @@ export default function SettingsView() {
                             supabase.auth.signOut().catch(() => {});
                             
                             // Restore exact handover manual spec: clear all storage and hard reload
-                            const timeout = new Promise(resolve => setTimeout(resolve, 1500));
                             const deepWipe = Promise.allSettled([
-                              (async () => {
-                                if ('caches' in window) {
-                                  const keys = await caches.keys();
-                                  await Promise.all(keys.map(k => caches.delete(k)));
-                                }
-                              })(),
-                              (async () => {
-                                if ('indexedDB' in window && indexedDB.databases) {
-                                  const dbs = await indexedDB.databases();
-                                  dbs.forEach(db => { if (db.name) indexedDB.deleteDatabase(db.name); });
-                                }
-                              })(),
-                              (async () => {
-                                if ('serviceWorker' in navigator) {
-                                  const regs = await navigator.serviceWorker.getRegistrations();
-                                  for (const reg of regs) await reg.unregister();
-                                }
-                              })()
+                              // Clear all localStorage
+                              localStorage.clear(),
+                              // Clear all sessionStorage
+                              sessionStorage.clear(),
+                              // Clear all Caches (Service Worker assets)
+                              caches.keys().then(keys => Promise.all(keys.map(k => caches.delete(k)))),
+                              // Clear ALL IndexedDB databases (This is what you're missing!)
+                              indexedDB.databases().then(dbs => {
+                                dbs.forEach(db => { if (db.name) indexedDB.deleteDatabase(db.name); });
+                              }),
+                              // Unregister Service Workers
+                              navigator.serviceWorker.getRegistrations().then(regs => {
+                                regs.forEach(reg => reg.unregister());
+                              })
                             ]);
-                            
-                            Promise.race([deepWipe, timeout]).finally(() => {
-                              localStorage.clear();
-                              sessionStorage.clear();
-                              window.location.reload();
-                            });
+
+                            // 2. Perform reload after wipe
+                            await deepWipe;
+                            window.location.reload();
                           }}
                           className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md text-[13px] font-semibold shadow-sm transition-colors"
                         >
