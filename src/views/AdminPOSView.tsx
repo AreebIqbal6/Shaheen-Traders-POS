@@ -884,94 +884,87 @@ const handleDispatch = async () => {
       clientName: clientName.trim(),
       paymentTerms,
       area,
-      bookerName,
-      contactNumber,
-      totalWords
-    };
+      bookerName, 
+    contactNumber, // --- Continuation of orderData ---
+    totalWords
+  };
 
-    if (window.electronAPI?.dispatchOrder) {
-      // --- Legacy Electron Path ---
-      const res = await window.electronAPI.dispatchOrder(orderData);
-      if (res?.success) {
-        const newOrder: Order = { receiptNumber: res.orderId, date: new Date(), ...orderData };
-        setPastOrders(prev => [newOrder, ...prev]);
-        setLastReceiptNumber(res.orderId);
-        setIsCheckoutSuccess(true);
-        setIsSubmitting(false);
-        return true;
-      } else {
-        toast.error("Dispatch failed: " + res?.error);
-        setIsSubmitting(false);
-        return false;
-      }
-    } else {
-      // --- Tauri / Browser Path ---
-      const newOrder: Order = {
-        receiptNumber: draftOrderId,
-        date: new Date(),
-        ...orderData
-      };
+  // 2. Define the new order object (this is what you pass to the backup)
+  const newOrder: Order = {
+    receiptNumber: draftOrderId,
+    date: new Date(),
+    ...orderData
+  };
 
-      // SILENT BACKUP TRIGGER
-      if (window.__TAURI__) {
-        saveSilentBackup(newOrder).catch(err => console.error("Silent backup failed:", err));
-      }
+  // 3. Trigger the silent background backup immediately
+  if (window.__TAURI__) {
+    saveSilentBackup(newOrder).catch(err => console.error("Silent backup failed:", err));
+  }
 
-      setPastOrders(prev => [newOrder, ...prev]);
-      setLastReceiptNumber(newOrder.receiptNumber as string);
-
-      // Hardware Printing
-      try {
-        if (window.__TAURI__) {
-          const printerIp = localStorage.getItem('shaheen_printer_ip') || '192.168.1.100';
-          await window.__TAURI__.invoke('print_receipt_tcp', { printerIp, payload: orderData });
-        }
-      } catch (e) {
-        console.error("Hardware print failed:", e);
-      }
-
-      // Stock Updates
-      const updatedProducts = products.map(p => {
-        const cartItem = cart.find(c => c.id === p.id);
-        if (cartItem) {
-          let multiplier = 1;
-          if (cartItem.uom === 'Box') multiplier = p.pcsPerBox || 1;
-          if (cartItem.uom === 'Ctn') multiplier = (p.pcsPerBox || 1) * (p.boxPerCtn || 1);
-          return { ...p, stock: Math.max(0, p.stock - (cartItem.quantity * multiplier)) };
-        }
-        return p;
-      });
-      setProducts(updatedProducts);
-
-      // Supabase / Local Status Updates
-      if (draftOrderId) {
-        if (activeSupabaseId) {
-          try {
-            const { error } = await supabase.from('orders').update({ status: 'COMPLETED' }).eq('id', activeSupabaseId);
-            if (error) console.warn("Supabase update failed:", error);
-          } catch (err) {
-            console.warn("Supabase update threw:", err);
-          }
-        }
-        
-        let offlineOrders = JSON.parse(localStorage.getItem('shaheen_offline_orders') || '[]');
-        const orderIndex = offlineOrders.findIndex((o: any) => o.id === draftOrderId || o.receipt_number === draftOrderId);
-        if (orderIndex !== -1) {
-          offlineOrders[orderIndex].status = 'COMPLETED';
-          localStorage.setItem('shaheen_offline_orders', JSON.stringify(offlineOrders));
-        }
-      }
-
+  // --- Proceed with your existing dispatch/print/Supabase logic ---
+  if (window.electronAPI?.dispatchOrder) {
+    const res = await window.electronAPI.dispatchOrder(orderData);
+    if (res?.success) {
+      setPastOrders(prev => [{ receiptNumber: res.orderId, date: new Date(), ...orderData }, ...prev]);
+      setLastReceiptNumber(res.orderId);
       setIsCheckoutSuccess(true);
       setIsSubmitting(false);
       return true;
+    } else {
+      toast.error("Dispatch failed: " + res?.error);
+      setIsSubmitting(false);
+      return false;
     }
-  } catch (e) {
-    console.error(e);
-    toast.error("An error occurred during dispatch.");
+  } else {
+    setPastOrders(prev => [newOrder, ...prev]);
+    setLastReceiptNumber(newOrder.receiptNumber as string);
+
+    try {
+      if (window.__TAURI__) {
+        const printerIp = localStorage.getItem('shaheen_printer_ip') || '192.168.1.100';
+        await window.__TAURI__.invoke('print_receipt_tcp', { printerIp, payload: orderData });
+      }
+    } catch (e) {
+      console.error("Hardware print failed:", e);
+    }
+
+    const updatedProducts = products.map(p => {
+      const cartItem = cart.find(c => c.id === p.id);
+      if (cartItem) {
+        let multiplier = 1;
+        if (cartItem.uom === 'Box') multiplier = p.pcsPerBox || 1;
+        if (cartItem.uom === 'Ctn') multiplier = (p.pcsPerBox || 1) * (p.boxPerCtn || 1);
+        return { ...p, stock: Math.max(0, p.stock - (cartItem.quantity * multiplier)) };
+      }
+      return p;
+    });
+    setProducts(updatedProducts);
+
+    if (draftOrderId) {
+      if (activeSupabaseId) {
+        try {
+          await supabase.from('orders').update({ status: 'COMPLETED' }).eq('id', activeSupabaseId);
+        } catch (err) {
+          console.warn("Supabase update failed:", err);
+        }
+      }
+      let offlineOrders = JSON.parse(localStorage.getItem('shaheen_offline_orders') || '[]');
+      const orderIndex = offlineOrders.findIndex((o: any) => o.id === draftOrderId || o.receipt_number === draftOrderId);
+      if (orderIndex !== -1) {
+        offlineOrders[orderIndex].status = 'COMPLETED';
+        localStorage.setItem('shaheen_offline_orders', JSON.stringify(offlineOrders));
+      }
+    }
+    setIsCheckoutSuccess(true);
     setIsSubmitting(false);
-    return false;
+    return true;
   }
+} catch (e) {
+  console.error(e);
+  toast.error("An error occurred during dispatch.");
+  setIsSubmitting(false);
+  return false;
+}
 };
 
   const minStockDict = JSON.parse(localStorage.getItem('shaheen_min_stock') || '{}');
