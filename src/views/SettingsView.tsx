@@ -536,22 +536,24 @@ export default function SettingsView() {
                             // Fire and forget signOut, it might hang offline
                             supabase.auth.signOut().catch(() => {});
                             
-                            // Restore exact handover manual spec: clear all storage and hard reload
+                            // 1. Wipe everything with defensive checks
                             const deepWipe = Promise.allSettled([
-                              // Clear all localStorage
-                              localStorage.clear(),
-                              // Clear all sessionStorage
-                              sessionStorage.clear(),
-                              // Clear all Caches (Service Worker assets)
-                              caches.keys().then(keys => Promise.all(keys.map(k => caches.delete(k)))),
-                              // Clear ALL IndexedDB databases (This is what you're missing!)
-                              indexedDB.databases().then(dbs => {
+                              // Clear all storages
+                              Promise.resolve(localStorage.clear()),
+                              Promise.resolve(sessionStorage.clear()),
+                              
+                              // Clear all Cache Storage (Service Worker assets)
+                              'caches' in window ? caches.keys().then(keys => Promise.all(keys.map(k => caches.delete(k)))) : Promise.resolve(),
+                              
+                              // Clear ALL IndexedDB databases
+                              ('indexedDB' in window && (indexedDB as any).databases) ? (indexedDB as any).databases().then((dbs: any[]) => {
                                 dbs.forEach(db => { if (db.name) indexedDB.deleteDatabase(db.name); });
-                              }),
+                              }) : Promise.resolve(),
+                              
                               // Unregister Service Workers
-                              navigator.serviceWorker.getRegistrations().then(regs => {
+                              'serviceWorker' in navigator ? navigator.serviceWorker.getRegistrations().then(regs => {
                                 regs.forEach(reg => reg.unregister());
-                              })
+                              }) : Promise.resolve()
                             ]);
 
                             // 2. Perform reload after wipe
