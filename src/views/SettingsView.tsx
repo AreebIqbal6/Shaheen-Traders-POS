@@ -533,14 +533,18 @@ export default function SettingsView() {
                               }
                             }
                             
-                            // 1. Sign out of Supabase first to terminate the cloud session
+                            // 1. Force-kill the local booker identity
+                            localStorage.removeItem('shaheen_active_booker');
+                            localStorage.removeItem('sb-xaukltifywuxuewdulfl-auth-token');
+
+                            // 2. Sign out of Supabase
                             try {
                               await supabase.auth.signOut();
                             } catch (e) {
-                              console.warn("Sign out failed, continuing with wipe...");
+                              console.warn("Supabase sign out failed, continuing...");
                             }
 
-                            // 2. Perform the Deep Wipe
+                            // 3. Perform the Deep Wipe (Incinerate everything else)
                             (window as any).__wiping = true;
 
                             const deepWipe = Promise.allSettled([
