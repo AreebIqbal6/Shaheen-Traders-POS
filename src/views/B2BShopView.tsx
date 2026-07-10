@@ -283,7 +283,7 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
 
     // Heartbeat every 10 seconds regardless of movement
     const intervalId = setInterval(pushLocation, 10000);
-
+    
     return () => {
       navigator.geolocation.clearWatch(watchId);
       clearInterval(intervalId);
@@ -446,19 +446,26 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
     <>
       <div className="flex flex-col h-full w-full max-w-4xl mx-auto relative shadow-2xl bg-slate-50 dark:bg-[#0a0a0c] text-slate-900 dark:text-slate-50 font-sans print:hidden">
       
-      {/* Top Header */}
-      <div className="bg-white dark:bg-zinc-900/60 backdrop-blur-md px-4 py-4 flex items-center justify-between border-b border-slate-200 dark:border-zinc-800/50 shrink-0 sticky top-0 z-10">
-        <div className="flex items-center gap-3 cursor-pointer" onClick={() => setActiveTabState('shop')}>
-           <div className="w-8 h-8 flex items-center justify-center shrink-0">
-             <img src="/logo_transparent.png" alt="S" className="w-full h-full object-contain drop-shadow-sm" />
-           </div>
-           <div>
-             <h1 className="font-bold text-[18px] leading-tight text-slate-900 dark:text-slate-50 tracking-tight hover:text-blue-600 transition-colors">Shaheen Wholesale</h1>
-             <p className="text-[10px] text-blue-500 font-bold uppercase tracking-wider">B2B Portal</p>
-           </div>
+     {/* Top Header */}
+        <div className="bg-white dark:bg-zinc-900/60 backdrop-blur-md px-4 py-4 flex items-center justify-between border-b border-slate-200 dark:border-zinc-800/50 shrink-0 sticky top-0 z-10">
+          <div className="flex items-center gap-3 cursor-pointer" onClick={() => setActiveTabState('shop')}>
+             <div className="w-8 h-8 flex items-center justify-center shrink-0">
+               <img src="/logo_transparent.png" alt="S" className="w-full h-full object-contain drop-shadow-sm" />
+             </div>
+             <div>
+               <h1 className="font-bold text-[18px] leading-tight text-slate-900 dark:text-slate-50 tracking-tight">Shaheen Wholesale</h1>
+               <p className="text-[10px] text-blue-500 font-bold uppercase tracking-wider">B2B Portal</p>
+             </div>
+          </div>
+          
+        {/* Desktop Nav - Visible only on PC */}
+          <div className="hidden md:flex gap-6">
+            <button onClick={() => setActiveTab('shop')} className="font-bold text-slate-500 hover:text-blue-600">Shop</button>
+            <button onClick={() => setActiveTab('cart')} className="font-bold text-slate-500 hover:text-blue-600">Cart</button>
+            <button onClick={() => setActiveTab('checkout')} className="font-bold text-slate-500 hover:text-blue-600">Checkout</button>
+            <button onClick={() => setActiveTab('dashboard')} className="font-bold text-slate-500 hover:text-blue-600">Profile</button>
+          </div>
         </div>
-      </div>
-
       {/* Main Content Area */}
       <div className="flex-1 pb-32 overflow-y-auto">
         {activeTab === 'shop' && (
@@ -853,9 +860,13 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
           className={`flex flex-col items-center p-2 transition-colors flex-1 ${activeTab === 'dashboard' ? 'text-blue-600 dark:text-blue-400' : 'text-slate-500 hover:text-slate-900 dark:hover:text-slate-100'}`}
         >
           <User size={20} className={activeTab === 'dashboard' ? 'fill-blue-500/20' : ''} />
-          <span className="text-xs font-bold mt-1">Profile</span>
+          {/* Mobile Bottom Navigation - HIDDEN ON DESKTOP */}
+      <div className="md:hidden fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md bg-white/90 dark:bg-[#0a0a0c]/90 backdrop-blur-xl border-t border-slate-200 dark:border-zinc-900 flex justify-around items-center pt-3 pb-[calc(1rem+env(safe-area-inset-bottom))] px-2 z-30 shadow-none print:hidden">
+        {/* Your existing buttons stay here */}
+      </div>
         </button>
       </div>
+      
     </>
   );
 }
