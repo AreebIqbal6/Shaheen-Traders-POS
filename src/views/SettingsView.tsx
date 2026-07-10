@@ -78,6 +78,11 @@ export default function SettingsView() {
         }
       } else {
         if ('showDirectoryPicker' in window) {
+          // Show immediate feedback before browser prompt steals focus
+          toast.info('Opening folder picker...', {
+            description: 'Please grant permission to save backups in this folder.',
+            duration: 3000
+          });
           const { requestBackupDirectory } = await import('../utils/fileSystem');
           const loadingId = toast.loading('Please allow folder access in the browser prompt above...', { duration: 10000 });
           const dirName = await requestBackupDirectory('primary');
@@ -119,6 +124,11 @@ export default function SettingsView() {
         }
       } else {
         if ('showDirectoryPicker' in window) {
+          // Show immediate feedback before browser prompt steals focus
+          toast.info('Opening folder picker...', {
+            description: 'Please grant permission to save secondary backups on USB/external drive.',
+            duration: 3000
+          });
           const { requestBackupDirectory } = await import('../utils/fileSystem');
           const loadingId = toast.loading('Please allow folder access...', { duration: 10000 });
           const dirName = await requestBackupDirectory('secondary');
@@ -438,6 +448,10 @@ export default function SettingsView() {
               </div>
               <button 
                 onClick={() => {
+                  toast.warning('Initiating factory reset...', {
+                    description: 'Clearing local data and signing out. Please wait.',
+                    duration: 5000
+                  });
                   toast.custom((t) => (
                     <div className={`${t.visible ? 'animate-enter' : 'animate-leave'} max-w-md w-full bg-white dark:bg-zinc-900 shadow-lg rounded-lg pointer-events-auto flex flex-col ring-1 ring-black ring-opacity-5 p-5`}>
                       <div className="flex items-start gap-4">
