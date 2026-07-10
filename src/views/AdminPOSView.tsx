@@ -868,8 +868,6 @@ export default function AdminPOSView() {
     setTimeout(() => hiddenScannerRef.current?.focus(), 100);
   };
 
-// 1. ADD THIS AT THE TOP OF YOUR FILE (with your other imports)
-import { saveSilentBackup } from '../utils/silentBackup';
 
 // 2. USE THIS UNIFIED FUNCTION
 const handleDispatch = async () => {
@@ -878,6 +876,8 @@ const handleDispatch = async () => {
 
   try {
     const totalWords = toWords(total).toUpperCase() + ' RUPEES ONLY';
+    
+    // 1. Build the data object cleanly
     const orderData = {
       items: cart,
       total,
@@ -914,7 +914,7 @@ const handleDispatch = async () => {
 
       // SILENT BACKUP TRIGGER
       if (window.__TAURI__) {
-        saveSilentBackup(newOrder).catch(console.error);
+        saveSilentBackup(newOrder).catch(err => console.error("Silent backup failed:", err));
       }
 
       setPastOrders(prev => [newOrder, ...prev]);
@@ -973,30 +973,6 @@ const handleDispatch = async () => {
     return false;
   }
 };
-
-         // 2. Also update it in local pending incoming orders if it was an offline B2B order
-         let offlineOrders = JSON.parse(localStorage.getItem('shaheen_offline_orders') || '[]');
-         const orderIndex = offlineOrders.findIndex((o: any) => o.id === draftOrderId || o.receipt_number === draftOrderId);
-         if (orderIndex !== -1) {
-            offlineOrders[orderIndex].status = 'COMPLETED';
-            localStorage.setItem('shaheen_offline_orders', JSON.stringify(offlineOrders));
-         }
-      }
-      
-      // setIsReceiptOpen(false);
-      setIsCheckoutSuccess(true);
-      setIsSubmitting(false);
-      
-      return true;
-    } // close else
-    
-    } catch (e) {
-      console.error(e);
-      toast.error("An error occurred during dispatch.");
-      setIsSubmitting(false);
-      return false;
-    }
-  };
 
   const minStockDict = JSON.parse(localStorage.getItem('shaheen_min_stock') || '{}');
   const hasCriticalStock = products.some(p => p.stock <= (minStockDict[p.id] ?? 5));
