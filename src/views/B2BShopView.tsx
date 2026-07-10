@@ -426,7 +426,7 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
   // Render Logic
   if (isCheckoutSuccess) {
     return (
-      <div className="flex flex-col h-screen w-full bg-slate-50 dark:bg-[#0a0a0c] items-center justify-center p-6 text-center">
+      <div className="flex flex-col h-screen w-full max-w-md mx-auto relative shadow-2xl bg-slate-50 dark:bg-[#0a0a0c] items-center justify-center p-6 text-center">
         <div className="w-20 h-20 bg-green-100 text-green-600 dark:text-green-400 rounded-full flex items-center justify-center mb-6 shadow-sm">
           <Package size={40} />
         </div>
@@ -444,7 +444,7 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
 
   return (
     <>
-      <div className="flex flex-col h-full w-full bg-slate-50 dark:bg-[#0a0a0c] text-slate-900 dark:text-slate-50 font-sans print:hidden">
+      <div className="flex flex-col h-full w-full max-w-md mx-auto relative shadow-2xl bg-slate-50 dark:bg-[#0a0a0c] text-slate-900 dark:text-slate-50 font-sans print:hidden">
       
       {/* Top Header */}
       <div className="bg-white dark:bg-zinc-900/60 backdrop-blur-md px-4 py-4 flex items-center justify-between border-b border-slate-200 dark:border-zinc-800/50 shrink-0 sticky top-0 z-10">
@@ -813,7 +813,7 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
       )}
 
       {/* Mobile Bottom Navigation - ALWAYS VISIBLE (But hidden during print) */}
-      <div className={`${isImpersonating ? 'absolute' : 'fixed'} bottom-0 left-0 right-0 w-full bg-white/90 dark:bg-[#0a0a0c]/90 backdrop-blur-xl border-t border-slate-200 dark:border-zinc-900 flex justify-around items-center pt-3 pb-[calc(1rem+env(safe-area-inset-bottom))] px-2 z-30 shadow-none print:hidden`}>
+      <div className={`${isImpersonating ? 'absolute' : 'fixed'} bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md bg-white/90 dark:bg-[#0a0a0c]/90 backdrop-blur-xl border-t border-slate-200 dark:border-zinc-900 flex justify-around items-center pt-3 pb-[calc(1rem+env(safe-area-inset-bottom))] px-2 z-30 shadow-none print:hidden`}>
         <button 
           onClick={() => setActiveTab('shop')} 
           className={`flex flex-col items-center p-2 transition-colors flex-1 ${activeTab === 'shop' ? 'text-blue-600 dark:text-blue-400' : 'text-slate-500 hover:text-slate-900 dark:hover:text-slate-100'}`}

@@ -4,6 +4,7 @@ import toast from 'react-hot-toast';
 import { open, save } from '@tauri-apps/plugin-dialog';
 import { writeTextFile, readTextFile } from '@tauri-apps/plugin-fs';
 import { desktopDir } from '@tauri-apps/api/path';
+import { supabase } from '../lib/supabase';
 
 export default function SettingsView() {
   const [backupPath, setBackupPath] = useState('');
