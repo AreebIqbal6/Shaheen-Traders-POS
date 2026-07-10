@@ -365,16 +365,11 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
 localStorage.setItem('shaheen_b2b_products_v2', JSON.stringify(mappedData));
         setProducts(mappedData);
       }
-    } catch (err) {
-      console.error("Failed to fetch from Supabase:", err);
-      // OPTION: If fetch fails, DON'T show old data. Clear it instead.
-      setProducts([]); 
-      localStorage.removeItem('shaheen_b2b_products');
-      toast.error("Could not load products. Please check your connection.");
-    }} catch (err) {
+    } } catch (err) {
   console.error("Connection failed:", err);
-  setProducts([]); // Just show empty, don't fallback to mocks
-  } 
+  setProducts([]); 
+  localStorage.removeItem('shaheen_b2b_products');
+}
     finally {
       setIsLoading(false);
     }
