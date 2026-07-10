@@ -4,7 +4,7 @@ import { saveSilentBackup } from '../utils/silentBackup';
 import { LayoutDashboard, ShoppingBag, Package, Settings, Search, Trash2, Printer, ScanBarcode, BarChart3, Bell, X, AlertTriangle, FileText, User, Building, Moon, Sun, Grid, ShoppingCart, CreditCard, MapPin, LogOut, ClipboardList, Menu, Users, ChevronDown, Phone, Map as MapIcon, PieChart, BookOpen } from 'lucide-react';
 import ProductsView from './ProductsView';
 import type { Product } from './ProductsView';
-import SettingsView from './SettingsView';
+import SettingsView from "./SettingsView";
 import AuthView from './AuthView';
 import BookersView from './BookersView';
 import TrackersView from './TrackersView';
