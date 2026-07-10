@@ -533,30 +533,32 @@ export default function SettingsView() {
                               }
                             }
                             
-                            // Fire and forget signOut, it might hang offline
-                            supabase.auth.signOut().catch(() => {});
-                            
-                            // 1. Wipe everything with defensive checks
+                            // 1. Sign out of Supabase first to terminate the cloud session
+                            try {
+                              await supabase.auth.signOut();
+                            } catch (e) {
+                              console.warn("Sign out failed, continuing with wipe...");
+                            }
+
+                            // 2. Perform the Deep Wipe
+                            (window as any).__wiping = true;
+
                             const deepWipe = Promise.allSettled([
-                              // Clear all storages
                               Promise.resolve(localStorage.clear()),
                               Promise.resolve(sessionStorage.clear()),
-                              
-                              // Clear all Cache Storage (Service Worker assets)
                               'caches' in window ? caches.keys().then(keys => Promise.all(keys.map(k => caches.delete(k)))) : Promise.resolve(),
-                              
-                              // Clear ALL IndexedDB databases
-                              ('indexedDB' in window && (indexedDB as any).databases) ? (indexedDB as any).databases().then((dbs: any[]) => {
-                                dbs.forEach(db => { if (db.name) indexedDB.deleteDatabase(db.name); });
-                              }) : Promise.resolve(),
-                              
-                              // Unregister Service Workers
-                              'serviceWorker' in navigator ? navigator.serviceWorker.getRegistrations().then(regs => {
-                                regs.forEach(reg => reg.unregister());
-                              }) : Promise.resolve()
+                              ('indexedDB' in window && (indexedDB as any).databases) 
+                                ? (indexedDB as any).databases().then((dbs: any[]) => {
+                                    dbs.forEach(db => { if (db.name) indexedDB.deleteDatabase(db.name); });
+                                  }) 
+                                : Promise.resolve(),
+                              'serviceWorker' in navigator 
+                                ? navigator.serviceWorker.getRegistrations().then(regs => {
+                                    regs.forEach(reg => reg.unregister());
+                                  }) 
+                                : Promise.resolve()
                             ]);
 
-                            // 2. Perform reload after wipe
                             await deepWipe;
                             window.location.reload();
                           }}
