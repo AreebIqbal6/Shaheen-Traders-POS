@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { playNotificationSound } from '../utils/audio';
+import { saveSilentBackup } from '../utils/silentBackup';
 import { LayoutDashboard, ShoppingBag, Package, Settings, Search, Trash2, Printer, ScanBarcode, BarChart3, Bell, X, AlertTriangle, FileText, User, Building, Moon, Sun, Grid, ShoppingCart, CreditCard, MapPin, LogOut, ClipboardList, Menu, Users, ChevronDown, Phone, Map as MapIcon, PieChart, BookOpen } from 'lucide-react';
 import ProductsView from './ProductsView';
 import type { Product } from './ProductsView';
@@ -867,19 +868,19 @@ export default function AdminPOSView() {
     setTimeout(() => hiddenScannerRef.current?.focus(), 100);
   };
 
-  const handleDispatch = async () => {
-    if (isSubmitting) return;
-    
-    // Phone validation removed to prevent blocking dispatch for landlines or legacy orders
-    // if (contactNumber && !validatePhone(contactNumber)) { ... }
-    
-    setIsSubmitting(true);
-    
-    try {
-      const totalWords = toWords(total).toUpperCase() + ' RUPEES ONLY';
-      const orderData = {
-        items: cart,
-        total,
+// 1. ADD THIS AT THE TOP OF YOUR FILE (with your other imports)
+import { saveSilentBackup } from '../utils/silentBackup';
+
+// 2. USE THIS UNIFIED FUNCTION
+const handleDispatch = async () => {
+  if (isSubmitting) return;
+  setIsSubmitting(true);
+
+  try {
+    const totalWords = toWords(total).toUpperCase() + ' RUPEES ONLY';
+    const orderData = {
+      items: cart,
+      total,
       clientName: clientName.trim(),
       paymentTerms,
       area,
@@ -889,17 +890,12 @@ export default function AdminPOSView() {
     };
 
     if (window.electronAPI?.dispatchOrder) {
-      // Legacy Electron (Can be removed later)
+      // --- Legacy Electron Path ---
       const res = await window.electronAPI.dispatchOrder(orderData);
       if (res?.success) {
-        const newOrder: Order = {
-          receiptNumber: res.orderId,
-          date: new Date(),
-          ...orderData
-        };
+        const newOrder: Order = { receiptNumber: res.orderId, date: new Date(), ...orderData };
         setPastOrders(prev => [newOrder, ...prev]);
         setLastReceiptNumber(res.orderId);
-        // setIsReceiptOpen(false);
         setIsCheckoutSuccess(true);
         setIsSubmitting(false);
         return true;
@@ -909,27 +905,32 @@ export default function AdminPOSView() {
         return false;
       }
     } else {
-      // Tauri / Browser mode
+      // --- Tauri / Browser Path ---
       const newOrder: Order = {
         receiptNumber: draftOrderId,
         date: new Date(),
         ...orderData
       };
+
+      // SILENT BACKUP TRIGGER
+      if (window.__TAURI__) {
+        saveSilentBackup(newOrder).catch(console.error);
+      }
+
       setPastOrders(prev => [newOrder, ...prev]);
       setLastReceiptNumber(newOrder.receiptNumber as string);
-      // Hardware Printing via Tauri
+
+      // Hardware Printing
       try {
-          if (window.__TAURI__) {
-             const printerIp = localStorage.getItem('shaheen_printer_ip') || '192.168.1.100';
-             await window.__TAURI__.invoke('print_receipt_tcp', { 
-                 printerIp, 
-                 payload: orderData 
-             });
-          }
+        if (window.__TAURI__) {
+          const printerIp = localStorage.getItem('shaheen_printer_ip') || '192.168.1.100';
+          await window.__TAURI__.invoke('print_receipt_tcp', { printerIp, payload: orderData });
+        }
       } catch (e) {
-          console.error("Hardware print failed:", e);
+        console.error("Hardware print failed:", e);
       }
-      
+
+      // Stock Updates
       const updatedProducts = products.map(p => {
         const cartItem = cart.find(c => c.id === p.id);
         if (cartItem) {
@@ -942,32 +943,36 @@ export default function AdminPOSView() {
       });
       setProducts(updatedProducts);
 
+      // Supabase / Local Status Updates
       if (draftOrderId) {
-         let updateFailed = false;
-         
-         // 1. Try to update in Supabase (will work if it's an online order with UUID)
-         if (activeSupabaseId) {
-           try {
-              const { error } = await supabase.from('orders').update({ status: 'COMPLETED' }).eq('id', activeSupabaseId);
-              if (error) {
-                updateFailed = true;
-                console.warn("Supabase update failed:", error);
-              }
-           } catch (err) {
-              updateFailed = true;
-              console.warn("Supabase update threw:", err);
-           }
-           
-           if (updateFailed) {
-              const queue = JSON.parse(localStorage.getItem('shaheen_offline_status_updates') || '[]');
-              queue.push({
-                 id: activeSupabaseId,
-                 status: 'COMPLETED',
-                 timestamp: new Date().toISOString()
-              });
-              localStorage.setItem('shaheen_offline_status_updates', JSON.stringify(queue));
-           }
-         }
+        if (activeSupabaseId) {
+          try {
+            const { error } = await supabase.from('orders').update({ status: 'COMPLETED' }).eq('id', activeSupabaseId);
+            if (error) console.warn("Supabase update failed:", error);
+          } catch (err) {
+            console.warn("Supabase update threw:", err);
+          }
+        }
+        
+        let offlineOrders = JSON.parse(localStorage.getItem('shaheen_offline_orders') || '[]');
+        const orderIndex = offlineOrders.findIndex((o: any) => o.id === draftOrderId || o.receipt_number === draftOrderId);
+        if (orderIndex !== -1) {
+          offlineOrders[orderIndex].status = 'COMPLETED';
+          localStorage.setItem('shaheen_offline_orders', JSON.stringify(offlineOrders));
+        }
+      }
+
+      setIsCheckoutSuccess(true);
+      setIsSubmitting(false);
+      return true;
+    }
+  } catch (e) {
+    console.error(e);
+    toast.error("An error occurred during dispatch.");
+    setIsSubmitting(false);
+    return false;
+  }
+};
 
          // 2. Also update it in local pending incoming orders if it was an offline B2B order
          let offlineOrders = JSON.parse(localStorage.getItem('shaheen_offline_orders') || '[]');
