@@ -134,9 +134,26 @@ export default function ProductsView({ products, setProducts }: ProductsViewProp
     setFormData(prev => ({ ...prev, barcode: sku }));
   };
 
-  const handleDelete = (id: string) => {
-    if (confirm('Are you sure you want to delete this product?')) {
+  // NEW
+const handleDelete = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this product?')) return;
+
+    try {
+      const { error } = await supabase.from('products').delete().eq('id', id);
+      if (error) throw error;
+
       setProducts(prev => prev.filter(p => p.id !== id));
+
+      // Clean up the min-stock threshold tied to this product
+      const newMinStockDict = { ...minStockDict };
+      delete newMinStockDict[id];
+      setMinStockDict(newMinStockDict);
+      localStorage.setItem('shaheen_min_stock', JSON.stringify(newMinStockDict));
+
+      toast.success('Product deleted.');
+    } catch (err: any) {
+      console.error('Failed to delete product from Supabase:', err);
+      toast.error('Failed to delete product: ' + err.message);
     }
   };
 
@@ -299,21 +316,32 @@ export default function ProductsView({ products, setProducts }: ProductsViewProp
                           const pwdInput = document.getElementById("wipe-inventory-" + t.id) as HTMLInputElement;
                           if (pwdInput.value !== '1234') { toast.error("Incorrect Password!"); return; }
                           
-                          toast.loading("Clearing inventory...", { id: "clear-inv" });
-                          try {
-                            if (navigator.onLine) {
-                              await supabase.from('products').delete().gte('price', 0);
-                            }
-                            setProducts([]);
-                            localStorage.removeItem('shaheen_products');
-                            localStorage.removeItem('shaheen_b2b_products');
-                            localStorage.removeItem('shaheen_b2b_products_v2');
-                            
-                            toast.success("Inventory cleared successfully!", { id: "clear-inv" });
-                            toast.dismiss(t.id);
-                          } catch (e) { 
-                            toast.error("Failed to clear cloud inventory. Are you offline?", { id: "clear-inv" }); 
-                          }
+                          // NEW
+if (!navigator.onLine) {
+  toast.error("You must be online to clear inventory — the cloud database has to be wiped too.");
+  return;
+}
+
+(window as any).__wiping = true; // pause the 5s background auto-sync during the wipe
+toast.loading("Clearing inventory...", { id: "clear-inv" });
+try {
+  const { error } = await supabase.from('products').delete().neq('id', '');
+  if (error) throw error;
+
+  setProducts([]);
+  setMinStockDict({});
+  localStorage.removeItem('shaheen_products');
+  localStorage.removeItem('shaheen_b2b_products');
+  localStorage.removeItem('shaheen_b2b_products_v2');
+  localStorage.removeItem('shaheen_min_stock');
+
+  toast.success("Inventory cleared successfully!", { id: "clear-inv" });
+  toast.dismiss(t.id);
+} catch (e: any) { 
+  toast.error("Failed to clear cloud inventory: " + e.message, { id: "clear-inv" }); 
+} finally {
+  (window as any).__wiping = false;
+}
                         }} className="bg-red-600 text-white px-4 py-2 rounded-md text-[13px] font-bold">YES, CLEAR</button>
                       </div>
                     </div>
