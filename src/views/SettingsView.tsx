@@ -76,76 +76,65 @@ export default function SettingsView() {
   };
 
   const handleFolderSelect = async (isSecondary: boolean) => {
-  // 0. Guard: Check if supported
-  if (!('__TAURI__' in window) && !('showDirectoryPicker' in window)) {
-    toast.error("Folder selection is only available in the Desktop App.");
-    return;
-  }
-
-  try {
-    // 1. TAURI DESKTOP (Native FS access - Always works on PC)
-    if ('__TAURI__' in window) {
-      const { open } = await import('@tauri-apps/plugin-dialog');
-      const selected = await open({
-        directory: true,
-        multiple: false,
-        title: isSecondary ? 'Select Secondary Backup Drive' : 'Select Backup Folder',
-      });
-
-      if (selected && typeof selected === 'string') {
-        if (isSecondary) {
-          setSecondaryBackupPath(selected);
-          localStorage.setItem('shaheen_secondary_backuppath', selected);
-        } else {
-          setBackupPath(selected);
-          localStorage.setItem('shaheen_backuppath', selected);
-        }
-        toast.success('Backup location updated!');
+    const savePath = (pathName: string) => {
+      if (isSecondary) {
+        setSecondaryBackupPath(pathName);
+        localStorage.setItem('shaheen_secondary_backuppath', pathName);
+      } else {
+        setBackupPath(pathName);
+        localStorage.setItem('shaheen_backuppath', pathName);
       }
-    } 
-    // 2. WEB BROWSER (FileSystem Access API)
-    else if ('showDirectoryPicker' in window) {
-      try {
-        // @ts-ignore
-        const dirHandle = await window.showDirectoryPicker();
-        const pathName = `Web Folder: ${dirHandle.name}`;
-        
-        if (isSecondary) {
-          setSecondaryBackupPath(pathName);
-          localStorage.setItem('shaheen_secondary_backuppath', pathName);
-        } else {
-          setBackupPath(pathName);
-          localStorage.setItem('shaheen_backuppath', pathName);
+    };
+
+    if (!('__TAURI__' in window) && !('showDirectoryPicker' in window)) {
+      toast.error("Folder selection is only available in the Desktop App.");
+      return;
+    }
+
+    try {
+      if ('__TAURI__' in window) {
+        const { open } = await import('@tauri-apps/plugin-dialog');
+        const selected = await open({
+          directory: true,
+          multiple: false,
+          title: isSecondary ? 'Select Secondary Backup Drive' : 'Select Backup Folder',
+        });
+
+        if (selected && typeof selected === 'string') {
+          savePath(selected);
+          toast.success('Backup location updated!');
         }
-        toast.success('Web folder access granted!');
-      } catch (err: any) {
-        if (err.name !== 'AbortError') {
-           console.error(err);
-           toast.error('Permission denied. Cannot access folder.');
-        }
+        return;
       }
-    } 
-    // 3. FALLBACK (Prompt)
-    else {
+
+      if ('showDirectoryPicker' in window) {
+        try {
+          // @ts-ignore
+          const dirHandle = await window.showDirectoryPicker();
+          if (dirHandle) {
+            savePath(`Web Folder: ${dirHandle.name}`);
+            toast.success('Web folder access granted!');
+          }
+        } catch (err: any) {
+          if (err?.name !== 'AbortError') {
+            console.error('Directory picker error:', err);
+            toast.error('Failed to access folder.');
+          }
+        }
+        return;
+      }
+
       const pathName = prompt('Browser does not support folder picking. Please manually enter the full system path (e.g., C:\\Backups):');
       if (pathName) {
-        if (isSecondary) {
-          setSecondaryBackupPath(pathName);
-          localStorage.setItem('shaheen_secondary_backuppath', pathName);
-        } else {
-          setBackupPath(pathName);
-          localStorage.setItem('shaheen_backuppath', pathName);
-        }
+        savePath(pathName);
+      }
+    } catch (err: any) {
+      if (err?.name !== 'AbortError' && err !== 'User cancelled') {
+        console.error("Folder picker error:", err);
+        toast.error('Failed to open folder picker.');
       }
     }
-  } catch (err: any) {
-    // Only show an error if it's not a user cancellation (AbortError)
-    if (err.name !== 'AbortError' && err !== 'User cancelled') {
-      console.error("Folder picker error:", err);
-      toast.error('Failed to open folder picker.');
-    }
-  }
-};
+  };
 
   function renderFactoryResetToast(t: any) {
     return (
