@@ -76,68 +76,76 @@ export default function SettingsView() {
   };
 
   const handleFolderSelect = async (isSecondary: boolean) => {
-    try {
-      // 1. TAURI DESKTOP (Native FS access - Always works on PC)
-      if ('__TAURI__' in window) {
-        const { open } = await import('@tauri-apps/plugin-dialog');
-        const selected = await open({
-          directory: true,
-          multiple: false,
-          title: isSecondary ? 'Select Secondary Backup Drive' : 'Select Backup Folder',
-        });
+  // 0. Guard: Check if supported
+  if (!('__TAURI__' in window) && !('showDirectoryPicker' in window)) {
+    toast.error("Folder selection is only available in the Desktop App.");
+    return;
+  }
 
-        if (selected && typeof selected === 'string') {
-          if (isSecondary) {
-            setSecondaryBackupPath(selected);
-            localStorage.setItem('shaheen_secondary_backuppath', selected);
-          } else {
-            setBackupPath(selected);
-            localStorage.setItem('shaheen_backuppath', selected);
-          }
-          toast.success('Backup location updated!');
+  try {
+    // 1. TAURI DESKTOP (Native FS access - Always works on PC)
+    if ('__TAURI__' in window) {
+      const { open } = await import('@tauri-apps/plugin-dialog');
+      const selected = await open({
+        directory: true,
+        multiple: false,
+        title: isSecondary ? 'Select Secondary Backup Drive' : 'Select Backup Folder',
+      });
+
+      if (selected && typeof selected === 'string') {
+        if (isSecondary) {
+          setSecondaryBackupPath(selected);
+          localStorage.setItem('shaheen_secondary_backuppath', selected);
+        } else {
+          setBackupPath(selected);
+          localStorage.setItem('shaheen_backuppath', selected);
         }
-      } 
-      // 2. WEB BROWSER (FileSystem Access API)
-      else if ('showDirectoryPicker' in window) {
-        try {
-          // @ts-ignore
-          const dirHandle = await window.showDirectoryPicker();
-          const pathName = `Web Folder: ${dirHandle.name}`;
-          
-          if (isSecondary) {
-            setSecondaryBackupPath(pathName);
-            localStorage.setItem('shaheen_secondary_backuppath', pathName);
-          } else {
-            setBackupPath(pathName);
-            localStorage.setItem('shaheen_backuppath', pathName);
-          }
-          toast.success('Web folder access granted!');
-        } catch (err: any) {
-          // This catches the case where the user clicks "Cancel" in the picker
-          if (err.name !== 'AbortError') {
-             console.error(err);
-             toast.error('Permission denied. Cannot access folder.');
-          }
+        toast.success('Backup location updated!');
+      }
+    } 
+    // 2. WEB BROWSER (FileSystem Access API)
+    else if ('showDirectoryPicker' in window) {
+      try {
+        // @ts-ignore
+        const dirHandle = await window.showDirectoryPicker();
+        const pathName = `Web Folder: ${dirHandle.name}`;
+        
+        if (isSecondary) {
+          setSecondaryBackupPath(pathName);
+          localStorage.setItem('shaheen_secondary_backuppath', pathName);
+        } else {
+          setBackupPath(pathName);
+          localStorage.setItem('shaheen_backuppath', pathName);
         }
-      } 
-      // 3. FALLBACK (Prompt)
-      else {
-        const pathName = prompt('Browser does not support folder picking. Please manually enter the full system path (e.g., C:\\Backups):');
-        if (pathName) {
-          if (isSecondary) {
-            setSecondaryBackupPath(pathName);
-            localStorage.setItem('shaheen_secondary_backuppath', pathName);
-          } else {
-            setBackupPath(pathName);
-            localStorage.setItem('shaheen_backuppath', pathName);
-          }
+        toast.success('Web folder access granted!');
+      } catch (err: any) {
+        if (err.name !== 'AbortError') {
+           console.error(err);
+           toast.error('Permission denied. Cannot access folder.');
         }
       }
-    } catch (err) {
+    } 
+    // 3. FALLBACK (Prompt)
+    else {
+      const pathName = prompt('Browser does not support folder picking. Please manually enter the full system path (e.g., C:\\Backups):');
+      if (pathName) {
+        if (isSecondary) {
+          setSecondaryBackupPath(pathName);
+          localStorage.setItem('shaheen_secondary_backuppath', pathName);
+        } else {
+          setBackupPath(pathName);
+          localStorage.setItem('shaheen_backuppath', pathName);
+        }
+      }
+    }
+  } catch (err: any) {
+    // Only show an error if it's not a user cancellation (AbortError)
+    if (err.name !== 'AbortError' && err !== 'User cancelled') {
       console.error("Folder picker error:", err);
       toast.error('Failed to open folder picker.');
     }
-  };
+  }
+};
           
           {/* General Store Settings */}
           <div className="bg-white dark:bg-zinc-900/60 backdrop-blur-md border border-zinc-200 dark:border-zinc-700 rounded-sm shadow-sm overflow-hidden">
