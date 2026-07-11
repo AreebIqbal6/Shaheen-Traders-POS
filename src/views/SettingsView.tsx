@@ -146,7 +146,8 @@ export default function SettingsView() {
     }
   }
 };
-          
+
+  return (
           {/* General Store Settings */}
           <div className="bg-white dark:bg-zinc-900/60 backdrop-blur-md border border-zinc-200 dark:border-zinc-700 rounded-sm shadow-sm overflow-hidden">
             <div className="border-b border-zinc-100 bg-zinc-50 dark:bg-zinc-900 px-5 py-4 flex items-center gap-2">
