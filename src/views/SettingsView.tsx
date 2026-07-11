@@ -147,64 +147,66 @@ export default function SettingsView() {
   }
 };
 
-  const renderFactoryResetToast = (t: any) => (
-    <div className={(t.visible ? 'animate-enter' : 'animate-leave') + " max-w-md w-full bg-white dark:bg-zinc-900 shadow-lg rounded-lg pointer-events-auto flex flex-col ring-1 ring-black ring-opacity-5 p-5"}>
-      <div className="flex items-start gap-4">
-        <div className="flex-shrink-0">
-          <AlertTriangle className="h-8 w-8 text-red-600" />
+  function renderFactoryResetToast(t: any) {
+    return (
+      <div className={(t.visible ? 'animate-enter' : 'animate-leave') + " max-w-md w-full bg-white dark:bg-zinc-900 shadow-lg rounded-lg pointer-events-auto flex flex-col ring-1 ring-black ring-opacity-5 p-5"}>
+        <div className="flex items-start gap-4">
+          <div className="flex-shrink-0">
+            <AlertTriangle className="h-8 w-8 text-red-600" />
+          </div>
+          <div className="flex-1 pt-0.5">
+            <p className="text-[15px] font-bold text-slate-900 dark:text-slate-100 mb-1">Factory Reset System</p>
+            <p className="text-[13px] text-slate-500 dark:text-zinc-400">Are you absolutely sure you want to factory reset this device? ALL local data will be wiped immediately.</p>
+            <input
+              id={"wipe-password-" + t.id}
+              type="password"
+              placeholder="Enter Admin Password"
+              className="w-full mt-3 px-3 py-2 bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-md text-[13px] text-slate-900 dark:text-white"
+            />
+          </div>
         </div>
-        <div className="flex-1 pt-0.5">
-          <p className="text-[15px] font-bold text-slate-900 dark:text-slate-100 mb-1">Factory Reset System</p>
-          <p className="text-[13px] text-slate-500 dark:text-slate-400">Are you absolutely sure you want to factory reset this device? ALL local data will be wiped immediately.</p>
-          <input
-            id={"wipe-password-" + t.id}
-            type="password"
-            placeholder="Enter Admin Password"
-            className="w-full mt-3 px-3 py-2 bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-md text-[13px] text-slate-900 dark:text-white"
-          />
+        <div className="mt-5 flex justify-end gap-3">
+          <button
+            onClick={() => { (window as any).__wiping = false; toast.dismiss(t.id); }}
+            className="bg-slate-100 dark:bg-zinc-800 text-slate-800 dark:text-slate-200 px-4 py-2 rounded-md text-[13px] font-semibold"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={async () => {
+              const pwdInput = document.getElementById("wipe-password-" + t.id) as HTMLInputElement;
+              if (pwdInput?.value !== '1234') {
+                toast.error("Incorrect Admin Password!");
+                return;
+              }
+              toast.loading("Wiping system, please wait...", { id: "wipe-auth" });
+              try {
+                supabase.removeAllChannels();
+                localStorage.clear();
+                sessionStorage.clear();
+                if ('indexedDB' in window && (indexedDB as any).databases) {
+                  const dbs = await (indexedDB as any).databases();
+                  dbs.forEach((db: any) => { if (db.name) indexedDB.deleteDatabase(db.name); });
+                }
+                if ('serviceWorker' in navigator) {
+                  const regs = await navigator.serviceWorker.getRegistrations();
+                  for (const reg of regs) { reg.unregister(); }
+                }
+                toast.success("Wipe complete. Rebooting...");
+                window.location.reload();
+              } catch (err) {
+                console.error("Wipe failed:", err);
+                window.location.reload();
+              }
+            }}
+            className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md text-[13px] font-bold"
+          >
+            YES, WIPE EVERYTHING
+          </button>
         </div>
       </div>
-      <div className="mt-5 flex justify-end gap-3">
-        <button
-          onClick={() => { (window as any).__wiping = false; toast.dismiss(t.id); }}
-          className="bg-slate-100 dark:bg-zinc-800 text-slate-800 dark:text-slate-200 px-4 py-2 rounded-md text-[13px] font-semibold"
-        >
-          Cancel
-        </button>
-        <button
-          onClick={async () => {
-            const pwdInput = document.getElementById("wipe-password-" + t.id) as HTMLInputElement;
-            if (pwdInput?.value !== '1234') {
-              toast.error("Incorrect Admin Password!");
-              return;
-            }
-            toast.loading("Wiping system, please wait...", { id: "wipe-auth" });
-            try {
-              supabase.removeAllChannels();
-              localStorage.clear();
-              sessionStorage.clear();
-              if ('indexedDB' in window && (indexedDB as any).databases) {
-                const dbs = await (indexedDB as any).databases();
-                dbs.forEach((db: any) => { if (db.name) indexedDB.deleteDatabase(db.name); });
-              }
-              if ('serviceWorker' in navigator) {
-                const regs = await navigator.serviceWorker.getRegistrations();
-                for (const reg of regs) { reg.unregister(); }
-              }
-              toast.success("Wipe complete. Rebooting...");
-              window.location.reload();
-            } catch (err) {
-              console.error("Wipe failed:", err);
-              window.location.reload();
-            }
-          }}
-          className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md text-[13px] font-bold"
-        >
-          YES, WIPE EVERYTHING
-        </button>
-      </div>
-    </div>
-  );
+    );
+  }
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
