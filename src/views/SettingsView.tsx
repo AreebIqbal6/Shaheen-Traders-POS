@@ -77,9 +77,9 @@ export default function SettingsView() {
 
   const handleFolderSelect = async (isSecondary: boolean) => {
     try {
+      // 1. TAURI DESKTOP (Native FS access - Always works on PC)
       if ('__TAURI__' in window) {
         const { open } = await import('@tauri-apps/plugin-dialog');
-        
         const selected = await open({
           directory: true,
           multiple: false,
@@ -90,39 +90,46 @@ export default function SettingsView() {
           if (isSecondary) {
             setSecondaryBackupPath(selected);
             localStorage.setItem('shaheen_secondary_backuppath', selected);
-            toast.success('Secondary Backup location updated!');
           } else {
             setBackupPath(selected);
             localStorage.setItem('shaheen_backuppath', selected);
-            toast.success('Backup location updated!');
+          }
+          toast.success('Backup location updated!');
+        }
+      } 
+      // 2. WEB BROWSER (FileSystem Access API)
+      else if ('showDirectoryPicker' in window) {
+        try {
+          // @ts-ignore
+          const dirHandle = await window.showDirectoryPicker();
+          const pathName = `Web Folder: ${dirHandle.name}`;
+          
+          if (isSecondary) {
+            setSecondaryBackupPath(pathName);
+            localStorage.setItem('shaheen_secondary_backuppath', pathName);
+          } else {
+            setBackupPath(pathName);
+            localStorage.setItem('shaheen_backuppath', pathName);
+          }
+          toast.success('Web folder access granted!');
+        } catch (err: any) {
+          // This catches the case where the user clicks "Cancel" in the picker
+          if (err.name !== 'AbortError') {
+             console.error(err);
+             toast.error('Permission denied. Cannot access folder.');
           }
         }
-      } else {
-        if ('showDirectoryPicker' in window) {
-          toast.info('Opening folder picker...', { duration: 3000 });
-          const { requestBackupDirectory } = await import('../utils/fileSystem');
-          const dirName = await requestBackupDirectory(isSecondary ? 'secondary' : 'primary');
-          if (dirName) {
-            const pathName = 'Web Folder: ' + dirName;
-            if (isSecondary) {
-              setSecondaryBackupPath(pathName);
-              localStorage.setItem('shaheen_secondary_backuppath', pathName);
-            } else {
-              setBackupPath(pathName);
-              localStorage.setItem('shaheen_backuppath', pathName);
-            }
-            toast.success('Location updated for web!');
-          }
-        } else {
-          const pathName = prompt('Enter folder path:');
-          if (pathName) {
-            if (isSecondary) {
-              setSecondaryBackupPath(pathName);
-              localStorage.setItem('shaheen_secondary_backuppath', pathName);
-            } else {
-              setBackupPath(pathName);
-              localStorage.setItem('shaheen_backuppath', pathName);
-            }
+      } 
+      // 3. FALLBACK (Prompt)
+      else {
+        const pathName = prompt('Browser does not support folder picking. Please manually enter the full system path (e.g., C:\\Backups):');
+        if (pathName) {
+          if (isSecondary) {
+            setSecondaryBackupPath(pathName);
+            localStorage.setItem('shaheen_secondary_backuppath', pathName);
+          } else {
+            setBackupPath(pathName);
+            localStorage.setItem('shaheen_backuppath', pathName);
           }
         }
       }
@@ -131,13 +138,6 @@ export default function SettingsView() {
       toast.error('Failed to open folder picker.');
     }
   };
-
-  return (
-    <div className="flex-1 bg-[#f8fafc] p-4 md:p-8 overflow-y-auto custom-scrollbar h-full overflow-x-hidden">
-      <div className="max-w-4xl mx-auto">
-        <h1 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-50 tracking-tight mb-6">System Settings</h1>
-
-        <div className="flex flex-col gap-4">
           
           {/* General Store Settings */}
           <div className="bg-white dark:bg-zinc-900/60 backdrop-blur-md border border-zinc-200 dark:border-zinc-700 rounded-sm shadow-sm overflow-hidden">
