@@ -417,42 +417,9 @@ export default function SettingsView() {
                 <h4 className="text-[13px] font-semibold text-slate-900 dark:text-slate-100">Factory Reset System</h4>
                 <p className="text-[11px] text-slate-500 mt-1">This will permanently delete all offline orders, locally cached products, cart items, and settings from this device. Do this only before handing the system to the client.</p>
               </div>
+              
               <button 
-                onClick={() => {
-                  toast.warning('Initiating factory reset...', {
-                    description: 'Clearing local data and signing out. Please wait.',
-                    duration: 5000
-                  });
-                  toast.custom((t) => (
-                    <div className={(t.visible ? 'animate-enter' : 'animate-leave') + " max-w-md w-full bg-white dark:bg-zinc-900 shadow-lg rounded-lg pointer-events-auto flex flex-col ring-1 ring-black ring-opacity-5 p-5"}>
-                      <div className="flex items-start gap-4">
-                        <div className="flex-shrink-0">
-                          <AlertTriangle className="h-8 w-8 text-red-600" />
-                        </div>
-                        <div className="flex-1 pt-0.5">
-                          <p className="text-[15px] font-bold text-slate-900 dark:text-slate-100 mb-1">
-                            Factory Reset System
-                          </p>
-                          <p className="text-[13px] text-slate-500 dark:text-slate-400">
-                            Are you absolutely sure you want to factory reset this device? ALL local data will be wiped immediately.
-                          </p>
-                          <input 
-                            id={"wipe-password-" + t.id}
-                            type="password"
-                            placeholder="Enter Admin Password"
-                            className="w-full mt-3 px-3 py-2 bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-md text-[13px] text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-red-500/50"
-                          />
-                        </div>
-                      </div>
-                      <div className="mt-5 flex justify-end gap-3">
-                        <button
-                          onClick={() => toast.dismiss(t.id)}
-                          className="bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-800 dark:text-slate-200 px-4 py-2 rounded-md text-[13px] font-semibold transition-colors"
-                        >
-                          Cancel
-                        <button 
                 onClick={async () => {
-                  // 1. HARD BLOCK: Prevent any background syncs from running the moment the user clicks
                   (window as any).__wiping = true;
                   
                   toast.custom((t) => (
