@@ -1199,7 +1199,10 @@ export default function AdminPOSView() {
                           key={p.id}
                           onClick={() => {
                             addToCart(p);
-                            hiddenScannerRef.current?.focus();
+                            // Only auto-focus scanner on PC to prevent mobile keyboard pop-ups
+                            if (window.innerWidth > 768) {
+                              hiddenScannerRef.current?.focus();
+                            }
                           }}
                           className="bg-white dark:bg-zinc-900/60 backdrop-blur-md border border-slate-200 dark:border-zinc-800/50 rounded-sm p-3 flex flex-col items-start hover:border-slate-400 transition-all text-left"
                         >
