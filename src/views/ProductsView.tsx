@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Search, Plus, Edit2, Trash2, X, AlertTriangle, Upload, Loader2, CalendarClock, ScanLine } from 'lucide-react';
 import CameraScanner from '../components/CameraScanner';
 import toast from 'react-hot-toast';
+import { supabase } from '../lib/supabase';
 
 export interface Product {
   id: string;
@@ -277,6 +278,50 @@ export default function ProductsView({ products, setProducts }: ProductsViewProp
               className="flex-1 sm:flex-none bg-blue-600 hover:bg-blue-700 text-white px-3 md:px-4 py-1.5 h-[36px] rounded-lg font-bold shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2 text-[13px] whitespace-nowrap border-t border-slate-300 dark:border-slate-600"
             >
               <Plus size={16} className="shrink-0" /> Add Product
+            </button>
+
+            {/* NEW CLEAR ALL BUTTON */}
+            <button 
+              onClick={() => {
+                 toast.custom((t) => (
+                    <div className={(t.visible ? 'animate-enter' : 'animate-leave') + " max-w-md w-full bg-white dark:bg-zinc-900 shadow-lg rounded-lg pointer-events-auto flex flex-col ring-1 ring-black ring-opacity-5 p-5"}>
+                      <div className="flex items-start gap-4">
+                        <AlertTriangle className="h-8 w-8 text-red-600 shrink-0" />
+                        <div className="flex-1 pt-0.5">
+                          <p className="text-[15px] font-bold text-slate-900 dark:text-slate-100 mb-1">Clear Entire Inventory</p>
+                          <p className="text-[13px] text-slate-500">Are you sure? This will delete ALL products locally and from the cloud.</p>
+                          <input id={"wipe-inventory-" + t.id} type="password" placeholder="Enter Admin Password" className="w-full mt-3 px-3 py-2 bg-slate-50 dark:bg-zinc-800 border rounded-md text-[13px]" />
+                        </div>
+                      </div>
+                      <div className="mt-5 flex justify-end gap-3">
+                        <button onClick={() => toast.dismiss(t.id)} className="bg-slate-100 dark:bg-zinc-800 text-slate-800 dark:text-slate-200 px-4 py-2 rounded-md text-[13px] font-semibold">Cancel</button>
+                        <button onClick={async () => {
+                          const pwdInput = document.getElementById("wipe-inventory-" + t.id) as HTMLInputElement;
+                          if (pwdInput.value !== '1234') { toast.error("Incorrect Password!"); return; }
+                          
+                          toast.loading("Clearing inventory...", { id: "clear-inv" });
+                          try {
+                            if (navigator.onLine) {
+                              await supabase.from('products').delete().gte('price', 0);
+                            }
+                            setProducts([]);
+                            localStorage.removeItem('shaheen_products');
+                            localStorage.removeItem('shaheen_b2b_products');
+                            localStorage.removeItem('shaheen_b2b_products_v2');
+                            
+                            toast.success("Inventory cleared successfully!", { id: "clear-inv" });
+                            toast.dismiss(t.id);
+                          } catch (e) { 
+                            toast.error("Failed to clear cloud inventory. Are you offline?", { id: "clear-inv" }); 
+                          }
+                        }} className="bg-red-600 text-white px-4 py-2 rounded-md text-[13px] font-bold">YES, CLEAR</button>
+                      </div>
+                    </div>
+                  ), { duration: Infinity });
+              }}
+              className="flex-1 sm:flex-none bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/40 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800/30 px-3 md:px-4 py-1.5 h-[36px] rounded-lg font-bold shadow-sm transition-all flex items-center justify-center gap-2 text-[13px] whitespace-nowrap"
+            >
+              <Trash2 size={16} className="shrink-0" /> Clear All
             </button>
           </div>
         </div>
