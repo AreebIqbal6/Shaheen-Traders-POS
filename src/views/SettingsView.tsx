@@ -450,108 +450,82 @@ export default function SettingsView() {
                           className="bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-800 dark:text-slate-200 px-4 py-2 rounded-md text-[13px] font-semibold transition-colors"
                         >
                           Cancel
+                        <button 
+                onClick={async () => {
+                  // 1. HARD BLOCK: Prevent any background syncs from running the moment the user clicks
+                  (window as any).__wiping = true;
+                  
+                  toast.custom((t) => (
+                    <div className={(t.visible ? 'animate-enter' : 'animate-leave') + " max-w-md w-full bg-white dark:bg-zinc-900 shadow-lg rounded-lg pointer-events-auto flex flex-col ring-1 ring-black ring-opacity-5 p-5"}>
+                      <div className="flex items-start gap-4">
+                        <div className="flex-shrink-0">
+                          <AlertTriangle className="h-8 w-8 text-red-600" />
+                        </div>
+                        <div className="flex-1 pt-0.5">
+                          <p className="text-[15px] font-bold text-slate-900 dark:text-slate-100 mb-1">
+                            Factory Reset System
+                          </p>
+                          <p className="text-[13px] text-slate-500 dark:text-slate-400">
+                            This will wipe EVERYTHING. Are you sure?
+                          </p>
+                          <input 
+                            id={"wipe-password-" + t.id}
+                            type="password"
+                            placeholder="Enter Admin Password"
+                            className="w-full mt-3 px-3 py-2 bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-md text-[13px] text-slate-900 dark:text-white"
+                          />
+                        </div>
+                      </div>
+                      <div className="mt-5 flex justify-end gap-3">
+                        <button
+                          onClick={() => { (window as any).__wiping = false; toast.dismiss(t.id); }}
+                          className="bg-slate-100 dark:bg-zinc-800 text-slate-800 dark:text-slate-200 px-4 py-2 rounded-md text-[13px] font-semibold"
+                        >
+                          Cancel
                         </button>
                         <button
                           onClick={async () => {
                             const pwdInput = document.getElementById("wipe-password-" + t.id) as HTMLInputElement;
-                            if (!pwdInput || !pwdInput.value) {
-                              toast.error("Admin password required");
+                            if (pwdInput.value !== '1234') {
+                              toast.error("Incorrect Admin Password!");
                               return;
                             }
                             
-                            toast.loading("Verifying...", { id: "wipe-auth" });
+                            toast.loading("Wiping system, please wait...", { id: "wipe-auth" });
                             
-                            let isVerified = false;
-                            if (pwdInput.value === '1234') {
-                              isVerified = true;
-                            } else {
-                              if (!navigator.onLine) {
-                                toast.error("Offline: Must use master password", { id: "wipe-auth" });
-                                return;
+                            try {
+                              // 1. Force kill all background Supabase connections
+                              supabase.removeAllChannels();
+                              
+                              // 2. Aggressive local wipe
+                              localStorage.clear();
+                              sessionStorage.clear();
+                              
+                              if ('indexedDB' in window && (indexedDB as any).databases) {
+                                const dbs = await (indexedDB as any).databases();
+                                dbs.forEach((db: any) => { if (db.name) indexedDB.deleteDatabase(db.name); });
                               }
                               
-                              try {
-                                const authPromise = (async () => {
-                                  const { data } = await supabase.auth.getUser();
-                                  const email = data?.user?.email || 'admin@shaheentraders.com';
-                                  return supabase.auth.signInWithPassword({ email, password: pwdInput.value });
-                                })();
-                                
-                                const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), 5000));
-                                
-                                const { error } = await Promise.race([authPromise, timeoutPromise]) as any;
-                                if (error) throw error;
-                                isVerified = true;
-                              } catch (err: any) {
-                                toast.error(err.message === "Timeout" ? "Verification timed out. Try again." : "Incorrect Admin Password!", { id: "wipe-auth" });
-                                return;
+                              // 3. Unregister Service Workers
+                              if ('serviceWorker' in navigator) {
+                                const regs = await navigator.serviceWorker.getRegistrations();
+                                for (const reg of regs) { reg.unregister(); }
                               }
+
+                              toast.success("Wipe complete. Rebooting...");
+                              window.location.reload();
+                            } catch (err) {
+                              console.error("Wipe failed:", err);
+                              window.location.reload();
                             }
-                            
-                            if (!isVerified) return;
-                            
-                            toast.success("Password verified. Wiping data...", { id: "wipe-auth" });
-                            toast.dismiss(t.id);
-                            
-                            (window as any).__wiping = true;
-                            
-                            if (navigator.onLine) {
-                              toast.loading("Wiping cloud database...", { id: "wipe-auth" });
-                              let wipeErrors: string[] = [];
-                              try {
-                                const { error } = await supabase.rpc('wipe_database');
-                                if (error) {
-                                  wipeErrors.push("RPC Wipe Error: " + error.message);
-                                }
-                              } catch (e: any) {
-                                console.error("Cloud wipe error:", e);
-                                wipeErrors.push(e.message || 'Unknown error');
-                              }
-                              if (wipeErrors.length > 0) {
-                                console.error("Wipe errors:", wipeErrors);
-                                toast.error("Partial wipe: " + wipeErrors.join('; '), { id: "wipe-auth", duration: 5000 });
-                              } else {
-                                toast.success("Database wiped! Clearing local cache...", { id: "wipe-auth" });
-                              }
-                            }
-                            
-                            localStorage.removeItem('shaheen_active_booker');
-                            localStorage.removeItem('sb-xaukltifywuxuewdulfl-auth-token');
-
-                            try {
-                              await supabase.auth.signOut();
-                            } catch (e) {
-                              console.warn("Supabase sign out failed, continuing...");
-                            }
-
-                            (window as any).__wiping = true;
-
-                            const deepWipe = Promise.allSettled([
-                              Promise.resolve(localStorage.clear()),
-                              Promise.resolve(sessionStorage.clear()),
-                              'caches' in window ? caches.keys().then(keys => Promise.all(keys.map(k => caches.delete(k)))) : Promise.resolve(),
-                              ('indexedDB' in window && (indexedDB as any).databases) 
-                                ? (indexedDB as any).databases().then((dbs: any[]) => {
-                                    dbs.forEach(db => { if (db.name) indexedDB.deleteDatabase(db.name); });
-                                  }) 
-                                : Promise.resolve(),
-                              'serviceWorker' in navigator 
-                                ? navigator.serviceWorker.getRegistrations().then(regs => {
-                                    regs.forEach(reg => reg.unregister());
-                                  }) 
-                                : Promise.resolve()
-                            ]);
-
-                            await deepWipe;
-                            window.location.reload();
                           }}
-                          className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md text-[13px] font-semibold shadow-sm transition-colors"
+                          className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md text-[13px] font-bold"
                         >
-                          Yes, Wipe Data
+                          YES, WIPE EVERYTHING
                         </button>
                       </div>
                     </div>
-                  ), { duration: Infinity, position: 'top-center' });
+                  ), { duration: Infinity });
                 }}
                 className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-sm font-bold text-[12px] shadow-sm transition-colors whitespace-nowrap shrink-0"
               >
