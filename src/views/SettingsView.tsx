@@ -4,6 +4,7 @@ import toast from 'react-hot-toast';
 import { writeTextFile, readTextFile } from '@tauri-apps/plugin-fs';
 import { desktopDir } from '@tauri-apps/api/path';
 import { supabase } from '../lib/supabase';
+import { ensureBackupFolder } from '../utils/backupValidator';
 
 export default function SettingsView() {
   const [backupPath, setBackupPath] = useState('');
@@ -52,8 +53,6 @@ export default function SettingsView() {
     return localStorage.getItem('shaheen_cashdrawerkick') !== 'false';
   });
 
-  import { ensureBackupFolder } from '../utils/backupValidator';
-
   const handleSave = async () => {
     localStorage.setItem('shaheen_backuppath', backupPath.trim());
     localStorage.setItem('shaheen_secondary_backuppath', secondaryBackupPath.trim());
@@ -73,6 +72,9 @@ export default function SettingsView() {
       }
       toast.dismiss("save-val");
     }
+
+    toast.success('Configurations Saved Successfully!');
+  };
 
     toast.success('Configurations Saved Successfully!');
   };
