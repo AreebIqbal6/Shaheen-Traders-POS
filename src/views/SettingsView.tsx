@@ -63,7 +63,6 @@ export default function SettingsView() {
     localStorage.setItem('shaheen_globalbarcode', String(globalBarcode));
     localStorage.setItem('shaheen_cashdrawerkick', String(cashDrawerKick));
 
-    // Force creation of folders right away as you click save
     if ('__TAURI__' in window) {
       toast.loading("Validating backup folders...", { id: "save-val" });
       await ensureBackupFolder(backupPath.trim(), false);
@@ -72,9 +71,6 @@ export default function SettingsView() {
       }
       toast.dismiss("save-val");
     }
-
-    toast.success('Configurations Saved Successfully!');
-  };
 
     toast.success('Configurations Saved Successfully!');
   };
@@ -168,12 +164,7 @@ export default function SettingsView() {
                 />
               </div>
               <div className="col-span-1 md:col-span-2 flex justify-end mt-1">
-                 <button onClick={() => {
-                   localStorage.setItem('shaheen_store_name', storeName.trim());
-                   localStorage.setItem('shaheen_outlet_location', outletLocation.trim());
-                   localStorage.setItem('shaheen_address', address.trim());
-                   toast.success('Store Information Saved!');
-                 }} className="bg-blue-600 text-white px-5 py-2 rounded-sm font-semibold shadow-sm hover:bg-blue-700 transition-colors text-[12px]">
+                 <button onClick={handleSave} className="bg-blue-600 text-white px-5 py-2 rounded-sm font-semibold shadow-sm hover:bg-blue-700 transition-colors text-[12px]">
                    Save Store Info
                  </button>
               </div>
@@ -245,10 +236,9 @@ export default function SettingsView() {
               <h2 className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">Security & Offline Backup</h2>
             </div>
             <div className="p-5 flex flex-col gap-5">
-              
               <div className="flex flex-col gap-1.5">
                 <label className="text-[13px] font-semibold text-zinc-600">Manual JSON Backup & Restore</label>
-                <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mb-2">Export your entire offline database (products, pos_history, our_order, cart) to a JSON file. You can save this on your phone, PC, or USB. Use Import to restore the system from a JSON file.</p>
+                <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mb-2">Export your entire offline database to a JSON file. Use Import to restore the system from a JSON file.</p>
                 <div className="flex items-center gap-3">
                   <button 
                     onClick={async () => {
@@ -259,37 +249,20 @@ export default function SettingsView() {
                           our_order: localStorage.getItem('shaheen_our_order'),
                           cart: localStorage.getItem('shaheen_cart')
                         };
-                        
                         const dateString = new Date().toISOString().split('T')[0];
                         const backupFileName = 'shaheen_backup_' + dateString + '.json';
-                        
                         if ('__TAURI__' in window) {
                           const { save } = await import('@tauri-apps/plugin-dialog');
-                          const filePath = await save({
-                            filters: [{ name: 'JSON', extensions: ['json'] }],
-                            defaultPath: backupFileName,
-                          });
-                          
-                          if (filePath) {
-                            await writeTextFile(filePath, JSON.stringify(data));
-                            toast.success('Backup saved successfully');
-                          }
+                          const filePath = await save({ filters: [{ name: 'JSON', extensions: ['json'] }], defaultPath: backupFileName });
+                          if (filePath) { await writeTextFile(filePath, JSON.stringify(data)); toast.success('Backup saved successfully'); }
                         } else {
                           const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
                           const url = URL.createObjectURL(blob);
-                          const a = document.createElement('a');
-                          a.href = url;
-                          a.download = backupFileName;
-                          document.body.appendChild(a);
-                          a.click();
-                          document.body.removeChild(a);
-                          URL.revokeObjectURL(url);
+                          const a = document.createElement('a'); a.href = url; a.download = backupFileName;
+                          document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
                           toast.success('Backup saved successfully');
                         }
-                      } catch (err) {
-                        console.error(err);
-                        toast.error('Failed to export backup: ' + String(err));
-                      }
+                      } catch (err) { toast.error('Failed to export backup: ' + String(err)); }
                     }}
                     className="flex items-center gap-2 bg-blue-50 text-blue-600 border border-blue-200 hover:bg-blue-100 px-4 py-2 rounded-sm text-[12px] font-bold transition-colors"
                   >
@@ -301,16 +274,11 @@ export default function SettingsView() {
                       try {
                         if ('__TAURI__' in window) {
                           const { open } = await import('@tauri-apps/plugin-dialog');
-                          const selectedPath = await open({
-                            multiple: false,
-                            filters: [{ name: 'JSON', extensions: ['json'] }]
-                          });
+                          const selectedPath = await open({ multiple: false, filters: [{ name: 'JSON', extensions: ['json'] }] });
                           if (selectedPath && typeof selectedPath === 'string') {
                             if (!confirm('Are you sure? This will override all current offline data.')) return;
-                            
                             const fileContents = await readTextFile(selectedPath);
                             const data = JSON.parse(fileContents);
-                            
                             if (data.products) localStorage.setItem('shaheen_products', data.products);
                             if (data.pos_history) localStorage.setItem('shaheen_orders', data.pos_history);
                             if (data.our_order) localStorage.setItem('shaheen_our_order', data.our_order);
@@ -319,36 +287,27 @@ export default function SettingsView() {
                             window.location.reload();
                           }
                         } else {
-                          const input = document.createElement('input');
-                          input.type = 'file';
-                          input.accept = '.json';
+                          const input = document.createElement('input'); input.type = 'file'; input.accept = '.json';
                           input.onchange = (e: any) => {
-                            const file = e.target.files[0];
-                            if (!file) return;
+                            const file = e.target.files[0]; if (!file) return;
                             if (!confirm('Are you sure? This will override all current offline data.')) return;
                             const reader = new FileReader();
                             reader.onload = (event) => {
                               try {
-                                const fileContents = event.target?.result as string;
-                                const data = JSON.parse(fileContents);
+                                const fileContents = event.target?.result as string; const data = JSON.parse(fileContents);
                                 if (data.products) localStorage.setItem('shaheen_products', data.products);
                                 if (data.pos_history) localStorage.setItem('shaheen_orders', data.pos_history);
                                 if (data.our_order) localStorage.setItem('shaheen_our_order', data.our_order);
                                 if (data.cart) localStorage.setItem('shaheen_cart', data.cart);
                                 toast.success('Backup restored successfully! Please reload the application.');
                                 window.location.reload();
-                              } catch (err) {
-                                toast.error('Invalid JSON file.');
-                              }
+                              } catch (err) { toast.error('Invalid JSON file.'); }
                             };
                             reader.readAsText(file);
                           };
                           input.click();
                         }
-                      } catch (err) {
-                        console.error(err);
-                        toast.error('Import failed or cancelled: ' + String(err));
-                      }
+                      } catch (err) { toast.error('Import failed or cancelled: ' + String(err)); }
                     }}
                     className="flex items-center gap-2 bg-slate-50 text-slate-700 border border-slate-300 hover:bg-slate-100 px-4 py-2 rounded-sm text-[12px] font-bold transition-colors cursor-pointer"
                   >
@@ -364,14 +323,12 @@ export default function SettingsView() {
               <FolderDown size={28} />
               <h2 className="text-lg font-bold">Auto-Save Export Location (Excel, PDF, SQL)</h2>
             </div>
-            
             <div className="flex flex-col gap-2">
               <p className="text-[14px] text-blue-900/70 dark:text-blue-200/70 mb-2 leading-relaxed max-w-3xl">
-                This is the absolute path on your PC or USB drive where the system will silently and automatically export a complete backup of every dispatched order (PDF Receipt, Excel Sheet, SQL Query).
+                This is the absolute path on your PC or USB drive where the system will silently and automatically export a complete backup.
                 <br />
                 <span className="font-semibold text-blue-700 dark:text-blue-400">A "SHAHEEN BACKUP" folder will automatically be created inside this path.</span>
               </p>
-              
               <div className="flex items-center gap-2">
                 <input 
                   type="text" 
@@ -393,14 +350,12 @@ export default function SettingsView() {
               <FolderDown size={28} />
               <h2 className="text-lg font-bold">Secondary Backup Location (USB / External Drive)</h2>
             </div>
-            
             <div className="flex flex-col gap-2">
               <p className="text-[14px] text-emerald-900/70 dark:text-emerald-200/70 mb-2 leading-relaxed max-w-3xl">
-                This is an optional secondary location. If a path is provided here, the system will simultaneously save the exact same backup files to this location as well. If the drive is disconnected, the system will skip it gracefully without throwing an error.
+                This is an optional secondary location. If a path is provided here, the system will simultaneously save the exact same backup files.
                 <br />
                 <span className="font-semibold text-emerald-700 dark:text-emerald-400">A "SHAHEEN BACKUP" folder will automatically be created inside this path.</span>
               </p>
-              
               <div className="flex items-center gap-2">
                 <input 
                   type="text" 
@@ -434,9 +389,8 @@ export default function SettingsView() {
               </div>
               
               <button 
-                onClick={async () => {
+                onClick={() => {
                   (window as any).__wiping = true;
-                  
                   toast.custom((t) => (
                     <div className={(t.visible ? 'animate-enter' : 'animate-leave') + " max-w-md w-full bg-white dark:bg-zinc-900 shadow-lg rounded-lg pointer-events-auto flex flex-col ring-1 ring-black ring-opacity-5 p-5"}>
                       <div className="flex items-start gap-4">
@@ -444,12 +398,8 @@ export default function SettingsView() {
                           <AlertTriangle className="h-8 w-8 text-red-600" />
                         </div>
                         <div className="flex-1 pt-0.5">
-                          <p className="text-[15px] font-bold text-slate-900 dark:text-slate-100 mb-1">
-                            Factory Reset System
-                          </p>
-                          <p className="text-[13px] text-slate-500 dark:text-slate-400">
-                            This will wipe EVERYTHING. Are you sure?
-                          </p>
+                          <p className="text-[15px] font-bold text-slate-900 dark:text-slate-100 mb-1">Factory Reset System</p>
+                          <p className="text-[13px] text-slate-500 dark:text-slate-400">Are you absolutely sure you want to factory reset this device? ALL local data will be wiped immediately.</p>
                           <input 
                             id={"wipe-password-" + t.id}
                             type="password"
@@ -459,52 +409,29 @@ export default function SettingsView() {
                         </div>
                       </div>
                       <div className="mt-5 flex justify-end gap-3">
-                        <button
-                          onClick={() => { (window as any).__wiping = false; toast.dismiss(t.id); }}
-                          className="bg-slate-100 dark:bg-zinc-800 text-slate-800 dark:text-slate-200 px-4 py-2 rounded-md text-[13px] font-semibold"
-                        >
-                          Cancel
-                        </button>
-                        <button
-                          onClick={async () => {
-                            const pwdInput = document.getElementById("wipe-password-" + t.id) as HTMLInputElement;
-                            if (pwdInput.value !== '1234') {
-                              toast.error("Incorrect Admin Password!");
-                              return;
+                        <button onClick={() => { (window as any).__wiping = false; toast.dismiss(t.id); }} className="bg-slate-100 dark:bg-zinc-800 text-slate-800 dark:text-slate-200 px-4 py-2 rounded-md text-[13px] font-semibold">Cancel</button>
+                        <button onClick={async () => {
+                          const pwdInput = document.getElementById("wipe-password-" + t.id) as HTMLInputElement;
+                          if (pwdInput.value !== '1234') { toast.error("Incorrect Admin Password!"); return; }
+                          toast.loading("Wiping system, please wait...", { id: "wipe-auth" });
+                          try {
+                            supabase.removeAllChannels();
+                            localStorage.clear(); sessionStorage.clear();
+                            if ('indexedDB' in window && (indexedDB as any).databases) {
+                              const dbs = await (indexedDB as any).databases();
+                              dbs.forEach((db: any) => { if (db.name) indexedDB.deleteDatabase(db.name); });
                             }
-                            
-                            toast.loading("Wiping system, please wait...", { id: "wipe-auth" });
-                            
-                            try {
-                              // 1. Force kill all background Supabase connections
-                              supabase.removeAllChannels();
-                              
-                              // 2. Aggressive local wipe
-                              localStorage.clear();
-                              sessionStorage.clear();
-                              
-                              if ('indexedDB' in window && (indexedDB as any).databases) {
-                                const dbs = await (indexedDB as any).databases();
-                                dbs.forEach((db: any) => { if (db.name) indexedDB.deleteDatabase(db.name); });
-                              }
-                              
-                              // 3. Unregister Service Workers
-                              if ('serviceWorker' in navigator) {
-                                const regs = await navigator.serviceWorker.getRegistrations();
-                                for (const reg of regs) { reg.unregister(); }
-                              }
-
-                              toast.success("Wipe complete. Rebooting...");
-                              window.location.reload();
-                            } catch (err) {
-                              console.error("Wipe failed:", err);
-                              window.location.reload();
+                            if ('serviceWorker' in navigator) {
+                              const regs = await navigator.serviceWorker.getRegistrations();
+                              for (const reg of regs) { reg.unregister(); }
                             }
-                          }}
-                          className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md text-[13px] font-bold"
-                        >
-                          YES, WIPE EVERYTHING
-                        </button>
+                            toast.success("Wipe complete. Rebooting...");
+                            window.location.reload();
+                          } catch (err) {
+                            console.error("Wipe failed:", err);
+                            window.location.reload();
+                          }
+                        }} className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md text-[13px] font-bold">YES, WIPE EVERYTHING</button>
                       </div>
                     </div>
                   ), { duration: Infinity });
