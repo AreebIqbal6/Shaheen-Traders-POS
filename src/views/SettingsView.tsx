@@ -52,7 +52,9 @@ export default function SettingsView() {
     return localStorage.getItem('shaheen_cashdrawerkick') !== 'false';
   });
 
-  const handleSave = () => {
+  import { ensureBackupFolder } from '../utils/backupValidator';
+
+  const handleSave = async () => {
     localStorage.setItem('shaheen_backuppath', backupPath.trim());
     localStorage.setItem('shaheen_secondary_backuppath', secondaryBackupPath.trim());
     localStorage.setItem('shaheen_store_name', storeName.trim());
@@ -61,6 +63,17 @@ export default function SettingsView() {
     localStorage.setItem('shaheen_autoprint', String(autoPrintReceipt));
     localStorage.setItem('shaheen_globalbarcode', String(globalBarcode));
     localStorage.setItem('shaheen_cashdrawerkick', String(cashDrawerKick));
+
+    // Force creation of folders right away as you click save
+    if ('__TAURI__' in window) {
+      toast.loading("Validating backup folders...", { id: "save-val" });
+      await ensureBackupFolder(backupPath.trim(), false);
+      if (secondaryBackupPath.trim()) {
+        await ensureBackupFolder(secondaryBackupPath.trim(), false);
+      }
+      toast.dismiss("save-val");
+    }
+
     toast.success('Configurations Saved Successfully!');
   };
 

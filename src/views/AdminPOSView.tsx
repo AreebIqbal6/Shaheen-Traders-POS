@@ -157,6 +157,14 @@ export default function AdminPOSView() {
       if (!silent) toast.error('Cannot sync while offline. Please check your internet connection.');
       return;
     }
+
+    if (!silent && '__TAURI__' in window) {
+      const bp = localStorage.getItem('shaheen_backuppath');
+      if (bp) {
+        const { ensureBackupFolder } = await import('../utils/backupValidator');
+        await ensureBackupFolder(bp, false);
+      }
+    }
     
     // Prevent concurrent sync loops that choke weak processors
     if (isSyncing) return; 
