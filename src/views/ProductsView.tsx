@@ -36,6 +36,15 @@ interface ProductsViewProps {
   setProducts: React.Dispatch<React.SetStateAction<Product[]>>;
 }
 
+// How long (ms) a "just did this myself" lock is honored before it expires
+// automatically. This is a safety net in case the realtime event for our
+// own write never arrives (dropped connection, etc.) — without this the
+// id would stay locked forever and silently ignore future external edits.
+const PENDING_OP_TTL_MS = 6000;
+
+// How long to debounce a burst of realtime events into a single refetch.
+const REFETCH_DEBOUNCE_MS = 250;
+
 export default function ProductsView({ products, setProducts }: ProductsViewProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [currentFilter, setCurrentFilter] = useState<'all' | 'critical' | 'low'>('all');
@@ -68,6 +77,149 @@ export default function ProductsView({ products, setProducts }: ProductsViewProp
     localStorage.setItem('shaheen_min_stock', JSON.stringify(newDict));
   };
 
+  // ==========================================================
+  // SYNC-LOCK / OPTIMISTIC UPDATE BOOKKEEPING
+  // ==========================================================
+  // pendingOpsRef tracks product ids whose local state we JUST changed
+  // ourselves (Save / Delete). When the realtime subscription sees a
+  // postgres_changes event for one of these ids, it treats it as our own
+  // write coming back around and skips the refetch, so the UI doesn't
+  // flicker or briefly re-render with a stale-then-fresh copy.
+  const pendingOpsRef = useRef<Map<string, number>>(new Map());
+
+  // isWipingRef is true only while THIS device's "Clear All" is running.
+  // It lets the realtime handler ignore the burst of individual DELETE
+  // events that a full-table wipe generates, since local state is
+  // already set to [] directly by the handler.
+  const isWipingRef = useRef(false);
+
+  // Debounce handle for coalescing bursts of realtime events (e.g. a bulk
+  // change from another device) into a single fetchProducts() call.
+  const refetchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const markPending = (id: string) => {
+    pendingOpsRef.current.set(id, Date.now() + PENDING_OP_TTL_MS);
+  };
+
+  const isPending = (id: string) => {
+    const expiry = pendingOpsRef.current.get(id);
+    if (expiry === undefined) return false;
+    if (Date.now() > expiry) {
+      pendingOpsRef.current.delete(id);
+      return false;
+    }
+    return true;
+  };
+
+  const clearPending = (id: string) => {
+    pendingOpsRef.current.delete(id);
+  };
+
+  // ==========================================================
+  // ROW <-> PRODUCT MAPPING
+  // ==========================================================
+  // Robust against nulls, missing columns, and either snake_case
+  // ("pcs_per_box") or camelCase ("pcsPerBox") column naming, since
+  // different Supabase setups may use either convention.
+  const toOptionalNumber = (val: unknown): number | undefined => {
+    if (val === null || val === undefined || val === '') return undefined;
+    const num = Number(val);
+    return Number.isFinite(num) ? num : undefined;
+  };
+
+  const mapRowToProduct = (row: any): Product => ({
+    id: String(row.id),
+    barcode: row.barcode != null ? String(row.barcode) : '',
+    name: row.name != null ? String(row.name) : '',
+    price: Number(row.price) || 0,
+    stock: Number(row.stock) || 0,
+    sku: row.sku != null ? String(row.sku) : undefined,
+    category: row.category != null ? String(row.category) : undefined,
+    pcsPerBox: toOptionalNumber(row.pcs_per_box ?? row.pcsPerBox),
+    boxPerCtn: toOptionalNumber(row.box_per_ctn ?? row.boxPerCtn),
+  });
+
+  // Builds the payload sent TO Supabase from a Product-shaped object.
+  // Deliberately never includes "id" — inserts let the DB generate it,
+  // and updates target the row via .eq('id', ...) instead.
+  const mapProductToRow = (product: Omit<Product, 'id'>) => ({
+    barcode: product.barcode,
+    name: product.name,
+    price: product.price,
+    stock: product.stock,
+    sku: product.sku ?? null,
+    category: product.category ?? null,
+    pcs_per_box: product.pcsPerBox ?? null,
+    box_per_ctn: product.boxPerCtn ?? null,
+  });
+
+  const fetchProducts = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('products')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      setProducts((data || []).map(mapRowToProduct));
+    } catch (err: any) {
+      console.error('Failed to fetch products from Supabase:', err);
+      toast.error('Failed to sync products: ' + err.message);
+    }
+  };
+
+  const scheduleFetch = (delay: number = REFETCH_DEBOUNCE_MS) => {
+    if (refetchTimeoutRef.current) clearTimeout(refetchTimeoutRef.current);
+    refetchTimeoutRef.current = setTimeout(() => {
+      refetchTimeoutRef.current = null;
+      fetchProducts();
+    }, delay);
+  };
+
+  useEffect(() => {
+    // One subscription covers INSERT / UPDATE / DELETE, keeping every
+    // device (PC and mobile) live without a manual refresh.
+    const channel = supabase
+      .channel('products-realtime-sync')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'products' },
+        (payload) => {
+          // A local "Clear All" is in flight — its own bulk DELETE events
+          // are expected and already reflected in local state (set to []
+          // directly), so skip refetching once per deleted row.
+          if (isWipingRef.current) return;
+
+          const affectedId = (payload.new as any)?.id ?? (payload.old as any)?.id;
+          const idStr = affectedId !== undefined && affectedId !== null ? String(affectedId) : null;
+
+          // This event is the server confirming a write WE just made
+          // (optimistic Save/Delete) — consume the lock and skip the
+          // refetch so the UI doesn't flicker or double-render.
+          if (idStr && isPending(idStr)) {
+            clearPending(idStr);
+            return;
+          }
+
+          // Genuine external change (another device, or something we
+          // didn't originate) — coalesce bursts into one refetch.
+          scheduleFetch();
+        }
+      )
+      .subscribe();
+
+    // Initial load so the view is correct even before the first realtime
+    // event arrives (e.g. right after a page refresh).
+    fetchProducts();
+
+    return () => {
+      supabase.removeChannel(channel);
+      if (refetchTimeoutRef.current) clearTimeout(refetchTimeoutRef.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const [formData, setFormData] = useState<Partial<Product> & { minStock?: number }>({
     barcode: '', name: '', price: 0, stock: 0, minStock: 5
   });
@@ -99,26 +251,78 @@ export default function ProductsView({ products, setProducts }: ProductsViewProp
     }
   }, [isModalOpen]);
 
-  const handleSave = () => {
+  // ==========================================================
+  // SAVE (optimistic insert / update)
+  // ==========================================================
+  const handleSave = async () => {
     if (!formData.name || !formData.barcode) { toast.error('Name and Barcode are required'); return; }
 
     const finalFormData = { ...formData };
     if (!finalFormData.sku) {
-       finalFormData.sku = generateSKU(finalFormData.name || '', finalFormData.barcode || '');
+      finalFormData.sku = generateSKU(finalFormData.name || '', finalFormData.barcode || '');
     }
 
     const mStock = finalFormData.minStock ?? 5;
     delete finalFormData.minStock;
 
     if (editingProduct) {
+      const updatedProduct = { ...editingProduct, ...finalFormData } as Product;
+
+      // Lock this id BEFORE writing so the realtime echo of our own
+      // update is recognized and skipped instead of triggering a refetch.
+      markPending(editingProduct.id);
+
+      // Optimistic UI update — reflect the change immediately.
+      setProducts(prev => prev.map(p => p.id === editingProduct.id ? updatedProduct : p));
       saveMinStock(editingProduct.id, mStock);
-      setProducts(prev => prev.map(p => p.id === editingProduct.id ? { ...p, ...finalFormData } as Product : p));
+      setIsModalOpen(false);
+
+      try {
+        const { error } = await supabase
+          .from('products')
+          .update(mapProductToRow(updatedProduct))
+          .eq('id', editingProduct.id);
+        if (error) throw error;
+      } catch (err: any) {
+        clearPending(editingProduct.id);
+        console.error('Failed to update product in Supabase:', err);
+        toast.error('Failed to save changes: ' + err.message);
+        fetchProducts(); // resync with server truth since the write failed
+      }
     } else {
-      const newId = Date.now().toString() + Math.random().toString();
-      saveMinStock(newId, mStock);
-      setProducts(prev => [...prev, { ...finalFormData, id: newId } as Product]);
+      const tempId = 'temp-' + Date.now().toString() + Math.random().toString(36).slice(2);
+      const tempProduct = { ...finalFormData, id: tempId } as Product;
+
+      // Optimistic UI insert with a temporary id.
+      setProducts(prev => [tempProduct, ...prev]);
+      setIsModalOpen(false);
+
+      try {
+        const { data, error } = await supabase
+          .from('products')
+          .insert(mapProductToRow(finalFormData as Omit<Product, 'id'>))
+          .select()
+          .single();
+        if (error) throw error;
+
+        const savedProduct = mapRowToProduct(data);
+
+        // Lock the REAL id (returned by the DB) so the realtime INSERT
+        // echo for it is recognized and skipped.
+        markPending(savedProduct.id);
+        saveMinStock(savedProduct.id, mStock);
+
+        // Swap the temporary row for the real one, now carrying the DB id.
+        setProducts(prev => prev.map(p => p.id === tempId ? savedProduct : p));
+      } catch (err: any) {
+        console.error('Failed to insert product into Supabase:', err);
+        toast.error('Failed to save product: ' + err.message);
+        // The insert never landed — drop the optimistic temp row and
+        // resync in case anything else changed in the meantime.
+        setProducts(prev => prev.filter(p => p.id !== tempId));
+        fetchProducts();
+      }
     }
-    setIsModalOpen(false);
   };
 
   const handleGenerateSKU = () => {
@@ -131,15 +335,25 @@ export default function ProductsView({ products, setProducts }: ProductsViewProp
     setFormData(prev => ({ ...prev, barcode: sku }));
   };
 
+  // ==========================================================
+  // DELETE (optimistic removal)
+  // ==========================================================
   const handleDelete = async (id: string) => {
     if (!confirm('Are you sure you want to delete this product?')) return;
+
+    // Lock this id BEFORE writing so the realtime echo of our own delete
+    // is recognized and skipped instead of triggering a refetch.
+    markPending(id);
+
+    // Optimistic UI removal — reflect the change immediately.
+    setProducts(prev => prev.filter(p => p.id !== id));
 
     try {
       const { error } = await supabase.from('products').delete().eq('id', id);
       if (error) throw error;
 
-      setProducts(prev => prev.filter(p => p.id !== id));
-
+      // Only clean up local min-stock bookkeeping once the delete is
+      // actually confirmed server-side.
       const newMinStockDict = { ...minStockDict };
       delete newMinStockDict[id];
       setMinStockDict(newMinStockDict);
@@ -147,8 +361,10 @@ export default function ProductsView({ products, setProducts }: ProductsViewProp
 
       toast.success('Product deleted.');
     } catch (err: any) {
+      clearPending(id);
       console.error('Failed to delete product from Supabase:', err);
       toast.error('Failed to delete product: ' + err.message);
+      fetchProducts(); // resync — the delete didn't actually happen server-side
     }
   };
 
@@ -308,7 +524,12 @@ export default function ProductsView({ products, setProducts }: ProductsViewProp
                             return;
                           }
 
-                          (window as any).__wiping = true;
+                          // Suppress the realtime handler for the duration of the
+                          // wipe (plus a short grace period below) so the burst
+                          // of per-row DELETE events doesn't trigger a refetch
+                          // per row — local state is already cleared directly.
+                          isWipingRef.current = true;
+                          pendingOpsRef.current.clear();
                           toast.loading("Clearing inventory...", { id: "clear-inv" });
                           try {
                             const { error } = await supabase.from('products').delete().gte('price', 0);
@@ -326,7 +547,10 @@ export default function ProductsView({ products, setProducts }: ProductsViewProp
                           } catch (e: any) { 
                             toast.error("Failed to clear cloud inventory: " + e.message, { id: "clear-inv" }); 
                           } finally {
-                            (window as any).__wiping = false;
+                            // Short grace period to absorb any trailing DELETE
+                            // events still in flight from the wipe before other
+                            // devices' genuine changes are allowed to refetch.
+                            setTimeout(() => { isWipingRef.current = false; }, 1500);
                           }
                         }} className="bg-red-600 text-white px-4 py-2 rounded-md text-[13px] font-bold">YES, CLEAR</button>
                       </div>
