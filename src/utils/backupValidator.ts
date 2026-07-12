@@ -30,9 +30,9 @@ export const ensureBackupFolder = async (basePath: string, isSecondary: boolean 
       await mkdir(shaheenPath, { recursive: true });
     }
 
-    return true;
+    return shaheenPath; 
   } catch (err) {
     console.error(`[Backup Validator] Critical failure creating folder at ${basePath}:`, err);
-    return false;
+    return null; // Return null on failure so the manager knows to abort
   }
 };
