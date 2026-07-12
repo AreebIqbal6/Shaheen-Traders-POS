@@ -59,11 +59,15 @@ export const saveOrderBackup = async (orderId: string, cart: any[], details: any
       }
 
       for (const validBase of pathsToSave) {
-        try {
-          // Since the validator already appended 'SHAHEEN TRADERS BACKUP', we just append the order hierarchy
-          const orderFolderPath = `${validBase}\\ORDER HISTORY\\${dateStr}\\${orderId}`;
-
-          await mkdir(orderFolderPath, { recursive: true });
+  // ADD THIS LOG:
+  console.log("Saving to Base Path:", validBase); 
+  
+  try {
+    const orderFolderPath = `${validBase}\\ORDER HISTORY\\${dateStr}\\${orderId}`;
+    console.log("Creating Folder Structure:", orderFolderPath); // ADD THIS LOG
+    
+    await mkdir(orderFolderPath, { recursive: true });
+    // ...
 
           if (pdfResult) {
             const pdfBuffer = await pdfResult.blob.arrayBuffer();
