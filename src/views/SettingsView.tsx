@@ -147,8 +147,8 @@ export default function SettingsView() {
             <AlertTriangle className="h-8 w-8 text-red-600" />
           </div>
           <div className="flex-1 pt-0.5">
-            <p className="text-[15px] font-bold text-slate-900 dark:text-slate-100 mb-1">Factory Reset System</p>
-            <p className="text-[13px] text-slate-500 dark:text-zinc-400">Are you absolutely sure you want to factory reset this device? ALL local data will be wiped immediately.</p>
+            <p className="text-[15px] font-bold text-slate-900 dark:text-slate-100 mb-1">True Factory Reset (Cloud + Local)</p>
+            <p className="text-[13px] text-slate-500 dark:text-zinc-400">Are you absolutely sure? This will permanently delete ALL Products, Bookers, Orders, and Local Data from the entire cloud system and this device.</p>
             <input
               id={"wipe-password-" + t.id}
               type="password"
@@ -171,11 +171,26 @@ export default function SettingsView() {
                 toast.error("Incorrect Admin Password!");
                 return;
               }
-              toast.loading("Wiping system, please wait...", { id: "wipe-auth" });
+
+              if (!navigator.onLine) {
+                 toast.error("You must be online to wipe the cloud database.");
+                 return;
+              }
+
+              toast.loading("Nuking cloud database & local system...", { id: "wipe-auth" });
               try {
+                (window as any).__wiping = true;
+
+                // 1. WIPE THE CLOUD (Deletes all rows safely)
+                await supabase.from('products').delete().not('id', 'is', null);
+                await supabase.from('bookers').delete().not('id', 'is', null); 
+                await supabase.from('orders').delete().not('id', 'is', null);  
+
+                // 2. WIPE LOCAL DATA CACHE
                 supabase.removeAllChannels();
                 localStorage.clear();
                 sessionStorage.clear();
+                
                 if ('indexedDB' in window && (indexedDB as any).databases) {
                   const dbs = await (indexedDB as any).databases();
                   dbs.forEach((db: any) => { if (db.name) indexedDB.deleteDatabase(db.name); });
@@ -184,16 +199,22 @@ export default function SettingsView() {
                   const regs = await navigator.serviceWorker.getRegistrations();
                   for (const reg of regs) { reg.unregister(); }
                 }
-                toast.success("Wipe complete. Rebooting...");
-                window.location.reload();
-              } catch (err) {
+                
+                toast.success("System completely wiped. Rebooting...", { id: "wipe-auth" });
+                
+                // Force all listeners to shut down, then reload
+                window.dispatchEvent(new Event('force_remount'));
+                setTimeout(() => window.location.reload(), 500);
+
+              } catch (err: any) {
                 console.error("Wipe failed:", err);
-                window.location.reload();
+                toast.error("Wipe failed: " + err.message, { id: "wipe-auth" });
+                (window as any).__wiping = false;
               }
             }}
             className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md text-[13px] font-bold"
           >
-            YES, WIPE EVERYTHING
+            YES, NUKE EVERYTHING
           </button>
         </div>
       </div>
