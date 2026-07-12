@@ -41,33 +41,35 @@ export const saveOrderBackup = async (orderId: string, cart: any[], details: any
       if (secondaryPath && secondaryPath.startsWith('Web Folder')) secondaryPath = '';
 
       // Validate Primary Folder
-      const primaryTarget = await ensureBackupFolder(basePath, true); // Silent background check
+      const primaryTarget = await ensureBackupFolder(basePath, true); 
       if (!primaryTarget) {
         throw new Error("Primary backup location is inaccessible. Backup aborted.");
       }
 
-      const pathsToSave = [primaryTarget];
+      // Convert target to a solid string path
+      const baseValidPath = typeof primaryTarget === 'string' ? primaryTarget : `${basePath}\\SHAHEEN BACKUP`;
+      const pathsToSave = [baseValidPath];
 
       // Validate Secondary Folder (Fallback logic)
       if (secondaryPath && secondaryPath.trim() !== '') {
         const secondaryTarget = await ensureBackupFolder(secondaryPath, true);
         if (secondaryTarget) {
-          pathsToSave.push(secondaryTarget);
+          const secondaryValidPath = typeof secondaryTarget === 'string' ? secondaryTarget : `${secondaryPath}\\SHAHEEN BACKUP`;
+          pathsToSave.push(secondaryValidPath);
         } else {
           console.warn("Secondary backup drive (USB) missing. Skipping secondary backup silently.");
         }
       }
 
       for (const validBase of pathsToSave) {
-  // ADD THIS LOG:
-  console.log("Saving to Base Path:", validBase); 
-  
-  try {
-    const orderFolderPath = `${validBase}\\ORDER HISTORY\\${dateStr}\\${orderId}`;
-    console.log("Creating Folder Structure:", orderFolderPath); // ADD THIS LOG
-    
-    await mkdir(orderFolderPath, { recursive: true });
-    // ...
+        console.log("Saving to Base Path:", validBase); 
+        
+        try {
+          // Construct explicit order hierarchy cleanly on top of valid target base
+          const orderFolderPath = `${validBase}\\ORDER HISTORY\\${dateStr}\\${orderId}`;
+          console.log("Creating Folder Structure:", orderFolderPath); 
+          
+          await mkdir(orderFolderPath, { recursive: true });
 
           if (pdfResult) {
             const pdfBuffer = await pdfResult.blob.arrayBuffer();
@@ -83,8 +85,7 @@ export const saveOrderBackup = async (orderId: string, cart: any[], details: any
           console.log(`Auto-saved backup strictly to: ${orderFolderPath}`);
         } catch (pathError: any) {
           console.error(`Failed to save backup to path ${validBase}:`, pathError);
-          // Only bubble the error up if the Primary drive failed during write
-          if (validBase === primaryTarget) {
+          if (validBase === pathsToSave[0]) {
             throw pathError; 
           }
         }
@@ -144,7 +145,6 @@ export const saveOrderBackup = async (orderId: string, cart: any[], details: any
         console.warn('File System Access API failed or unavailable', fsError);
       }
 
-      // ULTIMATE FALLBACK FOR CLOUD DEPLOYMENTS WITH NO DIRECTORY PERMISSIONS
       console.warn('Falling back to standard browser downloads');
       
       if (pdfResult) {
