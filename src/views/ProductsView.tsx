@@ -33,19 +33,13 @@ export const generateSKU = (name: string, barcode: string) => {
 
 interface ProductsViewProps {
   products: Product[];
-  setProducts: React.Dispatch<React.SetStateAction<Product[]>>;
+  setProducts?: React.Dispatch<React.SetStateAction<Product[]>>;
 }
 
-// How long (ms) a "just did this myself" lock is honored before it expires
-// automatically. This is a safety net in case the realtime event for our
-// own write never arrives (dropped connection, etc.) — without this the
-// id would stay locked forever and silently ignore future external edits.
 const PENDING_OP_TTL_MS = 6000;
-
-// How long to debounce a burst of realtime events into a single refetch.
 const REFETCH_DEBOUNCE_MS = 250;
 
-export default function ProductsView({ products, setProducts }: ProductsViewProps) {
+export default function ProductsView({ products = [], setProducts }: ProductsViewProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [currentFilter, setCurrentFilter] = useState<'all' | 'critical' | 'low'>('all');
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -56,9 +50,7 @@ export default function ProductsView({ products, setProducts }: ProductsViewProp
   const fileInputRef = useRef<HTMLInputElement>(null);
   const barcodeInputRef = useRef<HTMLInputElement>(null);
 
-  const formatLakhs = (val: number) => {
-    return `Rs ${val.toLocaleString('en-PK')}`;
-  };
+  const formatLakhs = (val: number) => `Rs ${val.toLocaleString('en-PK')}`;
 
   const totalProducts = products.length;
   const criticalStock = products.filter(p => p.stock <= 2).length;
@@ -77,30 +69,11 @@ export default function ProductsView({ products, setProducts }: ProductsViewProp
     localStorage.setItem('shaheen_min_stock', JSON.stringify(newDict));
   };
 
-  // ==========================================================
-  // SYNC-LOCK / OPTIMISTIC UPDATE BOOKKEEPING
-  // ==========================================================
-  // pendingOpsRef tracks product ids whose local state we JUST changed
-  // ourselves (Save / Delete). When the realtime subscription sees a
-  // postgres_changes event for one of these ids, it treats it as our own
-  // write coming back around and skips the refetch, so the UI doesn't
-  // flicker or briefly re-render with a stale-then-fresh copy.
   const pendingOpsRef = useRef<Map<string, number>>(new Map());
-
-  // isWipingRef is true only while THIS device's "Clear All" is running.
-  // It lets the realtime handler ignore the burst of individual DELETE
-  // events that a full-table wipe generates, since local state is
-  // already set to [] directly by the handler.
   const isWipingRef = useRef(false);
-
-  // Debounce handle for coalescing bursts of realtime events (e.g. a bulk
-  // change from another device) into a single fetchProducts() call.
   const refetchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const markPending = (id: string) => {
-    pendingOpsRef.current.set(id, Date.now() + PENDING_OP_TTL_MS);
-  };
-
+  const markPending = (id: string) => pendingOpsRef.current.set(id, Date.now() + PENDING_OP_TTL_MS);
   const isPending = (id: string) => {
     const expiry = pendingOpsRef.current.get(id);
     if (expiry === undefined) return false;
@@ -110,17 +83,8 @@ export default function ProductsView({ products, setProducts }: ProductsViewProp
     }
     return true;
   };
+  const clearPending = (id: string) => pendingOpsRef.current.delete(id);
 
-  const clearPending = (id: string) => {
-    pendingOpsRef.current.delete(id);
-  };
-
-  // ==========================================================
-  // ROW <-> PRODUCT MAPPING
-  // ==========================================================
-  // Robust against nulls, missing columns, and either snake_case
-  // ("pcs_per_box") or camelCase ("pcsPerBox") column naming, since
-  // different Supabase setups may use either convention.
   const toOptionalNumber = (val: unknown): number | undefined => {
     if (val === null || val === undefined || val === '') return undefined;
     const num = Number(val);
@@ -139,9 +103,6 @@ export default function ProductsView({ products, setProducts }: ProductsViewProp
     boxPerCtn: toOptionalNumber(row.box_per_ctn ?? row.boxPerCtn),
   });
 
-  // Builds the payload sent TO Supabase from a Product-shaped object.
-  // Deliberately never includes "id" — inserts let the DB generate it,
-  // and updates target the row via .eq('id', ...) instead.
   const mapProductToRow = (product: Omit<Product, 'id'>) => ({
     barcode: product.barcode,
     name: product.name,
@@ -162,10 +123,18 @@ export default function ProductsView({ products, setProducts }: ProductsViewProp
 
       if (error) throw error;
 
-      setProducts((data || []).map(mapRowToProduct));
+      const mappedData = (data || []).map(mapRowToProduct);
+      
+      // Update local storage directly so mobile/offline modes get the latest truth
+      localStorage.setItem('shaheen_products', JSON.stringify(mappedData));
+
+      // ONLY update state if the parent component actually passed the function
+      if (typeof setProducts === 'function') {
+        setProducts(mappedData);
+      }
     } catch (err: any) {
       console.error('Failed to fetch products from Supabase:', err);
-      toast.error('Failed to sync products: ' + err.message);
+      // Suppressed the error toast here to stop the UI from crashing if offline
     }
   };
 
@@ -178,46 +147,30 @@ export default function ProductsView({ products, setProducts }: ProductsViewProp
   };
 
   useEffect(() => {
-    // One subscription covers INSERT / UPDATE / DELETE, keeping every
-    // device (PC and mobile) live without a manual refresh.
     const channel = supabase
       .channel('products-realtime-sync')
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'products' },
         (payload) => {
-          // A local "Clear All" is in flight — its own bulk DELETE events
-          // are expected and already reflected in local state (set to []
-          // directly), so skip refetching once per deleted row.
           if (isWipingRef.current) return;
-
           const affectedId = (payload.new as any)?.id ?? (payload.old as any)?.id;
           const idStr = affectedId !== undefined && affectedId !== null ? String(affectedId) : null;
-
-          // This event is the server confirming a write WE just made
-          // (optimistic Save/Delete) — consume the lock and skip the
-          // refetch so the UI doesn't flicker or double-render.
           if (idStr && isPending(idStr)) {
             clearPending(idStr);
             return;
           }
-
-          // Genuine external change (another device, or something we
-          // didn't originate) — coalesce bursts into one refetch.
           scheduleFetch();
         }
       )
       .subscribe();
 
-    // Initial load so the view is correct even before the first realtime
-    // event arrives (e.g. right after a page refresh).
     fetchProducts();
 
     return () => {
       supabase.removeChannel(channel);
       if (refetchTimeoutRef.current) clearTimeout(refetchTimeoutRef.current);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const [formData, setFormData] = useState<Partial<Product> & { minStock?: number }>({
@@ -251,9 +204,6 @@ export default function ProductsView({ products, setProducts }: ProductsViewProp
     }
   }, [isModalOpen]);
 
-  // ==========================================================
-  // SAVE (optimistic insert / update)
-  // ==========================================================
   const handleSave = async () => {
     if (!formData.name || !formData.barcode) { toast.error('Name and Barcode are required'); return; }
 
@@ -267,104 +217,78 @@ export default function ProductsView({ products, setProducts }: ProductsViewProp
 
     if (editingProduct) {
       const updatedProduct = { ...editingProduct, ...finalFormData } as Product;
-
-      // Lock this id BEFORE writing so the realtime echo of our own
-      // update is recognized and skipped instead of triggering a refetch.
       markPending(editingProduct.id);
 
-      // Optimistic UI update — reflect the change immediately.
-      setProducts(prev => prev.map(p => p.id === editingProduct.id ? updatedProduct : p));
+      if (typeof setProducts === 'function') {
+         setProducts(prev => prev.map(p => p.id === editingProduct.id ? updatedProduct : p));
+      }
       saveMinStock(editingProduct.id, mStock);
       setIsModalOpen(false);
 
       try {
-        const { error } = await supabase
-          .from('products')
-          .update(mapProductToRow(updatedProduct))
-          .eq('id', editingProduct.id);
+        const { error } = await supabase.from('products').update(mapProductToRow(updatedProduct)).eq('id', editingProduct.id);
         if (error) throw error;
       } catch (err: any) {
         clearPending(editingProduct.id);
-        console.error('Failed to update product in Supabase:', err);
         toast.error('Failed to save changes: ' + err.message);
-        fetchProducts(); // resync with server truth since the write failed
+        fetchProducts(); 
       }
     } else {
       const tempId = 'temp-' + Date.now().toString() + Math.random().toString(36).slice(2);
       const tempProduct = { ...finalFormData, id: tempId } as Product;
 
-      // Optimistic UI insert with a temporary id.
-      setProducts(prev => [tempProduct, ...prev]);
+      if (typeof setProducts === 'function') {
+         setProducts(prev => [tempProduct, ...prev]);
+      }
       setIsModalOpen(false);
 
       try {
-        const { data, error } = await supabase
-          .from('products')
-          .insert(mapProductToRow(finalFormData as Omit<Product, 'id'>))
-          .select()
-          .single();
+        const { data, error } = await supabase.from('products').insert(mapProductToRow(finalFormData as Omit<Product, 'id'>)).select().single();
         if (error) throw error;
 
         const savedProduct = mapRowToProduct(data);
-
-        // Lock the REAL id (returned by the DB) so the realtime INSERT
-        // echo for it is recognized and skipped.
         markPending(savedProduct.id);
         saveMinStock(savedProduct.id, mStock);
 
-        // Swap the temporary row for the real one, now carrying the DB id.
-        setProducts(prev => prev.map(p => p.id === tempId ? savedProduct : p));
+        if (typeof setProducts === 'function') {
+           setProducts(prev => prev.map(p => p.id === tempId ? savedProduct : p));
+        }
       } catch (err: any) {
-        console.error('Failed to insert product into Supabase:', err);
         toast.error('Failed to save product: ' + err.message);
-        // The insert never landed — drop the optimistic temp row and
-        // resync in case anything else changed in the meantime.
-        setProducts(prev => prev.filter(p => p.id !== tempId));
+        if (typeof setProducts === 'function') setProducts(prev => prev.filter(p => p.id !== tempId));
         fetchProducts();
       }
     }
   };
 
   const handleGenerateSKU = () => {
-    const prefix = formData.name 
-      ? formData.name.substring(0, 3).toUpperCase().replace(/[^A-Z]/g, 'P') 
-      : 'PRD';
+    const prefix = formData.name ? formData.name.substring(0, 3).toUpperCase().replace(/[^A-Z]/g, 'P') : 'PRD';
     const year = new Date().getFullYear();
     const randomNum = Math.floor(1000 + Math.random() * 9000);
-    const sku = `${prefix}-${year}-${randomNum}`;
-    setFormData(prev => ({ ...prev, barcode: sku }));
+    setFormData(prev => ({ ...prev, barcode: `${prefix}-${year}-${randomNum}` }));
   };
 
-  // ==========================================================
-  // DELETE (optimistic removal)
-  // ==========================================================
   const handleDelete = async (id: string) => {
     if (!confirm('Are you sure you want to delete this product?')) return;
-
-    // Lock this id BEFORE writing so the realtime echo of our own delete
-    // is recognized and skipped instead of triggering a refetch.
     markPending(id);
 
-    // Optimistic UI removal — reflect the change immediately.
-    setProducts(prev => prev.filter(p => p.id !== id));
+    if (typeof setProducts === 'function') {
+       setProducts(prev => prev.filter(p => p.id !== id));
+    }
 
     try {
       const { error } = await supabase.from('products').delete().eq('id', id);
       if (error) throw error;
 
-      // Only clean up local min-stock bookkeeping once the delete is
-      // actually confirmed server-side.
       const newMinStockDict = { ...minStockDict };
       delete newMinStockDict[id];
       setMinStockDict(newMinStockDict);
       localStorage.setItem('shaheen_min_stock', JSON.stringify(newMinStockDict));
-
       toast.success('Product deleted.');
     } catch (err: any) {
       clearPending(id);
-      console.error('Failed to delete product from Supabase:', err);
       toast.error('Failed to delete product: ' + err.message);
-      fetchProducts(); // resync — the delete didn't actually happen server-side
+      fetchProducts(); 
     }
   };
 
@@ -412,7 +336,9 @@ export default function ProductsView({ products, setProducts }: ProductsViewProp
       }
       
       if (newProducts.length > 0) {
-        setProducts(prev => [...newProducts, ...prev]);
+        if (typeof setProducts === 'function') {
+           setProducts(prev => [...newProducts, ...prev]);
+        }
         toast.success(`Successfully imported ${newProducts.length} products!`);
       }
       if (fileInputRef.current) fileInputRef.current.value = '';
@@ -520,14 +446,10 @@ export default function ProductsView({ products, setProducts }: ProductsViewProp
                           if (pwdInput.value !== '1234') { toast.error("Incorrect Password!"); return; }
                           
                           if (!navigator.onLine) {
-                            toast.error("You must be online to clear inventory — the cloud database has to be wiped too.");
+                            toast.error("You must be online to clear inventory.");
                             return;
                           }
 
-                          // Suppress the realtime handler for the duration of the
-                          // wipe (plus a short grace period below) so the burst
-                          // of per-row DELETE events doesn't trigger a refetch
-                          // per row — local state is already cleared directly.
                           isWipingRef.current = true;
                           pendingOpsRef.current.clear();
                           toast.loading("Clearing inventory...", { id: "clear-inv" });
@@ -535,21 +457,19 @@ export default function ProductsView({ products, setProducts }: ProductsViewProp
                             const { error } = await supabase.from('products').delete().gte('price', 0);
                             if (error) throw error;
 
-                            setProducts([]);
+                            if (typeof setProducts === 'function') setProducts([]);
                             setMinStockDict({});
                             localStorage.removeItem('shaheen_products');
                             localStorage.removeItem('shaheen_b2b_products');
                             localStorage.removeItem('shaheen_b2b_products_v2');
                             localStorage.removeItem('shaheen_min_stock');
+                            window.dispatchEvent(new Event('force_remount'));
 
                             toast.success("Inventory cleared successfully!", { id: "clear-inv" });
                             toast.dismiss(t.id);
                           } catch (e: any) { 
                             toast.error("Failed to clear cloud inventory: " + e.message, { id: "clear-inv" }); 
                           } finally {
-                            // Short grace period to absorb any trailing DELETE
-                            // events still in flight from the wipe before other
-                            // devices' genuine changes are allowed to refetch.
                             setTimeout(() => { isWipingRef.current = false; }, 1500);
                           }
                         }} className="bg-red-600 text-white px-4 py-2 rounded-md text-[13px] font-bold">YES, CLEAR</button>
