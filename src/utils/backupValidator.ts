@@ -1,24 +1,38 @@
 import { exists, mkdir } from '@tauri-apps/plugin-fs';
-import { toast } from 'react-hot-toast';
 
-export const ensureBackupFolder = async (basePath: string, silent = false): Promise<string | null> => {
-  if (!basePath || basePath.startsWith('Web Folder:')) return basePath;
+export const ensureBackupFolder = async (basePath: string, isSecondary: boolean = false) => {
+  // 1. If we are on the Web (Vercel/Chrome), we cannot manipulate native file systems silently.
+  if (!('__TAURI__' in window)) {
+    return true; 
+  }
 
-  const cleanBasePath = basePath.replace(/\//g, '\\');
-  const folderPath = cleanBasePath.endsWith('\\') 
-    ? `${cleanBasePath}SHAHEEN TRADERS BACKUP` 
-    : `${cleanBasePath}\\SHAHEEN TRADERS BACKUP`;
+  if (!basePath || basePath.trim() === '') {
+    return false;
+  }
 
   try {
-    const folderExists = await exists(folderPath);
-    if (!folderExists) {
-      await mkdir(folderPath, { recursive: true });
-      if (!silent) toast.success("Created backup directory: SHAHEEN TRADERS BACKUP");
+    const cleanPath = basePath.trim();
+    
+    // 2. Check if the parent path exists (e.g., D:\ or E:\Backups)
+    const baseExists = await exists(cleanPath);
+    if (!baseExists) {
+      console.warn(`[Backup Validator] Base path does not exist: ${cleanPath}`);
+      return false;
     }
-    return folderPath;
+
+    // 3. Define the mandatory subfolder
+    const shaheenPath = `${cleanPath}\\SHAHEEN BACKUP`;
+    
+    // 4. Check if SHAHEEN BACKUP exists. If not, forcefully create it.
+    const shaheenExists = await exists(shaheenPath);
+    if (!shaheenExists) {
+      console.log(`[Backup Validator] Creating missing directory: ${shaheenPath}`);
+      await mkdir(shaheenPath, { recursive: true });
+    }
+
+    return true;
   } catch (err) {
-    console.warn(`Drive disconnected or path inaccessible: ${folderPath}`, err);
-    if (!silent) toast.error("Backup drive disconnected or inaccessible!");
-    return null; // Signals to the export manager that the drive is dead/unplugged
+    console.error(`[Backup Validator] Critical failure creating folder at ${basePath}:`, err);
+    return false;
   }
 };
