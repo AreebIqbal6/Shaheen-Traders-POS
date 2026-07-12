@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Search, Plus, Edit2, Trash2, X, AlertTriangle, Upload, Loader2, CalendarClock, ScanLine } from 'lucide-react';
+import { Search, Plus, Edit2, Trash2, X, AlertTriangle, Upload, Loader2, ScanLine } from 'lucide-react';
 import CameraScanner from '../components/CameraScanner';
 import toast from 'react-hot-toast';
 import { supabase } from '../lib/supabase';
@@ -44,7 +44,6 @@ export default function ProductsView({ products, setProducts }: ProductsViewProp
   const [isLoadingApi, setIsLoadingApi] = useState(false);
   const [isScannerActive, setIsScannerActive] = useState(false);
 
-
   const fileInputRef = useRef<HTMLInputElement>(null);
   const barcodeInputRef = useRef<HTMLInputElement>(null);
 
@@ -56,7 +55,6 @@ export default function ProductsView({ products, setProducts }: ProductsViewProp
   const criticalStock = products.filter(p => p.stock <= 2).length;
   const lowStock = products.filter(p => p.stock > 2 && p.stock <= 10).length;
   const inventoryValue = products.reduce((acc, p) => acc + (p.price * p.stock), 0);
-
 
   const [minStockDict, setMinStockDict] = useState<Record<string, number>>({});
 
@@ -101,7 +99,6 @@ export default function ProductsView({ products, setProducts }: ProductsViewProp
     }
   }, [isModalOpen]);
 
-
   const handleSave = () => {
     if (!formData.name || !formData.barcode) { toast.error('Name and Barcode are required'); return; }
 
@@ -134,8 +131,7 @@ export default function ProductsView({ products, setProducts }: ProductsViewProp
     setFormData(prev => ({ ...prev, barcode: sku }));
   };
 
-  // NEW
-const handleDelete = async (id: string) => {
+  const handleDelete = async (id: string) => {
     if (!confirm('Are you sure you want to delete this product?')) return;
 
     try {
@@ -144,7 +140,6 @@ const handleDelete = async (id: string) => {
 
       setProducts(prev => prev.filter(p => p.id !== id));
 
-      // Clean up the min-stock threshold tied to this product
       const newMinStockDict = { ...minStockDict };
       delete newMinStockDict[id];
       setMinStockDict(newMinStockDict);
@@ -157,11 +152,8 @@ const handleDelete = async (id: string) => {
     }
   };
 
-
-
-  // OpenFoodFacts API Integration
   async function fetchProductDetails(barcode: string) {
-    if (barcode.length < 8) return; // Too short to be a valid GTIN
+    if (barcode.length < 8) return;
     setIsLoadingApi(true);
     try {
       const res = await fetch(`https://world.openfoodfacts.org/api/v2/product/${barcode}.json`);
@@ -178,7 +170,6 @@ const handleDelete = async (id: string) => {
     setIsLoadingApi(false);
   }
 
-  // CSV Bulk Importer
   const handleCSVUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -189,8 +180,7 @@ const handleDelete = async (id: string) => {
       const lines = text.split('\n');
       const newProducts: Product[] = [];
       
-      // Assumes CSV format: Barcode, Name, Price, Stock
-      for (let i = 1; i < lines.length; i++) { // Skip header row
+      for (let i = 1; i < lines.length; i++) {
         const line = lines[i].trim();
         if (!line) continue;
         const [barcode, name, priceStr, stockStr] = line.split(',');
@@ -217,7 +207,6 @@ const handleDelete = async (id: string) => {
   return (
     <div className="h-full flex flex-col relative bg-slate-50 dark:bg-[#0a0a0c] p-4 md:p-8 overflow-x-hidden">
       
-      {/* Stat Cards Row */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-6">
         <div className="bg-white dark:bg-zinc-900/60 backdrop-blur-md border border-slate-200 dark:border-zinc-800/50 shadow-sm rounded-xl p-4 md:p-5 flex flex-col justify-between h-[100px]">
           <span className="text-[12px] font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Total Products</span>
@@ -239,7 +228,6 @@ const handleDelete = async (id: string) => {
       </div>
 
       <div className="mb-4 flex flex-col md:flex-row md:justify-between items-start md:items-center gap-4">
-        {/* Filter Pills */}
         <div className="flex bg-white dark:bg-zinc-900/60 backdrop-blur-md p-1 rounded-lg border border-slate-200 dark:border-zinc-800/50 overflow-x-auto w-full md:w-auto custom-scrollbar shadow-inner">
           <button 
             onClick={() => setCurrentFilter('all')}
@@ -297,7 +285,6 @@ const handleDelete = async (id: string) => {
               <Plus size={16} className="shrink-0" /> Add Product
             </button>
 
-            {/* NEW CLEAR ALL BUTTON */}
             <button 
               onClick={() => {
                  toast.custom((t) => (
@@ -316,32 +303,31 @@ const handleDelete = async (id: string) => {
                           const pwdInput = document.getElementById("wipe-inventory-" + t.id) as HTMLInputElement;
                           if (pwdInput.value !== '1234') { toast.error("Incorrect Password!"); return; }
                           
-                          // NEW
-if (!navigator.onLine) {
-  toast.error("You must be online to clear inventory — the cloud database has to be wiped too.");
-  return;
-}
+                          if (!navigator.onLine) {
+                            toast.error("You must be online to clear inventory — the cloud database has to be wiped too.");
+                            return;
+                          }
 
-(window as any).__wiping = true; // pause the 5s background auto-sync during the wipe
-toast.loading("Clearing inventory...", { id: "clear-inv" });
-try {
-  const { error } = await supabase.from('products').delete().neq('id', '');
-  if (error) throw error;
+                          (window as any).__wiping = true;
+                          toast.loading("Clearing inventory...", { id: "clear-inv" });
+                          try {
+                            const { error } = await supabase.from('products').delete().gte('price', 0);
+                            if (error) throw error;
 
-  setProducts([]);
-  setMinStockDict({});
-  localStorage.removeItem('shaheen_products');
-  localStorage.removeItem('shaheen_b2b_products');
-  localStorage.removeItem('shaheen_b2b_products_v2');
-  localStorage.removeItem('shaheen_min_stock');
+                            setProducts([]);
+                            setMinStockDict({});
+                            localStorage.removeItem('shaheen_products');
+                            localStorage.removeItem('shaheen_b2b_products');
+                            localStorage.removeItem('shaheen_b2b_products_v2');
+                            localStorage.removeItem('shaheen_min_stock');
 
-  toast.success("Inventory cleared successfully!", { id: "clear-inv" });
-  toast.dismiss(t.id);
-} catch (e: any) { 
-  toast.error("Failed to clear cloud inventory: " + e.message, { id: "clear-inv" }); 
-} finally {
-  (window as any).__wiping = false;
-}
+                            toast.success("Inventory cleared successfully!", { id: "clear-inv" });
+                            toast.dismiss(t.id);
+                          } catch (e: any) { 
+                            toast.error("Failed to clear cloud inventory: " + e.message, { id: "clear-inv" }); 
+                          } finally {
+                            (window as any).__wiping = false;
+                          }
                         }} className="bg-red-600 text-white px-4 py-2 rounded-md text-[13px] font-bold">YES, CLEAR</button>
                       </div>
                     </div>
@@ -357,7 +343,6 @@ try {
 
       <div className="flex-1 bg-white dark:bg-zinc-900/60 backdrop-blur-md border border-slate-200 dark:border-zinc-800/50 shadow-sm rounded-xl overflow-hidden flex flex-col">
         <div className="overflow-y-auto overflow-x-auto custom-scrollbar flex-1">
-          {/* Desktop Table View */}
           <table className="hidden md:table w-full text-left text-[13px] whitespace-nowrap">
             <thead className="bg-slate-50/90 dark:bg-[#0a0a0c]/90 backdrop-blur-md border-b border-slate-200 dark:border-zinc-800/50 text-slate-600 dark:text-slate-400 uppercase tracking-wider text-[11px] sticky top-0 z-10">
               <tr>
@@ -410,7 +395,6 @@ try {
             </tbody>
           </table>
 
-          {/* Mobile Card View */}
           <div className="md:hidden flex flex-col divide-y divide-slate-200 dark:divide-slate-700">
              {filteredProducts.map(product => {
                 const mStock = minStockDict[product.id] ?? 5;
@@ -462,7 +446,6 @@ try {
             </div>
             
             <div className="p-6 flex flex-col gap-4 overflow-y-auto custom-scrollbar">
-              
               <div className="relative">
                 <div className="flex justify-between items-center mb-1.5">
                   <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider block">Barcode Scanner / SKU</label>
