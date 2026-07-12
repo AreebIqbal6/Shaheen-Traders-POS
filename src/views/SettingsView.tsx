@@ -136,7 +136,7 @@ export default function SettingsView() {
     }
   };
 
-  function renderFactoryResetToast(t: any) {
+  const renderFactoryResetToast = (t: any) => {
     return (
       <div className={(t.visible ? 'animate-enter' : 'animate-leave') + " max-w-md w-full bg-white dark:bg-zinc-900 shadow-lg rounded-lg pointer-events-auto flex flex-col ring-1 ring-black ring-opacity-5 p-5"}>
         <div className="flex items-start gap-4">
@@ -195,10 +195,10 @@ export default function SettingsView() {
         </div>
       </div>
     );
-  }
+  };
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
+    <div className="p-6 max-w-7xl mx-auto w-full h-full overflow-y-auto">
       <div className="space-y-6">
           {/* General Store Settings */}
           <div className="bg-white dark:bg-zinc-900/60 backdrop-blur-md border border-zinc-200 dark:border-zinc-700 rounded-sm shadow-sm overflow-hidden">
@@ -460,7 +460,6 @@ export default function SettingsView() {
               </button>
             </div>
           </div>
-        </div>
       </div>
     </div>
   );
