@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Store, Receipt, Printer, Database, Download, Upload, FolderDown, FolderSearch, AlertTriangle, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { writeTextFile, readTextFile } from '@tauri-apps/plugin-fs';
@@ -10,7 +10,7 @@ export default function SettingsView() {
   const [backupPath, setBackupPath] = useState('');
   const [secondaryBackupPath, setSecondaryBackupPath] = useState('');
 
-  React.useEffect(() => {
+  useEffect(() => {
     const fetchDefault = async () => {
       const saved = localStorage.getItem('shaheen_backuppath');
       if (saved) {
@@ -39,6 +39,7 @@ export default function SettingsView() {
   const [storeName, setStoreName] = useState(() => {
     return localStorage.getItem('shaheen_store_name') || 'Shaheen Traders';
   });
+  
   const [outletLocation, setOutletLocation] = useState(() => {
     return localStorage.getItem('shaheen_outlet_location') || 'Main Outlet';
   });
@@ -46,9 +47,11 @@ export default function SettingsView() {
   const [autoPrintReceipt, setAutoPrintReceipt] = useState(() => {
     return localStorage.getItem('shaheen_autoprint') !== 'false';
   });
+  
   const [globalBarcode, setGlobalBarcode] = useState(() => {
     return localStorage.getItem('shaheen_globalbarcode') !== 'false';
   });
+  
   const [cashDrawerKick, setCashDrawerKick] = useState(() => {
     return localStorage.getItem('shaheen_cashdrawerkick') !== 'false';
   });
@@ -200,266 +203,270 @@ export default function SettingsView() {
   return (
     <div className="p-6 max-w-7xl mx-auto w-full h-full overflow-y-auto">
       <div className="space-y-6">
-          {/* General Store Settings */}
-          <div className="bg-white dark:bg-zinc-900/60 backdrop-blur-md border border-zinc-200 dark:border-zinc-700 rounded-sm shadow-sm overflow-hidden">
-            <div className="border-b border-zinc-100 bg-zinc-50 dark:bg-zinc-900 px-5 py-4 flex items-center gap-2">
-              <Store className="text-zinc-600" size={18} />
-              <h2 className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">Store Information</h2>
+        
+        {/* General Store Settings */}
+        <div className="bg-white dark:bg-zinc-900/60 backdrop-blur-md border border-zinc-200 dark:border-zinc-700 rounded-sm shadow-sm overflow-hidden">
+          <div className="border-b border-zinc-100 bg-zinc-50 dark:bg-zinc-900 px-5 py-4 flex items-center gap-2">
+            <Store className="text-zinc-600" size={18} />
+            <h2 className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">Store Information</h2>
+          </div>
+          <div className="p-5 grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[13px] font-semibold text-zinc-600">Store Name</label>
+              <input type="text" value={storeName} onChange={(e) => setStoreName(e.target.value)} className="border border-zinc-200 dark:border-zinc-700 rounded-sm px-3 py-2 focus:outline-none focus:border-zinc-400 focus:ring-1 focus:ring-zinc-400 transition-all text-zinc-800 dark:text-zinc-200 font-medium text-[13px]" />
             </div>
-            <div className="p-5 grid grid-cols-1 md:grid-cols-2 gap-5">
-              <div className="flex flex-col gap-1.5">
-                <label className="text-[13px] font-semibold text-zinc-600">Store Name</label>
-                <input type="text" value={storeName} onChange={(e) => setStoreName(e.target.value)} className="border border-zinc-200 dark:border-zinc-700 rounded-sm px-3 py-2 focus:outline-none focus:border-zinc-400 focus:ring-1 focus:ring-zinc-400 transition-all text-zinc-800 dark:text-zinc-200 font-medium text-[13px]" />
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <label className="text-[13px] font-semibold text-zinc-600">Outlet Location</label>
-                <input type="text" value={outletLocation} onChange={(e) => setOutletLocation(e.target.value)} className="border border-zinc-200 dark:border-zinc-700 rounded-sm px-3 py-2 focus:outline-none focus:border-zinc-400 focus:ring-1 focus:ring-zinc-400 transition-all text-zinc-800 dark:text-zinc-200 font-medium text-[13px]" />
-              </div>
-              <div className="flex flex-col gap-1.5 col-span-1 md:col-span-2">
-                <label className="text-[13px] font-semibold text-zinc-600">Address on Receipt</label>
-                <input 
-                   type="text" 
-                   value={address} 
-                   onChange={(e) => setAddress(e.target.value)}
-                   className="border border-zinc-200 dark:border-zinc-700 rounded-sm px-3 py-2 focus:outline-none focus:border-zinc-400 focus:ring-1 focus:ring-zinc-400 transition-all text-zinc-800 dark:text-zinc-200 font-medium text-[13px]" 
-                />
-              </div>
-              <div className="col-span-1 md:col-span-2 flex justify-end mt-1">
-                 <button onClick={handleSave} className="bg-blue-600 text-white px-5 py-2 rounded-sm font-semibold shadow-sm hover:bg-blue-700 transition-colors text-[12px]">
-                   Save Store Info
-                 </button>
-              </div>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[13px] font-semibold text-zinc-600">Outlet Location</label>
+              <input type="text" value={outletLocation} onChange={(e) => setOutletLocation(e.target.value)} className="border border-zinc-200 dark:border-zinc-700 rounded-sm px-3 py-2 focus:outline-none focus:border-zinc-400 focus:ring-1 focus:ring-zinc-400 transition-all text-zinc-800 dark:text-zinc-200 font-medium text-[13px]" />
+            </div>
+            <div className="flex flex-col gap-1.5 col-span-1 md:col-span-2">
+              <label className="text-[13px] font-semibold text-zinc-600">Address on Receipt</label>
+              <input 
+                 type="text" 
+                 value={address} 
+                 onChange={(e) => setAddress(e.target.value)}
+                 className="border border-zinc-200 dark:border-zinc-700 rounded-sm px-3 py-2 focus:outline-none focus:border-zinc-400 focus:ring-1 focus:ring-zinc-400 transition-all text-zinc-800 dark:text-zinc-200 font-medium text-[13px]" 
+              />
+            </div>
+            <div className="col-span-1 md:col-span-2 flex justify-end mt-1">
+               <button onClick={handleSave} className="bg-blue-600 text-white px-5 py-2 rounded-sm font-semibold shadow-sm hover:bg-blue-700 transition-colors text-[12px]">
+                 Save Store Info
+               </button>
             </div>
           </div>
+        </div>
 
-          {/* Hardware */}
-          <div className="bg-white dark:bg-zinc-900/60 backdrop-blur-md border border-zinc-200 dark:border-zinc-700 rounded-sm shadow-sm overflow-hidden">
-            <div className="border-b border-zinc-100 bg-zinc-50 dark:bg-zinc-900 px-5 py-4 flex items-center gap-2">
-              <Printer className="text-zinc-600" size={18} />
-              <h2 className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">Hardware Integration</h2>
-            </div>
-            <div className="p-5 flex flex-col gap-3 text-[13px]">
-                <div className="flex items-center justify-between py-2 border-b border-zinc-100">
-                  <div>
-                    <p className="font-semibold text-zinc-800 dark:text-zinc-200">Auto-Print Receipt</p>
-                    <p className="text-xs text-zinc-500 dark:text-zinc-400">Automatically fire print command after payment</p>
-                  </div>
-                  <div 
-                    onClick={() => {
-                      const newVal = !autoPrintReceipt;
-                      setAutoPrintReceipt(newVal);
-                      localStorage.setItem('shaheen_autoprint', String(newVal));
-                    }}
-                    className={"w-10 h-5 rounded-full relative cursor-pointer shadow-inner transition-colors " + (autoPrintReceipt ? "bg-blue-600" : "bg-zinc-200")}
-                  >
-                    <div className={"w-3.5 h-3.5 bg-white dark:bg-zinc-900/60 backdrop-blur-md rounded-full absolute top-[3px] shadow-sm transition-all " + (autoPrintReceipt ? "right-1" : "left-1")}></div>
-                  </div>
-                </div>
-                <div className="flex items-center justify-between py-2 border-b border-zinc-100">
-                  <div>
-                    <p className="font-semibold text-zinc-800 dark:text-zinc-200">Global Barcode Scanner Listener</p>
-                    <p className="text-xs text-zinc-500 dark:text-zinc-400">Listen for rapid barcode inputs even when out of focus</p>
-                  </div>
-                  <div 
-                    onClick={() => {
-                      const newVal = !globalBarcode;
-                      setGlobalBarcode(newVal);
-                      localStorage.setItem('shaheen_globalbarcode', String(newVal));
-                    }}
-                    className={"w-10 h-5 rounded-full relative cursor-pointer shadow-inner transition-colors " + (globalBarcode ? "bg-blue-600" : "bg-zinc-200")}
-                  >
-                    <div className={"w-3.5 h-3.5 bg-white dark:bg-zinc-900/60 backdrop-blur-md rounded-full absolute top-[3px] shadow-sm transition-all " + (globalBarcode ? "right-1" : "left-1")}></div>
-                  </div>
-                </div>
-                <div className="flex items-center justify-between py-2">
-                  <div>
-                    <p className="font-semibold text-zinc-800 dark:text-zinc-200">Cash Drawer Kick</p>
-                    <p className="text-xs text-zinc-500 dark:text-zinc-400">Send pulse to cash drawer upon exact change</p>
-                  </div>
-                  <div 
-                    onClick={() => {
-                      const newVal = !cashDrawerKick;
-                      setCashDrawerKick(newVal);
-                      localStorage.setItem('shaheen_cashdrawerkick', String(newVal));
-                    }}
-                    className={"w-10 h-5 rounded-full relative cursor-pointer shadow-inner transition-colors " + (cashDrawerKick ? "bg-blue-600" : "bg-zinc-200")}
-                  >
-                    <div className={"w-3.5 h-3.5 bg-white dark:bg-zinc-900/60 backdrop-blur-md rounded-full absolute top-[3px] shadow-sm transition-all " + (cashDrawerKick ? "right-1" : "left-1")}></div>
-                  </div>
-                </div>
-            </div>
+        {/* Hardware Integration */}
+        <div className="bg-white dark:bg-zinc-900/60 backdrop-blur-md border border-zinc-200 dark:border-zinc-700 rounded-sm shadow-sm overflow-hidden">
+          <div className="border-b border-zinc-100 bg-zinc-50 dark:bg-zinc-900 px-5 py-4 flex items-center gap-2">
+            <Printer className="text-zinc-600" size={18} />
+            <h2 className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">Hardware Integration</h2>
           </div>
-
-          {/* Security & Backup */}
-          <div className="bg-white dark:bg-zinc-900/60 backdrop-blur-md border border-zinc-200 dark:border-zinc-700 rounded-sm shadow-sm overflow-hidden">
-            <div className="border-b border-zinc-100 bg-zinc-50 dark:bg-zinc-900 px-5 py-4 flex items-center gap-2">
-              <Database className="text-zinc-600" size={18} />
-              <h2 className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">Security & Offline Backup</h2>
-            </div>
-            <div className="p-5 flex flex-col gap-5">
-              <div className="flex flex-col gap-1.5">
-                <label className="text-[13px] font-semibold text-zinc-600">Manual JSON Backup & Restore</label>
-                <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mb-2">Export your entire offline database to a JSON file. Use Import to restore the system from a JSON file.</p>
-                <div className="flex items-center gap-3">
-                  <button 
-                    onClick={async () => {
-                      try {
-                        const data = {
-                          products: localStorage.getItem('shaheen_products'),
-                          pos_history: localStorage.getItem('shaheen_orders'),
-                          our_order: localStorage.getItem('shaheen_our_order'),
-                          cart: localStorage.getItem('shaheen_cart')
-                        };
-                        const dateString = new Date().toISOString().split('T')[0];
-                        const backupFileName = 'shaheen_backup_' + dateString + '.json';
-                        if ('__TAURI__' in window) {
-                          const { save } = await import('@tauri-apps/plugin-dialog');
-                          const filePath = await save({ filters: [{ name: 'JSON', extensions: ['json'] }], defaultPath: backupFileName });
-                          if (filePath) { await writeTextFile(filePath, JSON.stringify(data)); toast.success('Backup saved successfully'); }
-                        } else {
-                          const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
-                          const url = URL.createObjectURL(blob);
-                          const a = document.createElement('a'); a.href = url; a.download = backupFileName;
-                          document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
-                          toast.success('Backup saved successfully');
-                        }
-                      } catch (err) { toast.error('Failed to export backup: ' + String(err)); }
-                    }}
-                    className="flex items-center gap-2 bg-blue-50 text-blue-600 border border-blue-200 hover:bg-blue-100 px-4 py-2 rounded-sm text-[12px] font-bold transition-colors"
-                  >
-                    <Download size={14} /> Export Backup
-                  </button>
-
-                  <button 
-                    onClick={async () => {
-                      try {
-                        if ('__TAURI__' in window) {
-                          const { open } = await import('@tauri-apps/plugin-dialog');
-                          const selectedPath = await open({ multiple: false, filters: [{ name: 'JSON', extensions: ['json'] }] });
-                          if (selectedPath && typeof selectedPath === 'string') {
-                            if (!confirm('Are you sure? This will override all current offline data.')) return;
-                            const fileContents = await readTextFile(selectedPath);
-                            const data = JSON.parse(fileContents);
-                            if (data.products) localStorage.setItem('shaheen_products', data.products);
-                            if (data.pos_history) localStorage.setItem('shaheen_orders', data.pos_history);
-                            if (data.our_order) localStorage.setItem('shaheen_our_order', data.our_order);
-                            if (data.cart) localStorage.setItem('shaheen_cart', data.cart);
-                            toast.success('Backup restored successfully! Please reload the application.');
-                            window.location.reload();
-                          }
-                        } else {
-                          const input = document.createElement('input'); input.type = 'file'; input.accept = '.json';
-                          input.onchange = (e: any) => {
-                            const file = e.target.files[0]; if (!file) return;
-                            if (!confirm('Are you sure? This will override all current offline data.')) return;
-                            const reader = new FileReader();
-                            reader.onload = (event) => {
-                              try {
-                                const fileContents = event.target?.result as string; const data = JSON.parse(fileContents);
-                                if (data.products) localStorage.setItem('shaheen_products', data.products);
-                                if (data.pos_history) localStorage.setItem('shaheen_orders', data.pos_history);
-                                if (data.our_order) localStorage.setItem('shaheen_our_order', data.our_order);
-                                if (data.cart) localStorage.setItem('shaheen_cart', data.cart);
-                                toast.success('Backup restored successfully! Please reload the application.');
-                                window.location.reload();
-                              } catch (err) { toast.error('Invalid JSON file.'); }
-                            };
-                            reader.readAsText(file);
-                          };
-                          input.click();
-                        }
-                      } catch (err) { toast.error('Import failed or cancelled: ' + String(err)); }
-                    }}
-                    className="flex items-center gap-2 bg-slate-50 text-slate-700 border border-slate-300 hover:bg-slate-100 px-4 py-2 rounded-sm text-[12px] font-bold transition-colors cursor-pointer"
-                  >
-                    <Upload size={14} /> Import Backup
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-blue-50/50 dark:bg-blue-900/10 border-2 border-blue-500/30 rounded-lg p-6 shadow-sm mb-6">
-            <div className="flex items-center gap-3 mb-4 text-blue-700 dark:text-blue-400">
-              <FolderDown size={28} />
-              <h2 className="text-lg font-bold">Auto-Save Export Location (Excel, PDF, SQL)</h2>
-            </div>
-            <div className="flex flex-col gap-2">
-              <p className="text-[14px] text-blue-900/70 dark:text-blue-200/70 mb-2 leading-relaxed max-w-3xl">
-                This is the absolute path on your PC or USB drive where the system will silently and automatically export a complete backup.
-                <br />
-                <span className="font-semibold text-blue-700 dark:text-blue-400">A "SHAHEEN BACKUP" folder will automatically be created inside this path.</span>
-              </p>
-              <div className="flex items-center gap-2">
-                <input 
-                  type="text" 
-                  value={backupPath} 
-                  onChange={e => setBackupPath(e.target.value)}
-                  placeholder="Click Browse to select folder..."
-                  className="border-2 border-blue-300 dark:border-blue-700 rounded-md px-4 py-3 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all text-blue-900 dark:text-blue-100 font-bold w-full text-[15px] bg-white dark:bg-slate-800 shadow-inner" 
-                />
-                <button onClick={() => handleFolderSelect(false)} className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-3 rounded-md font-bold flex items-center gap-2 shadow-sm whitespace-nowrap transition-colors">
-                  <FolderSearch size={20} />
-                  Browse
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-emerald-50/50 dark:bg-emerald-900/10 border-2 border-emerald-500/30 rounded-lg p-6 shadow-sm mb-6">
-            <div className="flex items-center gap-3 mb-4 text-emerald-700 dark:text-emerald-400">
-              <FolderDown size={28} />
-              <h2 className="text-lg font-bold">Secondary Backup Location (USB / External Drive)</h2>
-            </div>
-            <div className="flex flex-col gap-2">
-              <p className="text-[14px] text-emerald-900/70 dark:text-emerald-200/70 mb-2 leading-relaxed max-w-3xl">
-                This is an optional secondary location. If a path is provided here, the system will simultaneously save the exact same backup files.
-                <br />
-                <span className="font-semibold text-emerald-700 dark:text-emerald-400">A "SHAHEEN BACKUP" folder will automatically be created inside this path.</span>
-              </p>
-              <div className="flex items-center gap-2">
-                <input 
-                  type="text" 
-                  value={secondaryBackupPath} 
-                  onChange={e => setSecondaryBackupPath(e.target.value)}
-                  placeholder="Leave empty or click Browse to select a USB drive..."
-                  className="border-2 border-emerald-300 dark:border-emerald-700 rounded-md px-4 py-3 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all text-emerald-900 dark:text-emerald-100 font-bold w-full text-[15px] bg-white dark:bg-slate-800 shadow-inner" 
-                />
-                <button onClick={() => handleFolderSelect(true)} className="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-3 rounded-md font-bold flex items-center gap-2 shadow-sm whitespace-nowrap transition-colors">
-                  <FolderSearch size={20} />
-                  Browse
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <div className="flex justify-end mt-2">
-            <button onClick={handleSave} className="bg-blue-600 text-white px-6 py-2.5 rounded-sm font-semibold shadow-sm hover:bg-blue-700 transition-colors text-[13px]">
-              Save Configurations
-            </button>
-          </div>
-
-          <div className="mt-8 pt-6 border-t border-red-200 dark:border-red-900/30">
-            <h3 className="text-[13px] font-bold text-red-600 mb-2 flex items-center gap-2">
-              <AlertTriangle size={16} /> Danger Zone
-            </h3>
-            <div className="bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-900/30 rounded-sm p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="p-5 flex flex-col gap-3 text-[13px]">
+            <div className="flex items-center justify-between py-2 border-b border-zinc-100">
               <div>
-                <h4 className="text-[13px] font-semibold text-slate-900 dark:text-slate-100">Factory Reset System</h4>
-                <p className="text-[11px] text-slate-500 mt-1">This will permanently delete all offline orders, locally cached products, cart items, and settings from this device. Do this only before handing the system to the client.</p>
+                <p className="font-semibold text-zinc-800 dark:text-zinc-200">Auto-Print Receipt</p>
+                <p className="text-xs text-zinc-500 dark:text-zinc-400">Automatically fire print command after payment</p>
               </div>
-              
-              <button
+              <div 
                 onClick={() => {
-                  (window as any).__wiping = true;
-                  toast.custom(renderFactoryResetToast, { duration: Infinity });
+                  const newVal = !autoPrintReceipt;
+                  setAutoPrintReceipt(newVal);
+                  localStorage.setItem('shaheen_autoprint', String(newVal));
                 }}
-                className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-sm font-bold text-[12px] shadow-sm transition-colors whitespace-nowrap shrink-0"
+                className={"w-10 h-5 rounded-full relative cursor-pointer shadow-inner transition-colors " + (autoPrintReceipt ? "bg-blue-600" : "bg-zinc-200")}
               >
-                Wipe Local Data
+                <div className={"w-3.5 h-3.5 bg-white dark:bg-zinc-900/60 backdrop-blur-md rounded-full absolute top-[3px] shadow-sm transition-all " + (autoPrintReceipt ? "right-1" : "left-1")}></div>
+              </div>
+            </div>
+            <div className="flex items-center justify-between py-2 border-b border-zinc-100">
+              <div>
+                <p className="font-semibold text-zinc-800 dark:text-zinc-200">Global Barcode Scanner Listener</p>
+                <p className="text-xs text-zinc-500 dark:text-zinc-400">Listen for rapid barcode inputs even when out of focus</p>
+              </div>
+              <div 
+                onClick={() => {
+                  const newVal = !globalBarcode;
+                  setGlobalBarcode(newVal);
+                  localStorage.setItem('shaheen_globalbarcode', String(newVal));
+                }}
+                className={"w-10 h-5 rounded-full relative cursor-pointer shadow-inner transition-colors " + (globalBarcode ? "bg-blue-600" : "bg-zinc-200")}
+              >
+                <div className={"w-3.5 h-3.5 bg-white dark:bg-zinc-900/60 backdrop-blur-md rounded-full absolute top-[3px] shadow-sm transition-all " + (globalBarcode ? "right-1" : "left-1")}></div>
+              </div>
+            </div>
+            <div className="flex items-center justify-between py-2">
+              <div>
+                <p className="font-semibold text-zinc-800 dark:text-zinc-200">Cash Drawer Kick</p>
+                <p className="text-xs text-zinc-500 dark:text-zinc-400">Send pulse to cash drawer upon exact change</p>
+              </div>
+              <div 
+                onClick={() => {
+                  const newVal = !cashDrawerKick;
+                  setCashDrawerKick(newVal);
+                  localStorage.setItem('shaheen_cashdrawerkick', String(newVal));
+                }}
+                className={"w-10 h-5 rounded-full relative cursor-pointer shadow-inner transition-colors " + (cashDrawerKick ? "bg-blue-600" : "bg-zinc-200")}
+              >
+                <div className={"w-3.5 h-3.5 bg-white dark:bg-zinc-900/60 backdrop-blur-md rounded-full absolute top-[3px] shadow-sm transition-all " + (cashDrawerKick ? "right-1" : "left-1")}></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Security & Backup */}
+        <div className="bg-white dark:bg-zinc-900/60 backdrop-blur-md border border-zinc-200 dark:border-zinc-700 rounded-sm shadow-sm overflow-hidden">
+          <div className="border-b border-zinc-100 bg-zinc-50 dark:bg-zinc-900 px-5 py-4 flex items-center gap-2">
+            <Database className="text-zinc-600" size={18} />
+            <h2 className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">Security & Offline Backup</h2>
+          </div>
+          <div className="p-5 flex flex-col gap-5">
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[13px] font-semibold text-zinc-600">Manual JSON Backup & Restore</label>
+              <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mb-2">Export your entire offline database to a JSON file. Use Import to restore the system from a JSON file.</p>
+              <div className="flex items-center gap-3">
+                <button 
+                  onClick={async () => {
+                    try {
+                      const data = {
+                        products: localStorage.getItem('shaheen_products'),
+                        pos_history: localStorage.getItem('shaheen_orders'),
+                        our_order: localStorage.getItem('shaheen_our_order'),
+                        cart: localStorage.getItem('shaheen_cart')
+                      };
+                      const dateString = new Date().toISOString().split('T')[0];
+                      const backupFileName = 'shaheen_backup_' + dateString + '.json';
+                      if ('__TAURI__' in window) {
+                        const { save } = await import('@tauri-apps/plugin-dialog');
+                        const filePath = await save({ filters: [{ name: 'JSON', extensions: ['json'] }], defaultPath: backupFileName });
+                        if (filePath) { await writeTextFile(filePath, JSON.stringify(data)); toast.success('Backup saved successfully'); }
+                      } else {
+                        const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a'); a.href = url; a.download = backupFileName;
+                        document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+                        toast.success('Backup saved successfully');
+                      }
+                    } catch (err) { toast.error('Failed to export backup: ' + String(err)); }
+                  }}
+                  className="flex items-center gap-2 bg-blue-50 text-blue-600 border border-blue-200 hover:bg-blue-100 px-4 py-2 rounded-sm text-[12px] font-bold transition-colors"
+                >
+                  <Download size={14} /> Export Backup
+                </button>
+
+                <button 
+                  onClick={async () => {
+                    try {
+                      if ('__TAURI__' in window) {
+                        const { open } = await import('@tauri-apps/plugin-dialog');
+                        const selectedPath = await open({ multiple: false, filters: [{ name: 'JSON', extensions: ['json'] }] });
+                        if (selectedPath && typeof selectedPath === 'string') {
+                          if (!confirm('Are you sure? This will override all current offline data.')) return;
+                          const fileContents = await readTextFile(selectedPath);
+                          const data = JSON.parse(fileContents);
+                          if (data.products) localStorage.setItem('shaheen_products', data.products);
+                          if (data.pos_history) localStorage.setItem('shaheen_orders', data.pos_history);
+                          if (data.our_order) localStorage.setItem('shaheen_our_order', data.our_order);
+                          if (data.cart) localStorage.setItem('shaheen_cart', data.cart);
+                          toast.success('Backup restored successfully! Please reload the application.');
+                          window.location.reload();
+                        }
+                      } else {
+                        const input = document.createElement('input'); input.type = 'file'; input.accept = '.json';
+                        input.onchange = (e: any) => {
+                          const file = e.target.files[0]; if (!file) return;
+                          if (!confirm('Are you sure? This will override all current offline data.')) return;
+                          const reader = new FileReader();
+                          reader.onload = (event) => {
+                            try {
+                              const fileContents = event.target?.result as string; const data = JSON.parse(fileContents);
+                              if (data.products) localStorage.setItem('shaheen_products', data.products);
+                              if (data.pos_history) localStorage.setItem('shaheen_orders', data.pos_history);
+                              if (data.our_order) localStorage.setItem('shaheen_our_order', data.our_order);
+                              if (data.cart) localStorage.setItem('shaheen_cart', data.cart);
+                              toast.success('Backup restored successfully! Please reload the application.');
+                              window.location.reload();
+                            } catch (err) { toast.error('Invalid JSON file.'); }
+                          };
+                          reader.readAsText(file);
+                        };
+                        input.click();
+                      }
+                    } catch (err) { toast.error('Import failed or cancelled: ' + String(err)); }
+                  }}
+                  className="flex items-center gap-2 bg-slate-50 text-slate-700 border border-slate-300 hover:bg-slate-100 px-4 py-2 rounded-sm text-[12px] font-bold transition-colors cursor-pointer"
+                >
+                  <Upload size={14} /> Import Backup
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Auto-Save Export Location */}
+        <div className="bg-blue-50/50 dark:bg-blue-900/10 border-2 border-blue-500/30 rounded-lg p-6 shadow-sm mb-6">
+          <div className="flex items-center gap-3 mb-4 text-blue-700 dark:text-blue-400">
+            <FolderDown size={28} />
+            <h2 className="text-lg font-bold">Auto-Save Export Location (Excel, PDF, SQL)</h2>
+          </div>
+          <div className="flex flex-col gap-2">
+            <p className="text-[14px] text-blue-900/70 dark:text-blue-200/70 mb-2 leading-relaxed max-w-3xl">
+              This is the absolute path on your PC or USB drive where the system will silently and automatically export a complete backup.
+              <br />
+              <span className="font-semibold text-blue-700 dark:text-blue-400">A "SHAHEEN BACKUP" folder will automatically be created inside this path.</span>
+            </p>
+            <div className="flex items-center gap-2">
+              <input 
+                type="text" 
+                value={backupPath} 
+                onChange={e => setBackupPath(e.target.value)}
+                placeholder="Click Browse to select folder..."
+                className="border-2 border-blue-300 dark:border-blue-700 rounded-md px-4 py-3 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all text-blue-900 dark:text-blue-100 font-bold w-full text-[15px] bg-white dark:bg-slate-800 shadow-inner" 
+              />
+              <button onClick={() => handleFolderSelect(false)} className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-3 rounded-md font-bold flex items-center gap-2 shadow-sm whitespace-nowrap transition-colors">
+                <FolderSearch size={20} />
+                Browse
               </button>
             </div>
           </div>
+        </div>
+
+        {/* Secondary Backup Location */}
+        <div className="bg-emerald-50/50 dark:bg-emerald-900/10 border-2 border-emerald-500/30 rounded-lg p-6 shadow-sm mb-6">
+          <div className="flex items-center gap-3 mb-4 text-emerald-700 dark:text-emerald-400">
+            <FolderDown size={28} />
+            <h2 className="text-lg font-bold">Secondary Backup Location (USB / External Drive)</h2>
+          </div>
+          <div className="flex flex-col gap-2">
+            <p className="text-[14px] text-emerald-900/70 dark:text-emerald-200/70 mb-2 leading-relaxed max-w-3xl">
+              This is an optional secondary location. If a path is provided here, the system will simultaneously save the exact same backup files.
+              <br />
+              <span className="font-semibold text-emerald-700 dark:text-emerald-400">A "SHAHEEN BACKUP" folder will automatically be created inside this path.</span>
+            </p>
+            <div className="flex items-center gap-2">
+              <input 
+                type="text" 
+                value={secondaryBackupPath} 
+                onChange={e => setSecondaryBackupPath(e.target.value)}
+                placeholder="Leave empty or click Browse to select a USB drive..."
+                className="border-2 border-emerald-300 dark:border-emerald-700 rounded-md px-4 py-3 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all text-emerald-900 dark:text-emerald-100 font-bold w-full text-[15px] bg-white dark:bg-slate-800 shadow-inner" 
+              />
+              <button onClick={() => handleFolderSelect(true)} className="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-3 rounded-md font-bold flex items-center gap-2 shadow-sm whitespace-nowrap transition-colors">
+                <FolderSearch size={20} />
+                Browse
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex justify-end mt-2">
+          <button onClick={handleSave} className="bg-blue-600 text-white px-6 py-2.5 rounded-sm font-semibold shadow-sm hover:bg-blue-700 transition-colors text-[13px]">
+            Save Configurations
+          </button>
+        </div>
+
+        {/* Danger Zone */}
+        <div className="mt-8 pt-6 border-t border-red-200 dark:border-red-900/30">
+          <h3 className="text-[13px] font-bold text-red-600 mb-2 flex items-center gap-2">
+            <AlertTriangle size={16} /> Danger Zone
+          </h3>
+          <div className="bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-900/30 rounded-sm p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div>
+              <h4 className="text-[13px] font-semibold text-slate-900 dark:text-slate-100">Factory Reset System</h4>
+              <p className="text-[11px] text-slate-500 mt-1">This will permanently delete all offline orders, locally cached products, cart items, and settings from this device. Do this only before handing the system to the client.</p>
+            </div>
+            
+            <button
+              onClick={() => {
+                (window as any).__wiping = true;
+                toast.custom(renderFactoryResetToast, { duration: Infinity });
+              }}
+              className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-sm font-bold text-[12px] shadow-sm transition-colors whitespace-nowrap shrink-0"
+            >
+              Wipe Local Data
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );
