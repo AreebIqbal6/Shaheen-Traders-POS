@@ -66,7 +66,7 @@ export default function SettingsView() {
     localStorage.setItem('shaheen_globalbarcode', String(globalBarcode));
     localStorage.setItem('shaheen_cashdrawerkick', String(cashDrawerKick));
 
-    if ('__TAURI__' in window) {
+    if ('__TAURI_INTERNALS__' in window || '__TAURI__' in window) {
       toast.loading("Validating backup folders...", { id: "save-val" });
       await ensureBackupFolder(backupPath.trim(), false);
       if (secondaryBackupPath.trim()) {
@@ -89,13 +89,13 @@ export default function SettingsView() {
       }
     };
 
-    if (!('__TAURI__' in window) && !('showDirectoryPicker' in window)) {
-      toast.error("Folder selection is only available in the Desktop App.");
+    if (!('__TAURI_INTERNALS__' in window) && !('__TAURI__' in window) && !('showDirectoryPicker' in window)) {
+      toast.error("Automated folder backups require the Desktop App. Web users must manually download files via the browser.", { duration: 6000, style: { minWidth: '400px' } });
       return;
     }
 
     try {
-      if ('__TAURI__' in window) {
+      if ('__TAURI_INTERNALS__' in window || '__TAURI__' in window) {
         const { open } = await import('@tauri-apps/plugin-dialog');
         const selected = await open({
           directory: true,
@@ -337,7 +337,7 @@ export default function SettingsView() {
                       };
                       const dateString = new Date().toISOString().split('T')[0];
                       const backupFileName = 'shaheen_backup_' + dateString + '.json';
-                      if ('__TAURI__' in window) {
+                      if ('__TAURI_INTERNALS__' in window || '__TAURI__' in window) {
                         const { save } = await import('@tauri-apps/plugin-dialog');
                         const filePath = await save({ filters: [{ name: 'JSON', extensions: ['json'] }], defaultPath: backupFileName });
                         if (filePath) { await writeTextFile(filePath, JSON.stringify(data)); toast.success('Backup saved successfully'); }
@@ -358,7 +358,7 @@ export default function SettingsView() {
                 <button 
                   onClick={async () => {
                     try {
-                      if ('__TAURI__' in window) {
+                      if ('__TAURI_INTERNALS__' in window || '__TAURI__' in window) {
                         const { open } = await import('@tauri-apps/plugin-dialog');
                         const selectedPath = await open({ multiple: false, filters: [{ name: 'JSON', extensions: ['json'] }] });
                         if (selectedPath && typeof selectedPath === 'string') {

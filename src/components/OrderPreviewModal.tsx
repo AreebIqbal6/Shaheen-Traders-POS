@@ -115,7 +115,7 @@ export default function OrderPreviewModal({
                         const result = await m.exportReceiptToPDF(draftOrderId, false);
                         if (result) {
                           try {
-                            if ('__TAURI__' in window) {
+                            if ('__TAURI_INTERNALS__' in window || '__TAURI__' in window) {
                               const { BaseDirectory } = await import('@tauri-apps/api/path');
                               const { writeBinaryFile, mkdir, exists } = await import('@tauri-apps/plugin-fs');
                               

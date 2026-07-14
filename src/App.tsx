@@ -10,10 +10,39 @@ import { supabase } from './lib/supabase';
 import { saveOrderBackup } from './utils/exportManager';
 
 const RootRedirect = () => {
+  const [target, setTarget] = React.useState<string | null>(null);
   const location = useLocation();
+
+  React.useEffect(() => {
+    async function determineRoute() {
+      const isDesktop = '__TAURI_INTERNALS__' in window || '__TAURI__' in window;
+      if (!isDesktop) {
+        setTarget(`/booker${location.search}${location.hash}`);
+        return;
+      }
+      try {
+        const { getName } = await import('@tauri-apps/api/app');
+        const appName = await getName();
+        if (appName.toLowerCase().includes('booker')) {
+          setTarget(`/booker${location.search}${location.hash}`);
+        } else {
+          setTarget(`/admin${location.search}${location.hash}`);
+        }
+      } catch (err) {
+        setTarget(`/admin${location.search}${location.hash}`);
+      }
+    }
+    
+    if (location.pathname === '/') {
+      determineRoute();
+    }
+  }, [location]);
+
   if (location.pathname === '/') {
-    // Basic root redirection, can be smarter based on auth state
-    return <Navigate to={`/booker${location.search}${location.hash}`} replace />;
+    if (target) {
+      return <Navigate to={target} replace />;
+    }
+    return null; // or loading
   }
   return null;
 };
@@ -33,7 +62,7 @@ export default function App() {
   useEffect(() => {
     // 1. Only run this aggressive background listener on the PC environment
     // to prevent mobile bookers from trying to execute local file writes.
-    const isDesktop = '__TAURI__' in window || window.location.pathname.startsWith('/admin');
+    const isDesktop = '__TAURI_INTERNALS__' in window || '__TAURI__' in window || window.location.pathname.startsWith('/admin');
     
     if (!isDesktop) return;
 

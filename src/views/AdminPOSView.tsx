@@ -158,7 +158,7 @@ export default function AdminPOSView() {
       return;
     }
 
-    if (!silent && '__TAURI__' in window) {
+    if (!silent && ('__TAURI_INTERNALS__' in window || '__TAURI__' in window)) {
       const bp = localStorage.getItem('shaheen_backuppath');
       if (bp) {
         const { ensureBackupFolder } = await import('../utils/backupValidator');
@@ -356,7 +356,7 @@ export default function AdminPOSView() {
 
   // Automated PC Background Sync
   useEffect(() => {
-    const isTauri = '__TAURI__' in window;
+    const isTauri = '__TAURI_INTERNALS__' in window || '__TAURI__' in window;
     if (!isTauri || incomingOrders.length === 0) return;
 
     let autoBackedUp: string[] = [];
@@ -872,7 +872,7 @@ export default function AdminPOSView() {
         ...orderData
       };
 
-      if (window.__TAURI__) {
+      if (window.__TAURI_INTERNALS__ || window.__TAURI__) {
         saveSilentBackup(newOrder).catch(err => console.error("Silent backup failed:", err));
       }
 
@@ -894,9 +894,10 @@ export default function AdminPOSView() {
         setLastReceiptNumber(newOrder.receiptNumber as string);
 
         try {
-          if (window.__TAURI__) {
+          if (window.__TAURI_INTERNALS__ || window.__TAURI__) {
             const printerIp = localStorage.getItem('shaheen_printer_ip') || '192.168.1.100';
-            await window.__TAURI__.invoke('print_receipt_tcp', { printerIp, payload: orderData });
+            const tauri = window.__TAURI__ || window.__TAURI_INTERNALS__;
+            await tauri.invoke('print_receipt_tcp', { printerIp, payload: orderData });
           }
         } catch (e) {
           console.error("Hardware print failed:", e);

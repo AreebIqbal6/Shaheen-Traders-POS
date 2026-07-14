@@ -2,7 +2,7 @@ import { exists, mkdir } from '@tauri-apps/plugin-fs';
 
 export const ensureBackupFolder = async (basePath: string, isSecondary: boolean = false) => {
   // 1. If we are on the Web (Vercel/Chrome), we cannot manipulate native file systems silently.
-  if (!('__TAURI__' in window)) {
+  if (!('__TAURI_INTERNALS__' in window) && !('__TAURI__' in window)) {
     return true; 
   }
 

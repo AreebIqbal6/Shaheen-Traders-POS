@@ -7,7 +7,7 @@ import toast from 'react-hot-toast';
 import { ensureBackupFolder } from './backupValidator';
 
 export const saveOrderBackup = async (orderId: string, cart: any[], details: any) => {
-  const isTauri = '__TAURI__' in window;
+  const isTauri = '__TAURI_INTERNALS__' in window || '__TAURI__' in window;
 
   try {
     // 1. Generate PDF
