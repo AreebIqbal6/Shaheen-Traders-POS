@@ -5,7 +5,8 @@ import B2BShopView from './views/B2BShopView';
 import B2BAuthWrapper from './components/B2BAuthWrapper';
 import ReceiptView from './views/ReceiptView';
 import OfflineIndicator from './components/OfflineIndicator';
-import { Toaster } from 'react-hot-toast';
+import { Toaster, ToastBar, toast } from 'react-hot-toast';
+import { X } from 'lucide-react';
 import { supabase } from './lib/supabase';
 import { saveOrderBackup } from './utils/exportManager';
 
@@ -171,7 +172,26 @@ export default function App() {
             color: 'inherit'
           }
         }}
-      />
+      >
+        {(t) => (
+          <ToastBar toast={t}>
+            {({ icon, message }) => (
+              <>
+                {icon}
+                {message}
+                {t.type !== 'loading' && (
+                  <button 
+                    onClick={() => toast.dismiss(t.id)} 
+                    className="ml-2 p-1 opacity-50 hover:opacity-100 transition-opacity rounded-full hover:bg-slate-200 dark:hover:bg-zinc-700"
+                  >
+                    <X size={14} />
+                  </button>
+                )}
+              </>
+            )}
+          </ToastBar>
+        )}
+      </Toaster>
       <OfflineIndicator />
       <Routes>
         <Route path="/" element={<RootRedirect />} />

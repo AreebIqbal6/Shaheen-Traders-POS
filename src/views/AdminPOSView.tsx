@@ -202,6 +202,21 @@ export default function AdminPOSView() {
          if (!bookerError) localStorage.removeItem('shaheen_offline_bookers');
       }
       
+      // 3.5 Handle Wipe Inventory
+      if (localStorage.getItem('shaheen_wipe_products_pending') === 'true') {
+         await supabase.from('products').delete().gte('price', 0);
+         localStorage.removeItem('shaheen_wipe_products_pending');
+      }
+
+      // 3.6 Handle Deleted Products
+      const deletedProducts = JSON.parse(localStorage.getItem('shaheen_deleted_products') || '[]');
+      if (deletedProducts.length > 0) {
+         for (const pId of deletedProducts) {
+           await supabase.from('products').delete().eq('id', pId);
+         }
+         localStorage.removeItem('shaheen_deleted_products');
+      }
+      
       // 4. Handle Deleted Bookers
       const deletedBookers = JSON.parse(localStorage.getItem('shaheen_deleted_bookers') || '[]');
       if (deletedBookers.length > 0) {
@@ -567,6 +582,25 @@ export default function AdminPOSView() {
         throw new Error('Offline order, skipping Supabase');
       }
       setIncomingOrders(prev => prev.map(o => (o.id && o.id === order.id) ? { ...o, status: 'ACCEPTED' } : o));
+      
+      // Auto-save the PDF Backup locally
+      if (window.__TAURI_INTERNALS__ || window.__TAURI__) {
+        const totalAmount = order.total_amount || order.total || 0;
+        const mappedOrder = {
+          receiptNumber: order.receipt_number || order.id,
+          date: order.created_at ? new Date(order.created_at) : new Date(),
+          items: order.items || [],
+          total: totalAmount,
+          clientName: order.client_name || 'B2B Customer',
+          paymentTerms: order.payment_terms || 'Cash on Delivery',
+          area: order.area || '',
+          bookerName: order.booker_name || '',
+          contactNumber: order.client_phone || order.contact_number || '',
+          totalWords: '' // Silent backup doesn't strictly need accurate words for the filename/storage, but we can leave it empty
+        };
+        saveSilentBackup(mappedOrder as any).catch(err => console.error("Silent backup failed:", err));
+      }
+      toast.success('Order acknowledged and saved locally!');
     } catch (err: any) {
       console.warn('Supabase update failed, updating local order:', err);
       let offlineOrders = JSON.parse(localStorage.getItem('shaheen_offline_orders') || '[]');

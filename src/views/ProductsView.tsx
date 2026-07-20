@@ -278,7 +278,13 @@ export default function ProductsView({ products = [], setProducts }: ProductsVie
 
     try {
       const { error } = await supabase.from('products').delete().eq('id', id);
-      if (error) throw error;
+      if (error) console.error("Supabase delete failed:", error);
+
+      const deletedQueue = JSON.parse(localStorage.getItem('shaheen_deleted_products') || '[]');
+      if (!deletedQueue.includes(id)) {
+        deletedQueue.push(id);
+        localStorage.setItem('shaheen_deleted_products', JSON.stringify(deletedQueue));
+      }
 
       const newMinStockDict = { ...minStockDict };
       delete newMinStockDict[id];
@@ -445,17 +451,16 @@ export default function ProductsView({ products = [], setProducts }: ProductsVie
                           const pwdInput = document.getElementById("wipe-inventory-" + t.id) as HTMLInputElement;
                           if (pwdInput.value !== '1234') { toast.error("Incorrect Password!"); return; }
                           
-                          if (!navigator.onLine) {
-                            toast.error("You must be online to clear inventory.");
-                            return;
-                          }
-
                           isWipingRef.current = true;
                           pendingOpsRef.current.clear();
                           toast.loading("Clearing inventory...", { id: "clear-inv" });
                           try {
-                            const { error } = await supabase.from('products').delete().gte('price', 0);
-                            if (error) throw error;
+                            localStorage.setItem('shaheen_wipe_products_pending', 'true');
+                            if (navigator.onLine) {
+                               const { error } = await supabase.from('products').delete().gte('price', 0);
+                               if (error) throw error;
+                               localStorage.removeItem('shaheen_wipe_products_pending');
+                            }
 
                             if (typeof setProducts === 'function') setProducts([]);
                             setMinStockDict({});
