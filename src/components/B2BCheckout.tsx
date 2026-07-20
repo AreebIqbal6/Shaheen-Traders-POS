@@ -58,7 +58,7 @@ export default function B2BCheckout({ cart, total, onSuccess, onBack }: B2BCheck
     setError(null);
 
     // Manual validation to prevent silent HTML5 validation failures on mobile
-    if (!formData.businessName || !formData.areaName || !formData.bookerName || !formData.contactNumber) {
+    if (!formData.businessName || !formData.bookerName) {
       setError('Please fill out all required fields.');
       setIsSubmitting(false);
       return;
@@ -69,11 +69,7 @@ export default function B2BCheckout({ cart, total, onSuccess, onBack }: B2BCheck
       return /^((\+92)|(92))?3\d{9}$|^03\d{9}$/.test(cleanPhone);
     };
 
-    if (!validatePhone(formData.contactNumber)) {
-      setError('Please enter a valid Pakistani phone number (e.g. 0300 1234567).');
-      setIsSubmitting(false);
-      return;
-    }
+    // Phone validation removed
 
     const orderPayload = {
       client_name: formData.businessName,
