@@ -265,8 +265,17 @@ export default function AdminPOSView() {
       if (error || !cloudProducts) return;
       
       setProducts(prev => {
+        const cloudIds = new Set(cloudProducts.map(p => p.id));
         const localById = new Map(prev.map(p => [p.id, p]));
-        const merged = [...prev];
+        const merged = [];
+        
+        // Keep offline creations that haven't been synced yet
+        for (const p of prev) {
+           if (p.id.startsWith('temp-') && !cloudIds.has(p.id)) {
+              merged.push(p);
+           }
+        }
+
         for (const cp of cloudProducts) {
           const hasRealSku = cp.sku && cp.sku !== cp.barcode && cp.sku.trim() !== '';
           const localProduct = localById.get(cp.id);
@@ -277,12 +286,7 @@ export default function AdminPOSView() {
             pcsPerBox: cp.pcs_per_box || cp.pcsPerBox || localProduct?.pcsPerBox || 12,
             boxPerCtn: cp.box_per_ctn || cp.boxPerCtn || localProduct?.boxPerCtn || 6
           };
-          if (localById.has(cp.id)) {
-            const idx = merged.findIndex(p => p.id === cp.id);
-            if (idx !== -1) merged[idx] = { ...merged[idx], ...mapped };
-          } else {
-            merged.push(mapped);
-          }
+          merged.push(mapped);
         }
         return merged;
       });
