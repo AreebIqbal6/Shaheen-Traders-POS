@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Store, Receipt, Printer, Database, Download, Upload, FolderDown, FolderSearch, AlertTriangle, X } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { writeTextFile, readTextFile } from '@tauri-apps/plugin-fs';
-import { desktopDir } from '@tauri-apps/api/path';
+
 import { supabase } from '../lib/supabase';
 import { ensureBackupFolder } from '../utils/backupValidator';
 
@@ -17,7 +16,8 @@ export default function SettingsView() {
         setBackupPath(saved);
       } else {
         try {
-          const desktop = await desktopDir();
+          const { desktopDir } = await import('@tauri-apps/api/path');
+      const desktop = await desktopDir();
           setBackupPath(desktop);
         } catch {
           setBackupPath('D:\\AREEB');
@@ -381,7 +381,7 @@ export default function SettingsView() {
                       if ('__TAURI_INTERNALS__' in window || '__TAURI__' in window) {
                         const { save } = await import('@tauri-apps/plugin-dialog');
                         const filePath = await save({ filters: [{ name: 'JSON', extensions: ['json'] }], defaultPath: backupFileName });
-                        if (filePath) { await writeTextFile(filePath, JSON.stringify(data)); toast.success('Backup saved successfully'); }
+                        if (filePath) { const { writeTextFile } = await import('@tauri-apps/plugin-fs'); await writeTextFile(filePath, JSON.stringify(data)); toast.success('Backup saved successfully'); }
                       } else {
                         const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
                         const url = URL.createObjectURL(blob);
@@ -404,7 +404,8 @@ export default function SettingsView() {
                         const selectedPath = await open({ multiple: false, filters: [{ name: 'JSON', extensions: ['json'] }] });
                         if (selectedPath && typeof selectedPath === 'string') {
                           if (!confirm('Are you sure? This will override all current offline data.')) return;
-                          const fileContents = await readTextFile(selectedPath);
+                          const { readTextFile } = await import('@tauri-apps/plugin-fs');
+                      const fileContents = await readTextFile(selectedPath);
                           const data = JSON.parse(fileContents);
                           if (data.products) localStorage.setItem('shaheen_products', data.products);
                           if (data.pos_history) localStorage.setItem('shaheen_orders', data.pos_history);

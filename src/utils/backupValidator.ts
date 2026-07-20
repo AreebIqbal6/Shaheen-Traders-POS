@@ -1,4 +1,4 @@
-import { exists, mkdir } from '@tauri-apps/plugin-fs';
+
 
 export const ensureBackupFolder = async (basePath: string, isSecondary: boolean = false) => {
   // 1. If we are on the Web (Vercel/Chrome), we cannot manipulate native file systems silently.
@@ -12,6 +12,7 @@ export const ensureBackupFolder = async (basePath: string, isSecondary: boolean 
 
   try {
     const cleanPath = basePath.trim();
+    const { exists, mkdir } = await import('@tauri-apps/plugin-fs');
     
     // 2. Check if the parent path exists (e.g., D:\ or E:\Backups)
     const baseExists = await exists(cleanPath);

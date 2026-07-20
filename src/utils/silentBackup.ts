@@ -1,4 +1,4 @@
-import { writeTextFile, mkdir, exists } from "@tauri-apps/plugin-fs";
+
 
 export async function saveSilentBackup(orderData: any) {
   // Use the key exactly as it appears in SettingsView
@@ -13,6 +13,7 @@ export async function saveSilentBackup(orderData: any) {
   const targetDir = `${primaryPath}/Shaheen Traders Backup/${dateStr}/${orderId}`;
 
   try {
+    const { writeTextFile, mkdir, exists } = await import('@tauri-apps/plugin-fs');
     // Tauri's fs plugin handles directory creation recursively
     if (!(await exists(targetDir))) {
      await mkdir(backupPath, { recursive: true });

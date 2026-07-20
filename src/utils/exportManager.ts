@@ -1,7 +1,6 @@
 import { exportReceiptToPDF } from './exportPdf';
 import { generateOrderExcel } from './excel';
-import { mkdir, writeFile } from '@tauri-apps/plugin-fs';
-import { desktopDir } from '@tauri-apps/api/path';
+
 import { saveAs } from 'file-saver';
 import toast from 'react-hot-toast';
 import { ensureBackupFolder } from './backupValidator';
@@ -31,6 +30,8 @@ export const saveOrderBackup = async (orderId: string, cart: any[], details: any
     const dateStr = `${d}-${m}-${y}`;
 
     if (isTauri) {
+      const { desktopDir } = await import('@tauri-apps/api/path');
+      const { mkdir, writeFile } = await import('@tauri-apps/plugin-fs');
       // NATIVE TAURI DESKTOP MODE
       let basePath = localStorage.getItem('shaheen_backuppath');
       if (!basePath || basePath.startsWith('Web Folder')) {
