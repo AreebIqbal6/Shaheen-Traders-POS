@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Store, Receipt, Printer, Database, Download, Upload, FolderDown, FolderSearch, AlertTriangle, X } from 'lucide-react';
+import { Store, Receipt, Printer, Database, Download, Upload, FolderDown, FolderSearch, AlertTriangle, X , Download, RefreshCw } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 import { supabase } from '../lib/supabase';
@@ -39,6 +39,8 @@ export default function SettingsView() {
   const [storeName, setStoreName] = useState(() => {
     return localStorage.getItem('shaheen_store_name') || 'Shaheen Global Traders';
   });
+    const [isCheckingUpdate, setIsCheckingUpdate] = useState(false);
+  const [updateStatus, setUpdateStatus] = useState('');
   const [logo, setLogo] = useState(() => {
     return localStorage.getItem('shaheen_logo') || '';
   });
@@ -58,6 +60,32 @@ export default function SettingsView() {
   const [cashDrawerKick, setCashDrawerKick] = useState(() => {
     return localStorage.getItem('shaheen_cashdrawerkick') !== 'false';
   });
+
+  const handleCheckUpdate = async () => {
+    try {
+      setIsCheckingUpdate(true);
+      setUpdateStatus('Checking for updates...');
+      const { check } = await import('@tauri-apps/plugin-updater');
+      const update = await check();
+      
+      if (update) {
+        setUpdateStatus(`Found update v${update.version}. Downloading...`);
+        await update.downloadAndInstall();
+        setUpdateStatus('Update installed. Restarting...');
+        const { relaunch } = await import('@tauri-apps/plugin-process');
+        await relaunch();
+      } else {
+        setUpdateStatus('You are on the latest version.');
+        setTimeout(() => setUpdateStatus(''), 3000);
+      }
+    } catch (err: any) {
+      console.error(err);
+      setUpdateStatus('Failed to check for updates: ' + err.message);
+      setTimeout(() => setUpdateStatus(''), 3000);
+    } finally {
+      setIsCheckingUpdate(false);
+    }
+  };
 
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
