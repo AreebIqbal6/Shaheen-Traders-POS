@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { playNotificationSound } from '../utils/audio';
+import { saveSilentBackup } from '../utils/silentBackup';
 import { LayoutDashboard, ShoppingBag, Package, Settings, Search, Trash2, Printer, ScanBarcode, BarChart3, Bell, X, AlertTriangle, FileText, User, Building, Moon, Sun, Grid, ShoppingCart, CreditCard, MapPin, LogOut, ClipboardList, Menu, Users, ChevronDown, Phone, Map as MapIcon, PieChart, BookOpen } from 'lucide-react';
 import ProductsView from './ProductsView';
 import type { Product } from './ProductsView';
-import SettingsView from './SettingsView';
+import SettingsView from "./SettingsView";
 import AuthView from './AuthView';
 import BookersView from './BookersView';
 import TrackersView from './TrackersView';
@@ -22,6 +23,7 @@ import toast from 'react-hot-toast';
 import { toWords } from 'number-to-words';
 import { supabase } from '../lib/supabase';
 import { CloudUpload } from 'lucide-react';
+import { generateSKU } from './ProductsView';
 
 interface CartItem extends Product {
   cartId: string;
@@ -48,9 +50,6 @@ export interface OurOrderItem {
   barcode: string;
   quantityNeeded: number;
 }
-
-// Mock data removed for production
-import { generateSKU } from './ProductsView';
 
 export default function AdminPOSView() {
   const [products, setProducts] = useState<Product[]>(() => {
@@ -147,65 +146,63 @@ export default function AdminPOSView() {
   useEffect(() => {
     localStorage.setItem('shaheen_bookerName', bookerName);
   }, [bookerName]);
+  
   const [isSyncing, setIsSyncing] = useState(false);
 
+  // ==========================================
+  // PRIORITY 1: HARDENED MANUAL SYNC ENGINE
+  // ==========================================
   const handleSyncToCloud = async (e?: any) => {
     if ((window as any).__wiping) return;
     const silent = e === true;
+    
     if (!navigator.onLine) {
       if (!silent) toast.error('Cannot sync while offline. Please check your internet connection.');
       return;
     }
+
+    if (!silent && ('__TAURI_INTERNALS__' in window || '__TAURI__' in window)) {
+      const bp = localStorage.getItem('shaheen_backuppath');
+      if (bp) {
+        const { ensureBackupFolder } = await import('../utils/backupValidator');
+        await ensureBackupFolder(bp, false);
+      }
+    }
+    
+    // Prevent concurrent sync loops that choke weak processors
+    if (isSyncing) return; 
+    
     if (!silent) setIsSyncing(true);
+    
     try {
+      // 1. Sync Products (Strict Upsert)
       const productsToSync = products.map(p => {
-        // Generate a real SKU if one doesn't exist or if it's just the barcode
         const hasRealSku = p.sku && p.sku !== p.barcode && p.sku.trim() !== '';
-        const sku = hasRealSku ? p.sku : generateSKU(p.name || 'Product', p.barcode || '');
         return {
           id: p.id,
           name: p.name || 'Unknown Product',
           price: p.price,
           stock: p.stock,
           barcode: p.barcode,
-          sku: sku,
+          sku: hasRealSku ? p.sku : generateSKU(p.name || 'Product', p.barcode || ''),
           category: p.category || null
         };
       });
 
-      const { error } = await supabase.from('products').upsert(productsToSync);
-      if (error) throw error;
+      const { error: prodError } = await supabase.from('products').upsert(productsToSync, { onConflict: 'id' });
+      if (prodError) throw prodError;
       
-      // Pull products from cloud (picks up products added on other devices)
-      const { data: cloudProducts, error: pullError } = await supabase.from('products').select('*');
-      if (!pullError && cloudProducts && cloudProducts.length > 0) {
-        const localIds = new Set(products.map(p => p.id));
-        const newFromCloud = cloudProducts
-          .filter((cp: any) => !localIds.has(cp.id))
-          .map((cp: any) => {
-            const needsNewSku = !cp.sku || cp.sku === cp.barcode || cp.sku.trim() === '';
-            return {
-              ...cp,
-              sku: needsNewSku ? generateSKU(cp.name, cp.barcode) : cp.sku,
-              pcsPerBox: cp.pcs_per_box || cp.pcsPerBox || 12,
-              boxPerCtn: cp.box_per_ctn || cp.boxPerCtn || 6
-            };
-          });
-        if (newFromCloud.length > 0) {
-          setProducts(prev => [...prev, ...newFromCloud]);
-        }
-      }
-
-      // Sync offline records
+      // 2. Sync Offline Status Updates
       await syncOfflineStatusUpdates();
       
-      // Sync Bookers
+      // 3. Sync Offline Bookers
       const offlineBookers = JSON.parse(localStorage.getItem('shaheen_offline_bookers') || '[]');
       if (offlineBookers.length > 0) {
-         await supabase.from('bookers').upsert(offlineBookers);
-         localStorage.removeItem('shaheen_offline_bookers');
+         const { error: bookerError } = await supabase.from('bookers').upsert(offlineBookers, { onConflict: 'booker_number' });
+         if (!bookerError) localStorage.removeItem('shaheen_offline_bookers');
       }
       
+      // 4. Handle Deleted Bookers
       const deletedBookers = JSON.parse(localStorage.getItem('shaheen_deleted_bookers') || '[]');
       if (deletedBookers.length > 0) {
          for (const bNum of deletedBookers) {
@@ -214,13 +211,12 @@ export default function AdminPOSView() {
          localStorage.removeItem('shaheen_deleted_bookers');
       }
       
-      // Pull latest records, strictly preventing duplicates
+      // 5. Pull latest state to UI securely
       await fetchOrders();
-
-      // Also refresh bookers from cloud
       await pullBookersFromCloud();
+      await pullProductsFromCloud();
       
-      if (!silent) toast.success('Successfully synced items, records, and triggered PC backups!');
+      if (!silent) toast.success('Manual synchronization flawless and complete.');
     } catch (err: any) {
       console.error('Sync error:', err);
       if (!silent) toast.error('Failed to sync to cloud: ' + err.message);
@@ -229,7 +225,7 @@ export default function AdminPOSView() {
     }
   };
 
-  // Background Auto-Sync every 5 seconds
+  // Background Auto-Sync every 5 seconds (Silent Mode)
   const syncRef = useRef(handleSyncToCloud);
   useEffect(() => {
     syncRef.current = handleSyncToCloud;
@@ -269,24 +265,19 @@ export default function AdminPOSView() {
         const localById = new Map(prev.map(p => [p.id, p]));
         const merged = [...prev];
         for (const cp of cloudProducts) {
-          // Check if sku from cloud is just the barcode (meaning it's not a real SKU)
           const hasRealSku = cp.sku && cp.sku !== cp.barcode && cp.sku.trim() !== '';
           const localProduct = localById.get(cp.id);
           const mapped = {
             ...cp,
-            // Prefer local name if cloud name is empty
             name: cp.name || localProduct?.name || 'Unknown Product',
-            // Generate a proper SKU if the cloud one is just the barcode
             sku: hasRealSku ? cp.sku : (localProduct?.sku && localProduct.sku !== localProduct.barcode ? localProduct.sku : generateSKU(cp.name || 'Product', cp.barcode)),
             pcsPerBox: cp.pcs_per_box || cp.pcsPerBox || localProduct?.pcsPerBox || 12,
             boxPerCtn: cp.box_per_ctn || cp.boxPerCtn || localProduct?.boxPerCtn || 6
           };
           if (localById.has(cp.id)) {
-            // Update existing product with cloud data
             const idx = merged.findIndex(p => p.id === cp.id);
             if (idx !== -1) merged[idx] = { ...merged[idx], ...mapped };
           } else {
-            // New product from another device
             merged.push(mapped);
           }
         }
@@ -297,7 +288,6 @@ export default function AdminPOSView() {
     }
   }, []);
 
-  // Auto-pull bookers from Supabase on mount (cross-device sync)
   const pullBookersFromCloud = useCallback(async () => {
     try {
       const { data, error } = await supabase.from('bookers').select('*').order('created_at', { ascending: false });
@@ -317,7 +307,7 @@ export default function AdminPOSView() {
     localStorage.setItem('shaheen_our_order', JSON.stringify(ourOrderList));
   }, [ourOrderList]);
 
-  const handleAddToOurOrder = (product: Product | CartItem, quantityNeeded: number) => {
+  const handleAddToOurOrder = useCallback((product: Product | CartItem, quantityNeeded: number) => {
     setOurOrderList(prev => {
       const existing = prev.find(i => i.id === product.id);
       if (existing) {
@@ -326,7 +316,7 @@ export default function AdminPOSView() {
       return [...prev, { id: product.id, name: product.name, barcode: product.barcode || '', quantityNeeded }];
     });
     toast.success(`Added ${quantityNeeded} of ${product.name} to Our Order list.`);
-  };
+  }, []);
 
   // Enterprise USB Hardware Backup
   useEffect(() => {
@@ -350,13 +340,17 @@ export default function AdminPOSView() {
   const hiddenScannerRef = useRef<HTMLInputElement>(null);
   const [isScannerFocused, setIsScannerFocused] = useState(true);
 
-  const calculateItemPrice = (item: CartItem) => {
+  // ==========================================
+  // PRIORITY 3: CPU OPTIMIZATIONS (MOBILE)
+  // ==========================================
+  const calculateItemPrice = useCallback((item: CartItem) => {
     return item.price * item.quantity;
-  };
+  }, []);
 
-  const subTotal = cart.reduce((sum, item) => sum + calculateItemPrice(item), 0);
-  const tax = 0; // Removed tax as per user request
-  const total = subTotal + tax;
+  // Prevent subtotal loop freezing on weak CPUs
+  const subTotal = useMemo(() => cart.reduce((sum, item) => sum + calculateItemPrice(item), 0), [cart, calculateItemPrice]);
+  const tax = 0; 
+  const total = useMemo(() => subTotal + tax, [subTotal, tax]);
 
   // Incoming Orders System
   const [incomingOrders, setIncomingOrders] = useState<any[]>([]);
@@ -365,7 +359,7 @@ export default function AdminPOSView() {
 
   // Automated PC Background Sync
   useEffect(() => {
-    const isTauri = '__TAURI__' in window;
+    const isTauri = '__TAURI_INTERNALS__' in window || '__TAURI__' in window;
     if (!isTauri || incomingOrders.length === 0) return;
 
     let autoBackedUp: string[] = [];
@@ -375,9 +369,7 @@ export default function AdminPOSView() {
       autoBackedUp = [];
     }
     
-    // Initialize the state once on mount or when incomingOrders changes
     setAutoBackedUpOrders(autoBackedUp);
-    
     let hasNewBackups = false;
 
     incomingOrders.forEach(async (order) => {
@@ -398,7 +390,6 @@ export default function AdminPOSView() {
           await saveOrderBackup(orderId.toString(), order.items || [], details);
           toast.success(`Auto-backed up ${orderId} to PC.`);
           
-          // Modify Option A: Remove from queue and add to History
           supabase.from('orders').update({ status: 'COMPLETED' }).eq('id', order.id || orderId).then(({ error }) => {
             if (error) console.error("Failed to complete auto-backed up order in Supabase:", error);
           });
@@ -444,13 +435,11 @@ export default function AdminPOSView() {
       
       let allOrders = data || [];
       
-      // Add missing SKUs
       allOrders = allOrders.map((o: any) => ({
         ...o,
         items: (o.items || []).map((i: any) => ({ ...i, sku: i.sku || generateSKU(i.name, i.barcode) }))
       }));
         
-      // Hide orders that were completed locally but haven't synced to Supabase yet
       const statusQueue = JSON.parse(localStorage.getItem('shaheen_offline_status_updates') || '[]');
       if (statusQueue.length > 0) {
          const hiddenIds = statusQueue
@@ -462,7 +451,6 @@ export default function AdminPOSView() {
       const offlineOrders = JSON.parse(localStorage.getItem('shaheen_offline_orders') || '[]');
       if (offlineOrders.length > 0) {
         let pendingOffline = offlineOrders.filter((o: any) => o.status === 'PENDING' || o.status === 'ACCEPTED' || o.status === 'PROCESSING');
-        // Also hide offline orders that have pending terminal status updates (just in case)
         if (statusQueue.length > 0) {
            const hiddenIds = statusQueue
              .filter((u: any) => u.status === 'COMPLETED' || u.status === 'CANCELLED')
@@ -470,12 +458,10 @@ export default function AdminPOSView() {
            pendingOffline = pendingOffline.filter((o: any) => !hiddenIds.includes(o.id) && !hiddenIds.includes(o.receipt_number));
         }
         
-        // Add missing SKUs to offline orders too
         pendingOffline = pendingOffline.map((o: any) => ({
           ...o,
           items: (o.items || []).map((i: any) => ({ ...i, sku: i.sku || generateSKU(i.name, i.barcode) }))
         }));
-        // Deduplicate: if the offline order already exists in allOrders (Supabase), remove it from pendingOffline
         const existingIds = new Set(allOrders.map((o: any) => o.id).filter(Boolean));
         const existingReceipts = new Set(allOrders.map((o: any) => o.receipt_number).filter(Boolean));
         
@@ -486,7 +472,6 @@ export default function AdminPOSView() {
         allOrders = [...pendingOffline, ...allOrders];
       }
       
-      // Apply the bulletproof local hidden filter
       setIncomingOrders(allOrders.filter((o: any) => !permanentlyHiddenOrders.includes(o.id) && !permanentlyHiddenOrders.includes(o.receipt_number)));
     } catch (err) {
       console.warn('Failed to fetch from Supabase, loading local orders instead:', err);
@@ -500,7 +485,6 @@ export default function AdminPOSView() {
     }
   };
 
-  // Re-apply filter when permanentlyHiddenOrders changes
   useEffect(() => {
     if (permanentlyHiddenOrders.length > 0) {
       setIncomingOrders(prev => prev.filter(o => !permanentlyHiddenOrders.includes(o.id) && !permanentlyHiddenOrders.includes(o.receipt_number)));
@@ -557,7 +541,6 @@ export default function AdminPOSView() {
       )
       .subscribe();
 
-    // Realtime listener for products — syncs across devices instantly
     const productsChannel = supabase.channel('public:products')
       .on(
         'postgres_changes',
@@ -575,7 +558,7 @@ export default function AdminPOSView() {
     };
   }, []);
 
-  const handleAcknowledgeOrder = async (order: any) => {
+  const handleAcknowledgeOrder = useCallback(async (order: any) => {
     try {
       if (order.id) {
         const { error } = await supabase.from('orders').update({ status: 'ACCEPTED' }).eq('id', order.id);
@@ -594,9 +577,9 @@ export default function AdminPOSView() {
       }
       setIncomingOrders(prev => prev.map(o => ((order.id && o.id === order.id) || (order.receipt_number && o.receipt_number === order.receipt_number)) ? { ...o, status: 'ACCEPTED' } : o));
     }
-  };
+  }, []);
 
-  const handleCancelIncomingOrder = async (order: any) => {
+  const handleCancelIncomingOrder = useCallback(async (order: any) => {
     toast((t) => (
       <span className="flex flex-col gap-2">
         <span className="font-semibold text-slate-900">Cancel this order?</span>
@@ -636,9 +619,9 @@ export default function AdminPOSView() {
         </div>
       </span>
     ), { duration: 5000 });
-  };
+  }, []);
 
-  const handleRestoreOrder = async (order: any) => {
+  const handleRestoreOrder = useCallback(async (order: any) => {
     try {
       if (order.id) {
         await supabase.from('orders').update({ status: 'PENDING' }).eq('id', order.id);
@@ -671,9 +654,9 @@ export default function AdminPOSView() {
     } catch (e: any) {
       toast.error('Failed to restore order: ' + e.message);
     }
-  };
+  }, []);
 
-  const handleAcceptOrder = async (order: any) => {
+  const handleAcceptOrder = useCallback(async (order: any) => {
     const receiptNumber = order.receipt_number || order.id;
     
     setActiveSupabaseId(order.id || '');
@@ -708,7 +691,7 @@ export default function AdminPOSView() {
     setMobileActiveTab('cart');
     
     toast.success('Cart pre-filled! Please finalize and dispatch.');
-  };
+  }, [products]);
 
   const addToCart = useCallback((product: Product) => {
     setCart(prev => {
@@ -727,7 +710,6 @@ export default function AdminPOSView() {
     }
   }, [products, addToCart]);
 
-  // Global listener fallback
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (document.activeElement?.tagName === 'INPUT' || document.activeElement?.tagName === 'TEXTAREA') return;
@@ -748,7 +730,6 @@ export default function AdminPOSView() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [handleScan]); 
 
-  // Auto-focus scanner on load
   useEffect(() => {
     if (activeMenu === 'Register' && !isAlertDrawerOpen) {
       hiddenScannerRef.current?.focus();
@@ -761,11 +742,11 @@ export default function AdminPOSView() {
     return products.filter(p => p.name.toLowerCase().includes(lowerQ) || p.barcode.includes(lowerQ));
   }, [products, registerSearchQuery]);
 
-  const removeFromCart = (cartId: string) => {
+  const removeFromCart = useCallback((cartId: string) => {
     setCart(prev => prev.filter(item => item.cartId !== cartId));
-  };
+  }, []);
 
-  const handleClearAll = () => {
+  const handleClearAll = useCallback(() => {
     toast((t) => (
       <span className="flex flex-col gap-2">
         <span className="font-semibold text-slate-900">Clear the entire order?</span>
@@ -793,9 +774,9 @@ export default function AdminPOSView() {
         </div>
       </span>
     ), { duration: 5000 });
-  };
+  }, []);
 
-  const handleStartNewOrder = () => {
+  const handleStartNewOrder = useCallback(() => {
       setCart([]);
       setClientName('');
       setPaymentTerms('Bank Transfer');
@@ -807,11 +788,13 @@ export default function AdminPOSView() {
       setDraftOrderId('');
       setActiveSupabaseId('');
       setTimeout(() => hiddenScannerRef.current?.focus(), 100);
-  };
+  }, []);
 
-  const updateCartItem = (cartId: string, updates: Partial<CartItem>) => {
-    if (updates.quantity !== undefined && updates.quantity <= 0) return removeFromCart(cartId);
-    // Force integer quantity for B2B wholesale logic
+  const updateCartItem = useCallback((cartId: string, updates: Partial<CartItem>) => {
+    if (updates.quantity !== undefined && updates.quantity <= 0) {
+      removeFromCart(cartId);
+      return;
+    }
     if (updates.quantity !== undefined) {
       updates.quantity = Math.floor(updates.quantity);
     }
@@ -820,7 +803,6 @@ export default function AdminPOSView() {
       if (item.cartId !== cartId) return item;
       let newItem = { ...item, ...updates };
       
-      // If UOM changed, recalculate price based on base product
       if (updates.uom) {
          const product = products.find(p => p.id === item.id || p.barcode === item.barcode);
          if (product) {
@@ -832,9 +814,9 @@ export default function AdminPOSView() {
       }
       return newItem;
     }));
-  };
+  }, [products, removeFromCart]);
 
-  const handlePrintReceipt = () => {
+  const handlePrintReceipt = useCallback(() => {
     if (cart.length === 0) { toast.error('Cart is empty.'); return; }
     if (!clientName.trim()) { toast.error('Please enter Client / Business Name.'); return; }
     if (!area.trim()) { toast.error('Please enter Area Name.'); return; }
@@ -845,7 +827,6 @@ export default function AdminPOSView() {
       setDraftOrderId('ORD-' + Math.floor(100000 + Math.random() * 900000));
     }
 
-    // Stock Enforcement Check
     const insufficientItems = cart.filter(item => {
       const product = products.find(p => p.barcode === item.barcode || p.id === item.id);
       let multiplier = 1;
@@ -859,145 +840,113 @@ export default function AdminPOSView() {
     if (insufficientItems.length > 0) {
       const itemNames = insufficientItems.map(i => i.name).join(', ');
       toast.error(`Insufficient stock for: ${itemNames}. Please restock inventory first.`);
-      return; // Block opening the receipt
+      return; 
     }
 
     setIsReceiptOpen(true);
-  };
+  }, [cart, clientName, area, contactNumber, bookerName, draftOrderId, products]);
 
-  const handleCloseReceipt = () => {
+  const handleCloseReceipt = useCallback(() => {
     setIsReceiptOpen(false);
     setTimeout(() => hiddenScannerRef.current?.focus(), 100);
-  };
+  }, []);
 
-  const handleDispatch = async () => {
-    if (isSubmitting) return;
-    
-    // Phone validation removed to prevent blocking dispatch for landlines or legacy orders
-    // if (contactNumber && !validatePhone(contactNumber)) { ... }
-    
+  const handleDispatch = useCallback(async () => {
+    if (isSubmitting) return false;
     setIsSubmitting(true);
-    
+
     try {
       const totalWords = toWords(total).toUpperCase() + ' RUPEES ONLY';
+      
       const orderData = {
         items: cart,
         total,
-      clientName: clientName.trim(),
-      paymentTerms,
-      area,
-      bookerName,
-      contactNumber,
-      totalWords
-    };
+        clientName: clientName.trim(),
+        paymentTerms,
+        area,
+        bookerName, 
+        contactNumber,
+        totalWords
+      };
 
-    if (window.electronAPI?.dispatchOrder) {
-      // Legacy Electron (Can be removed later)
-      const res = await window.electronAPI.dispatchOrder(orderData);
-      if (res?.success) {
-        const newOrder: Order = {
-          receiptNumber: res.orderId,
-          date: new Date(),
-          ...orderData
-        };
-        setPastOrders(prev => [newOrder, ...prev]);
-        setLastReceiptNumber(res.orderId);
-        // setIsReceiptOpen(false);
-        setIsCheckoutSuccess(true);
-        setIsSubmitting(false);
-        return true;
-      } else {
-        toast.error("Dispatch failed: " + res?.error);
-        setIsSubmitting(false);
-        return false;
-      }
-    } else {
-      // Tauri / Browser mode
       const newOrder: Order = {
         receiptNumber: draftOrderId,
         date: new Date(),
         ...orderData
       };
-      setPastOrders(prev => [newOrder, ...prev]);
-      setLastReceiptNumber(newOrder.receiptNumber as string);
-      // Hardware Printing via Tauri
-      try {
-          if (window.__TAURI__) {
-             const printerIp = localStorage.getItem('shaheen_printer_ip') || '192.168.1.100';
-             await window.__TAURI__.invoke('print_receipt_tcp', { 
-                 printerIp, 
-                 payload: orderData 
-             });
-          }
-      } catch (e) {
-          console.error("Hardware print failed:", e);
+
+      if (window.__TAURI_INTERNALS__ || window.__TAURI__) {
+        saveSilentBackup(newOrder).catch(err => console.error("Silent backup failed:", err));
       }
-      
-      const updatedProducts = products.map(p => {
-        const cartItem = cart.find(c => c.id === p.id);
-        if (cartItem) {
-          let multiplier = 1;
-          if (cartItem.uom === 'Box') multiplier = p.pcsPerBox || 1;
-          if (cartItem.uom === 'Ctn') multiplier = (p.pcsPerBox || 1) * (p.boxPerCtn || 1);
-          return { ...p, stock: Math.max(0, p.stock - (cartItem.quantity * multiplier)) };
+
+      if (window.electronAPI?.dispatchOrder) {
+        const res = await window.electronAPI.dispatchOrder(orderData);
+        if (res?.success) {
+          setPastOrders(prev => [{ receiptNumber: res.orderId, date: new Date(), ...orderData }, ...prev]);
+          setLastReceiptNumber(res.orderId);
+          setIsCheckoutSuccess(true);
+          setIsSubmitting(false);
+          return true;
+        } else {
+          toast.error("Dispatch failed: " + res?.error);
+          setIsSubmitting(false);
+          return false;
         }
-        return p;
-      });
-      setProducts(updatedProducts);
+      } else {
+        setPastOrders(prev => [newOrder, ...prev]);
+        setLastReceiptNumber(newOrder.receiptNumber as string);
 
-      if (draftOrderId) {
-         let updateFailed = false;
-         
-         // 1. Try to update in Supabase (will work if it's an online order with UUID)
-         if (activeSupabaseId) {
-           try {
-              const { error } = await supabase.from('orders').update({ status: 'COMPLETED' }).eq('id', activeSupabaseId);
-              if (error) {
-                updateFailed = true;
-                console.warn("Supabase update failed:", error);
-              }
-           } catch (err) {
-              updateFailed = true;
-              console.warn("Supabase update threw:", err);
-           }
-           
-           if (updateFailed) {
-              const queue = JSON.parse(localStorage.getItem('shaheen_offline_status_updates') || '[]');
-              queue.push({
-                 id: activeSupabaseId,
-                 status: 'COMPLETED',
-                 timestamp: new Date().toISOString()
-              });
-              localStorage.setItem('shaheen_offline_status_updates', JSON.stringify(queue));
-           }
-         }
+        try {
+          if (window.__TAURI_INTERNALS__ || window.__TAURI__) {
+            const printerIp = localStorage.getItem('shaheen_printer_ip') || '192.168.1.100';
+            const tauri = window.__TAURI__ || window.__TAURI_INTERNALS__;
+            await tauri.invoke('print_receipt_tcp', { printerIp, payload: orderData });
+          }
+        } catch (e) {
+          console.error("Hardware print failed:", e);
+        }
 
-         // 2. Also update it in local pending incoming orders if it was an offline B2B order
-         let offlineOrders = JSON.parse(localStorage.getItem('shaheen_offline_orders') || '[]');
-         const orderIndex = offlineOrders.findIndex((o: any) => o.id === draftOrderId || o.receipt_number === draftOrderId);
-         if (orderIndex !== -1) {
+        const updatedProducts = products.map(p => {
+          const cartItem = cart.find(c => c.id === p.id);
+          if (cartItem) {
+            let multiplier = 1;
+            if (cartItem.uom === 'Box') multiplier = p.pcsPerBox || 1;
+            if (cartItem.uom === 'Ctn') multiplier = (p.pcsPerBox || 1) * (p.boxPerCtn || 1);
+            return { ...p, stock: Math.max(0, p.stock - (cartItem.quantity * multiplier)) };
+          }
+          return p;
+        });
+        setProducts(updatedProducts);
+
+        if (draftOrderId) {
+          if (activeSupabaseId) {
+            try {
+              await supabase.from('orders').update({ status: 'COMPLETED' }).eq('id', activeSupabaseId);
+            } catch (err) {
+              console.warn("Supabase update failed:", err);
+            }
+          }
+          let offlineOrders = JSON.parse(localStorage.getItem('shaheen_offline_orders') || '[]');
+          const orderIndex = offlineOrders.findIndex((o: any) => o.id === draftOrderId || o.receipt_number === draftOrderId);
+          if (orderIndex !== -1) {
             offlineOrders[orderIndex].status = 'COMPLETED';
             localStorage.setItem('shaheen_offline_orders', JSON.stringify(offlineOrders));
-         }
+          }
+        }
+        setIsCheckoutSuccess(true);
+        setIsSubmitting(false);
+        return true;
       }
-      
-      // setIsReceiptOpen(false);
-      setIsCheckoutSuccess(true);
-      setIsSubmitting(false);
-      
-      return true;
-    } // close else
-    
     } catch (e) {
       console.error(e);
       toast.error("An error occurred during dispatch.");
       setIsSubmitting(false);
       return false;
     }
-  };
+  }, [isSubmitting, total, cart, clientName, paymentTerms, area, bookerName, contactNumber, draftOrderId, products, activeSupabaseId]);
 
-  const minStockDict = JSON.parse(localStorage.getItem('shaheen_min_stock') || '{}');
-  const hasCriticalStock = products.some(p => p.stock <= (minStockDict[p.id] ?? 5));
+  const minStockDict = useMemo(() => JSON.parse(localStorage.getItem('shaheen_min_stock') || '{}'), []);
+  const hasCriticalStock = useMemo(() => products.some(p => p.stock <= (minStockDict[p.id] ?? 5)), [products, minStockDict]);
 
   const sidebarItems = [
     { name: 'Register', icon: <LayoutDashboard size={22} /> },
@@ -1008,23 +957,22 @@ export default function AdminPOSView() {
     { name: 'Ledger', icon: <BookOpen size={22} /> },
   ];
 
-  // Routing Switch
-  const unhandledOutOfStockItems = cart.filter(item => {
+  const unhandledOutOfStockItems = useMemo(() => cart.filter(item => {
     const product = products.find(p => p.barcode === item.barcode || p.id === item.id);
     const stockAvailable = product?.stock || 0;
     const deficit = item.quantity - stockAvailable;
     const alreadyInOurOrder = ourOrderList.find(o => o.id === item.id);
     return deficit > 0 && !alreadyInOurOrder;
-  });
+  }), [cart, products, ourOrderList]);
 
-  const scrollToFirstOutOfStock = () => {
+  const scrollToFirstOutOfStock = useCallback(() => {
     if (unhandledOutOfStockItems.length > 0) {
       const element = document.getElementById(`cart-item-${unhandledOutOfStockItems[0].id}`);
       if (element) {
         element.scrollIntoView({ behavior: 'smooth', block: 'center' });
       }
     }
-  };
+  }, [unhandledOutOfStockItems]);
 
   const renderContent = () => {
     switch (activeMenu) {
@@ -1284,7 +1232,10 @@ export default function AdminPOSView() {
                           key={p.id}
                           onClick={() => {
                             addToCart(p);
-                            hiddenScannerRef.current?.focus();
+                            // Only auto-focus scanner on PC to prevent mobile keyboard pop-ups
+                            if (window.innerWidth > 768) {
+                              hiddenScannerRef.current?.focus();
+                            }
                           }}
                           className="bg-white dark:bg-zinc-900/60 backdrop-blur-md border border-slate-200 dark:border-zinc-800/50 rounded-sm p-3 flex flex-col items-start hover:border-slate-400 transition-all text-left"
                         >
@@ -1345,7 +1296,6 @@ export default function AdminPOSView() {
                           const deficit = item.quantity - stockAvailable;
                           const isOutOfStock = deficit > 0;
                           
-                          // Use currentProduct as fallback if item is loaded from older database schema
                           const itemPcsPerBox = item.pcsPerBox || (item as any).pcs_per_box || currentProduct?.pcsPerBox || (currentProduct as any)?.pcs_per_box;
                           const itemBoxPerCtn = item.boxPerCtn || (item as any).box_per_ctn || currentProduct?.boxPerCtn || (currentProduct as any)?.box_per_ctn;
 
@@ -1758,7 +1708,7 @@ export default function AdminPOSView() {
             </button>
           ))}
 
-          {/* Orders / Notification Bell (Moved to Nav) */}
+          {/* Orders / Notification Bell */}
           <button 
             onClick={() => setActiveMenu('Orders')}
             className={`flex items-center justify-between gap-[9px] px-[9px] py-2 rounded-md transition-all text-[13px] font-medium w-full text-left relative overflow-hidden mt-1 ${
@@ -1883,7 +1833,6 @@ export default function AdminPOSView() {
                                   >
                                     View
                                   </button>
-
                                   <button 
                                     onClick={() => handleAcceptOrder(order)}
                                     className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs rounded-md shadow-sm transition-colors"
@@ -1955,14 +1904,11 @@ export default function AdminPOSView() {
           onClose={handleCloseReceipt}
           onDispatch={handleDispatch}
           onBackupSuccess={() => {
-             // 1. Immediately remove from incomingOrders local state
              setIncomingOrders(prev => prev.filter(o => o.id !== activeSupabaseId && o.receipt_number !== draftOrderId));
-             // 2. Add to permanent blocklist to prevent fetchOrders from ever resurrecting it
              setPermanentlyHiddenOrders(prev => [...prev, activeSupabaseId || draftOrderId]);
              
-             setIsReceiptOpen(false); // Optional: Auto close on success
+             setIsReceiptOpen(false);
              
-             // Reset form after successful backup
              setCart([]);
              setClientName('');
              setArea('');

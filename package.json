@@ -4,12 +4,13 @@
   "version": "0.0.0",
   "type": "module",
   "main": "main.cjs",
-  "scripts": {
+ "scripts": {
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "tauri": "tauri"
   },
   "dependencies": {
     "@ericblade/quagga2": "^1.12.1",

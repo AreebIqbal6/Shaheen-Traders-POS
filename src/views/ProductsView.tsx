@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Search, Plus, Edit2, Trash2, X, AlertTriangle, Upload, Loader2, CalendarClock, ScanLine } from 'lucide-react';
+import { Search, Plus, Edit2, Trash2, X, AlertTriangle, Upload, Loader2, ScanLine } from 'lucide-react';
 import CameraScanner from '../components/CameraScanner';
 import toast from 'react-hot-toast';
+import { supabase } from '../lib/supabase';
 
 export interface Product {
   id: string;
@@ -32,10 +33,13 @@ export const generateSKU = (name: string, barcode: string) => {
 
 interface ProductsViewProps {
   products: Product[];
-  setProducts: React.Dispatch<React.SetStateAction<Product[]>>;
+  setProducts?: React.Dispatch<React.SetStateAction<Product[]>>;
 }
 
-export default function ProductsView({ products, setProducts }: ProductsViewProps) {
+const PENDING_OP_TTL_MS = 6000;
+const REFETCH_DEBOUNCE_MS = 250;
+
+export default function ProductsView({ products = [], setProducts }: ProductsViewProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [currentFilter, setCurrentFilter] = useState<'all' | 'critical' | 'low'>('all');
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -43,19 +47,15 @@ export default function ProductsView({ products, setProducts }: ProductsViewProp
   const [isLoadingApi, setIsLoadingApi] = useState(false);
   const [isScannerActive, setIsScannerActive] = useState(false);
 
-
   const fileInputRef = useRef<HTMLInputElement>(null);
   const barcodeInputRef = useRef<HTMLInputElement>(null);
 
-  const formatLakhs = (val: number) => {
-    return `Rs ${val.toLocaleString('en-PK')}`;
-  };
+  const formatLakhs = (val: number) => `Rs ${val.toLocaleString('en-PK')}`;
 
   const totalProducts = products.length;
   const criticalStock = products.filter(p => p.stock <= 2).length;
   const lowStock = products.filter(p => p.stock > 2 && p.stock <= 10).length;
   const inventoryValue = products.reduce((acc, p) => acc + (p.price * p.stock), 0);
-
 
   const [minStockDict, setMinStockDict] = useState<Record<string, number>>({});
 
@@ -68,6 +68,110 @@ export default function ProductsView({ products, setProducts }: ProductsViewProp
     setMinStockDict(newDict);
     localStorage.setItem('shaheen_min_stock', JSON.stringify(newDict));
   };
+
+  const pendingOpsRef = useRef<Map<string, number>>(new Map());
+  const isWipingRef = useRef(false);
+  const refetchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const markPending = (id: string) => pendingOpsRef.current.set(id, Date.now() + PENDING_OP_TTL_MS);
+  const isPending = (id: string) => {
+    const expiry = pendingOpsRef.current.get(id);
+    if (expiry === undefined) return false;
+    if (Date.now() > expiry) {
+      pendingOpsRef.current.delete(id);
+      return false;
+    }
+    return true;
+  };
+  const clearPending = (id: string) => pendingOpsRef.current.delete(id);
+
+  const toOptionalNumber = (val: unknown): number | undefined => {
+    if (val === null || val === undefined || val === '') return undefined;
+    const num = Number(val);
+    return Number.isFinite(num) ? num : undefined;
+  };
+
+  const mapRowToProduct = (row: any): Product => ({
+    id: String(row.id),
+    barcode: row.barcode != null ? String(row.barcode) : '',
+    name: row.name != null ? String(row.name) : '',
+    price: Number(row.price) || 0,
+    stock: Number(row.stock) || 0,
+    sku: row.sku != null ? String(row.sku) : undefined,
+    category: row.category != null ? String(row.category) : undefined,
+    pcsPerBox: toOptionalNumber(row.pcs_per_box ?? row.pcsPerBox),
+    boxPerCtn: toOptionalNumber(row.box_per_ctn ?? row.boxPerCtn),
+  });
+
+  const mapProductToRow = (product: Omit<Product, 'id'>) => ({
+    barcode: product.barcode,
+    name: product.name,
+    price: product.price,
+    stock: product.stock,
+    sku: product.sku ?? null,
+    category: product.category ?? null,
+    pcs_per_box: product.pcsPerBox ?? null,
+    box_per_ctn: product.boxPerCtn ?? null,
+  });
+
+  const fetchProducts = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('products')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      const mappedData = (data || []).map(mapRowToProduct);
+      
+      // Update local storage directly so mobile/offline modes get the latest truth
+      localStorage.setItem('shaheen_products', JSON.stringify(mappedData));
+
+      // ONLY update state if the parent component actually passed the function
+      if (typeof setProducts === 'function') {
+        setProducts(mappedData);
+      }
+    } catch (err: any) {
+      console.error('Failed to fetch products from Supabase:', err);
+      // Suppressed the error toast here to stop the UI from crashing if offline
+    }
+  };
+
+  const scheduleFetch = (delay: number = REFETCH_DEBOUNCE_MS) => {
+    if (refetchTimeoutRef.current) clearTimeout(refetchTimeoutRef.current);
+    refetchTimeoutRef.current = setTimeout(() => {
+      refetchTimeoutRef.current = null;
+      fetchProducts();
+    }, delay);
+  };
+
+  useEffect(() => {
+    const channel = supabase
+      .channel('products-realtime-sync')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'products' },
+        (payload) => {
+          if (isWipingRef.current) return;
+          const affectedId = (payload.new as any)?.id ?? (payload.old as any)?.id;
+          const idStr = affectedId !== undefined && affectedId !== null ? String(affectedId) : null;
+          if (idStr && isPending(idStr)) {
+            clearPending(idStr);
+            return;
+          }
+          scheduleFetch();
+        }
+      )
+      .subscribe();
+
+    fetchProducts();
+
+    return () => {
+      supabase.removeChannel(channel);
+      if (refetchTimeoutRef.current) clearTimeout(refetchTimeoutRef.current);
+    };
+  }, []);
 
   const [formData, setFormData] = useState<Partial<Product> & { minStock?: number }>({
     barcode: '', name: '', price: 0, stock: 0, minStock: 5
@@ -100,50 +204,96 @@ export default function ProductsView({ products, setProducts }: ProductsViewProp
     }
   }, [isModalOpen]);
 
-
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!formData.name || !formData.barcode) { toast.error('Name and Barcode are required'); return; }
 
     const finalFormData = { ...formData };
     if (!finalFormData.sku) {
-       finalFormData.sku = generateSKU(finalFormData.name || '', finalFormData.barcode || '');
+      finalFormData.sku = generateSKU(finalFormData.name || '', finalFormData.barcode || '');
     }
 
     const mStock = finalFormData.minStock ?? 5;
     delete finalFormData.minStock;
 
     if (editingProduct) {
+      const updatedProduct = { ...editingProduct, ...finalFormData } as Product;
+      markPending(editingProduct.id);
+
+      if (typeof setProducts === 'function') {
+         setProducts(prev => prev.map(p => p.id === editingProduct.id ? updatedProduct : p));
+      }
       saveMinStock(editingProduct.id, mStock);
-      setProducts(prev => prev.map(p => p.id === editingProduct.id ? { ...p, ...finalFormData } as Product : p));
+      setIsModalOpen(false);
+
+      try {
+        const { error } = await supabase.from('products').update(mapProductToRow(updatedProduct)).eq('id', editingProduct.id);
+        if (error) throw error;
+      } catch (err: any) {
+        clearPending(editingProduct.id);
+        toast.error('Failed to save changes: ' + err.message);
+        fetchProducts(); 
+      }
     } else {
-      const newId = Date.now().toString() + Math.random().toString();
-      saveMinStock(newId, mStock);
-      setProducts(prev => [...prev, { ...finalFormData, id: newId } as Product]);
+      const tempId = 'temp-' + Date.now().toString() + Math.random().toString(36).slice(2);
+      const tempProduct = { ...finalFormData, id: tempId } as Product;
+
+      if (typeof setProducts === 'function') {
+         setProducts(prev => [tempProduct, ...prev]);
+      }
+      setIsModalOpen(false);
+
+      try {
+        const { data, error } = await supabase.from('products').insert(mapProductToRow(finalFormData as Omit<Product, 'id'>)).select().single();
+        if (error) throw error;
+
+        const savedProduct = mapRowToProduct(data);
+        markPending(savedProduct.id);
+        saveMinStock(savedProduct.id, mStock);
+
+        if (typeof setProducts === 'function') {
+           setProducts(prev => prev.map(p => p.id === tempId ? savedProduct : p));
+        }
+      } catch (err: any) {
+        toast.error('Failed to save product: ' + err.message);
+        if (typeof setProducts === 'function') setProducts(prev => prev.filter(p => p.id !== tempId));
+        fetchProducts();
+      }
     }
-    setIsModalOpen(false);
   };
 
   const handleGenerateSKU = () => {
-    const prefix = formData.name 
-      ? formData.name.substring(0, 3).toUpperCase().replace(/[^A-Z]/g, 'P') 
-      : 'PRD';
+    const prefix = formData.name ? formData.name.substring(0, 3).toUpperCase().replace(/[^A-Z]/g, 'P') : 'PRD';
     const year = new Date().getFullYear();
     const randomNum = Math.floor(1000 + Math.random() * 9000);
-    const sku = `${prefix}-${year}-${randomNum}`;
-    setFormData(prev => ({ ...prev, barcode: sku }));
+    setFormData(prev => ({ ...prev, barcode: `${prefix}-${year}-${randomNum}` }));
   };
 
-  const handleDelete = (id: string) => {
-    if (confirm('Are you sure you want to delete this product?')) {
-      setProducts(prev => prev.filter(p => p.id !== id));
+  const handleDelete = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this product?')) return;
+    markPending(id);
+
+    if (typeof setProducts === 'function') {
+       setProducts(prev => prev.filter(p => p.id !== id));
+    }
+
+    try {
+      const { error } = await supabase.from('products').delete().eq('id', id);
+      if (error) throw error;
+
+      const newMinStockDict = { ...minStockDict };
+      delete newMinStockDict[id];
+      setMinStockDict(newMinStockDict);
+      localStorage.setItem('shaheen_min_stock', JSON.stringify(newMinStockDict));
+      toast.success('Product deleted.');
+    } catch (err: any) {
+      clearPending(id);
+      toast.error('Failed to delete product: ' + err.message);
+      fetchProducts(); 
     }
   };
 
-
-
-  // OpenFoodFacts API Integration
   async function fetchProductDetails(barcode: string) {
-    if (barcode.length < 8) return; // Too short to be a valid GTIN
+    if (barcode.length < 8) return;
     setIsLoadingApi(true);
     try {
       const res = await fetch(`https://world.openfoodfacts.org/api/v2/product/${barcode}.json`);
@@ -160,7 +310,6 @@ export default function ProductsView({ products, setProducts }: ProductsViewProp
     setIsLoadingApi(false);
   }
 
-  // CSV Bulk Importer
   const handleCSVUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -171,8 +320,7 @@ export default function ProductsView({ products, setProducts }: ProductsViewProp
       const lines = text.split('\n');
       const newProducts: Product[] = [];
       
-      // Assumes CSV format: Barcode, Name, Price, Stock
-      for (let i = 1; i < lines.length; i++) { // Skip header row
+      for (let i = 1; i < lines.length; i++) {
         const line = lines[i].trim();
         if (!line) continue;
         const [barcode, name, priceStr, stockStr] = line.split(',');
@@ -188,7 +336,9 @@ export default function ProductsView({ products, setProducts }: ProductsViewProp
       }
       
       if (newProducts.length > 0) {
-        setProducts(prev => [...newProducts, ...prev]);
+        if (typeof setProducts === 'function') {
+           setProducts(prev => [...newProducts, ...prev]);
+        }
         toast.success(`Successfully imported ${newProducts.length} products!`);
       }
       if (fileInputRef.current) fileInputRef.current.value = '';
@@ -199,7 +349,6 @@ export default function ProductsView({ products, setProducts }: ProductsViewProp
   return (
     <div className="h-full flex flex-col relative bg-slate-50 dark:bg-[#0a0a0c] p-4 md:p-8 overflow-x-hidden">
       
-      {/* Stat Cards Row */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-6">
         <div className="bg-white dark:bg-zinc-900/60 backdrop-blur-md border border-slate-200 dark:border-zinc-800/50 shadow-sm rounded-xl p-4 md:p-5 flex flex-col justify-between h-[100px]">
           <span className="text-[12px] font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Total Products</span>
@@ -221,7 +370,6 @@ export default function ProductsView({ products, setProducts }: ProductsViewProp
       </div>
 
       <div className="mb-4 flex flex-col md:flex-row md:justify-between items-start md:items-center gap-4">
-        {/* Filter Pills */}
         <div className="flex bg-white dark:bg-zinc-900/60 backdrop-blur-md p-1 rounded-lg border border-slate-200 dark:border-zinc-800/50 overflow-x-auto w-full md:w-auto custom-scrollbar shadow-inner">
           <button 
             onClick={() => setCurrentFilter('all')}
@@ -278,13 +426,67 @@ export default function ProductsView({ products, setProducts }: ProductsViewProp
             >
               <Plus size={16} className="shrink-0" /> Add Product
             </button>
+
+            <button 
+              onClick={() => {
+                 toast.custom((t) => (
+                    <div className={(t.visible ? 'animate-enter' : 'animate-leave') + " max-w-md w-full bg-white dark:bg-zinc-900 shadow-lg rounded-lg pointer-events-auto flex flex-col ring-1 ring-black ring-opacity-5 p-5"}>
+                      <div className="flex items-start gap-4">
+                        <AlertTriangle className="h-8 w-8 text-red-600 shrink-0" />
+                        <div className="flex-1 pt-0.5">
+                          <p className="text-[15px] font-bold text-slate-900 dark:text-slate-100 mb-1">Clear Entire Inventory</p>
+                          <p className="text-[13px] text-slate-500">Are you sure? This will delete ALL products locally and from the cloud.</p>
+                          <input id={"wipe-inventory-" + t.id} type="password" placeholder="Enter Admin Password" className="w-full mt-3 px-3 py-2 bg-slate-50 dark:bg-zinc-800 border rounded-md text-[13px]" />
+                        </div>
+                      </div>
+                      <div className="mt-5 flex justify-end gap-3">
+                        <button onClick={() => toast.dismiss(t.id)} className="bg-slate-100 dark:bg-zinc-800 text-slate-800 dark:text-slate-200 px-4 py-2 rounded-md text-[13px] font-semibold">Cancel</button>
+                        <button onClick={async () => {
+                          const pwdInput = document.getElementById("wipe-inventory-" + t.id) as HTMLInputElement;
+                          if (pwdInput.value !== '1234') { toast.error("Incorrect Password!"); return; }
+                          
+                          if (!navigator.onLine) {
+                            toast.error("You must be online to clear inventory.");
+                            return;
+                          }
+
+                          isWipingRef.current = true;
+                          pendingOpsRef.current.clear();
+                          toast.loading("Clearing inventory...", { id: "clear-inv" });
+                          try {
+                            const { error } = await supabase.from('products').delete().gte('price', 0);
+                            if (error) throw error;
+
+                            if (typeof setProducts === 'function') setProducts([]);
+                            setMinStockDict({});
+                            localStorage.removeItem('shaheen_products');
+                            localStorage.removeItem('shaheen_b2b_products');
+                            localStorage.removeItem('shaheen_b2b_products_v2');
+                            localStorage.removeItem('shaheen_min_stock');
+                            window.dispatchEvent(new Event('force_remount'));
+
+                            toast.success("Inventory cleared successfully!", { id: "clear-inv" });
+                            toast.dismiss(t.id);
+                          } catch (e: any) { 
+                            toast.error("Failed to clear cloud inventory: " + e.message, { id: "clear-inv" }); 
+                          } finally {
+                            setTimeout(() => { isWipingRef.current = false; }, 1500);
+                          }
+                        }} className="bg-red-600 text-white px-4 py-2 rounded-md text-[13px] font-bold">YES, CLEAR</button>
+                      </div>
+                    </div>
+                  ), { duration: Infinity });
+              }}
+              className="flex-1 sm:flex-none bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/40 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800/30 px-3 md:px-4 py-1.5 h-[36px] rounded-lg font-bold shadow-sm transition-all flex items-center justify-center gap-2 text-[13px] whitespace-nowrap"
+            >
+              <Trash2 size={16} className="shrink-0" /> Clear All
+            </button>
           </div>
         </div>
       </div>
 
       <div className="flex-1 bg-white dark:bg-zinc-900/60 backdrop-blur-md border border-slate-200 dark:border-zinc-800/50 shadow-sm rounded-xl overflow-hidden flex flex-col">
         <div className="overflow-y-auto overflow-x-auto custom-scrollbar flex-1">
-          {/* Desktop Table View */}
           <table className="hidden md:table w-full text-left text-[13px] whitespace-nowrap">
             <thead className="bg-slate-50/90 dark:bg-[#0a0a0c]/90 backdrop-blur-md border-b border-slate-200 dark:border-zinc-800/50 text-slate-600 dark:text-slate-400 uppercase tracking-wider text-[11px] sticky top-0 z-10">
               <tr>
@@ -337,7 +539,6 @@ export default function ProductsView({ products, setProducts }: ProductsViewProp
             </tbody>
           </table>
 
-          {/* Mobile Card View */}
           <div className="md:hidden flex flex-col divide-y divide-slate-200 dark:divide-slate-700">
              {filteredProducts.map(product => {
                 const mStock = minStockDict[product.id] ?? 5;
@@ -389,7 +590,6 @@ export default function ProductsView({ products, setProducts }: ProductsViewProp
             </div>
             
             <div className="p-6 flex flex-col gap-4 overflow-y-auto custom-scrollbar">
-              
               <div className="relative">
                 <div className="flex justify-between items-center mb-1.5">
                   <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider block">Barcode Scanner / SKU</label>

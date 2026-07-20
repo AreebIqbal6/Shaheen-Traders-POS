@@ -4,9 +4,10 @@ import { mkdir, writeFile } from '@tauri-apps/plugin-fs';
 import { desktopDir } from '@tauri-apps/api/path';
 import { saveAs } from 'file-saver';
 import toast from 'react-hot-toast';
+import { ensureBackupFolder } from './backupValidator';
 
 export const saveOrderBackup = async (orderId: string, cart: any[], details: any) => {
-  const isTauri = '__TAURI__' in window;
+  const isTauri = '__TAURI_INTERNALS__' in window || '__TAURI__' in window;
 
   try {
     // 1. Generate PDF
@@ -23,8 +24,6 @@ export const saveOrderBackup = async (orderId: string, cart: any[], details: any
         sqlContent += `INSERT INTO order_items (order_id, product_id, sku, barcode, name, price, quantity) VALUES ('${orderId}', '${item.id}', '${item.sku || ''}', '${item.barcode || ''}', '${(item.name || '').replace(/'/g, "''")}', ${item.price}, ${item.quantity});\n`;
     });
 
-    // Use orderId directly — it's already formatted as ORD-XXXXXX or B2B-XXXX
-    // Date format: DD-MM-YYYY to match user's expected folder structure
     const dateObj = new Date();
     const d = String(dateObj.getDate()).padStart(2, '0');
     const m = String(dateObj.getMonth() + 1).padStart(2, '0');
@@ -32,29 +31,44 @@ export const saveOrderBackup = async (orderId: string, cart: any[], details: any
     const dateStr = `${d}-${m}-${y}`;
 
     if (isTauri) {
-      // NATIVE TAURI DESKTOP MODE (Silent Background Saving)
+      // NATIVE TAURI DESKTOP MODE
       let basePath = localStorage.getItem('shaheen_backuppath');
       if (!basePath || basePath.startsWith('Web Folder')) {
-        try {
-          basePath = await desktopDir();
-        } catch {
-          basePath = 'D:\\AREEB';
-        }
+        try { basePath = await desktopDir(); } catch { basePath = 'D:\\AREEB'; }
       }
       
       let secondaryPath = localStorage.getItem('shaheen_secondary_backuppath');
       if (secondaryPath && secondaryPath.startsWith('Web Folder')) secondaryPath = '';
 
-      const pathsToSave = [basePath];
-      if (secondaryPath && secondaryPath.trim() !== '') {
-        pathsToSave.push(secondaryPath.trim());
+      // Validate Primary Folder
+      const primaryTarget = await ensureBackupFolder(basePath, true); 
+      if (!primaryTarget) {
+        throw new Error("Primary backup location is inaccessible. Backup aborted.");
       }
 
-      for (const currentPath of pathsToSave) {
-        try {
-          const safeBasePath = currentPath.replace(/\//g, '\\');
-          const orderFolderPath = `${safeBasePath}\\SHAHEEN TRADERS BACKUP\\ORDER HISTORY\\${dateStr}\\${orderId}`;
+      // Convert target to a solid string path
+      const baseValidPath = typeof primaryTarget === 'string' ? primaryTarget : `${basePath}\\SHAHEEN BACKUP`;
+      const pathsToSave = [baseValidPath];
 
+      // Validate Secondary Folder (Fallback logic)
+      if (secondaryPath && secondaryPath.trim() !== '') {
+        const secondaryTarget = await ensureBackupFolder(secondaryPath, true);
+        if (secondaryTarget) {
+          const secondaryValidPath = typeof secondaryTarget === 'string' ? secondaryTarget : `${secondaryPath}\\SHAHEEN BACKUP`;
+          pathsToSave.push(secondaryValidPath);
+        } else {
+          console.warn("Secondary backup drive (USB) missing. Skipping secondary backup silently.");
+        }
+      }
+
+      for (const validBase of pathsToSave) {
+        console.log("Saving to Base Path:", validBase); 
+        
+        try {
+          // Construct explicit order hierarchy cleanly on top of valid target base
+          const orderFolderPath = `${validBase}\\ORDER HISTORY\\${dateStr}\\${orderId}`;
+          console.log("Creating Folder Structure:", orderFolderPath); 
+          
           await mkdir(orderFolderPath, { recursive: true });
 
           if (pdfResult) {
@@ -68,19 +82,16 @@ export const saveOrderBackup = async (orderId: string, cart: any[], details: any
 
           const textEncoder = new TextEncoder();
           await writeFile(`${orderFolderPath}\\${orderId}.sql`, textEncoder.encode(sqlContent));
-          console.log(`Auto-saved all backups to: ${orderFolderPath}`);
+          console.log(`Auto-saved backup strictly to: ${orderFolderPath}`);
         } catch (pathError: any) {
-          console.error(`Failed to save backup to path ${currentPath}:`, pathError);
-          if (currentPath === secondaryPath) {
-            toast.error(`Secondary Backup (USB) failed or drive missing. Primary backup was successful.`);
-          } else {
-            throw pathError; // If primary fails, bubble up to main catch
+          console.error(`Failed to save backup to path ${validBase}:`, pathError);
+          if (validBase === pathsToSave[0]) {
+            throw pathError; 
           }
         }
       }
     } else {
       // WEB BROWSER MODE FALLBACK
-      // First, attempt to use the new File System Access API
       try {
         const { getBackupDirectoryHandle } = await import('./fileSystem');
         const primaryHandle = await getBackupDirectoryHandle('primary');
@@ -94,7 +105,6 @@ export const saveOrderBackup = async (orderId: string, cart: any[], details: any
 
           for (const baseHandle of handles) {
             try {
-              // Create structure: SHAHEEN TRADERS BACKUP / ORDER HISTORY / dateStr / orderId
               const stBackupHandle = await baseHandle.getDirectoryHandle('SHAHEEN TRADERS BACKUP', { create: true });
               const ohHandle = await stBackupHandle.getDirectoryHandle('ORDER HISTORY', { create: true });
               const dateHandle = await ohHandle.getDirectoryHandle(dateStr, { create: true });
@@ -135,69 +145,20 @@ export const saveOrderBackup = async (orderId: string, cart: any[], details: any
         console.warn('File System Access API failed or unavailable', fsError);
       }
 
-      // If handles were not set, fallback to the old Local Vite API (for localhost testing)
-      const blobToBase64 = (blob: Blob): Promise<string> => {
-        return new Promise((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onloadend = () => {
-             const base64String = (reader.result as string).split(',')[1];
-             resolve(base64String);
-          };
-          reader.onerror = reject;
-          reader.readAsDataURL(blob);
-        });
-      };
-
-      let localBasePath = localStorage.getItem('shaheen_backuppath') || 'D:\\AREEB';
-      if (localBasePath.startsWith('Web Folder')) localBasePath = 'D:\\AREEB';
-
-      let pdfBase64 = null;
-      let excelBase64 = null;
-
+      console.warn('Falling back to standard browser downloads');
+      
       if (pdfResult) {
-        pdfBase64 = await blobToBase64(pdfResult.blob);
+        saveAs(pdfResult.blob, `${orderId}.pdf`);
       }
       if (excelResult.success && excelResult.buffer) {
         const blob = new Blob([excelResult.buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-        excelBase64 = await blobToBase64(blob);
+        saveAs(blob, `${orderId}.xlsx`);
       }
-
-      try {
-        const response = await fetch('/api/save-backup', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-             basePath: localBasePath,
-             dateStr,
-             orderId,
-             pdfBase64,
-             excelBase64,
-             sqlContent
-          })
-        });
-
-        if (!response.ok) {
-           throw new Error(`Local API save failed: ${response.statusText}`);
-        }
-      } catch (apiError) {
-        // ULTIMATE FALLBACK FOR CLOUD DEPLOYMENTS WITH NO DIRECTORY PERMISSIONS
-        console.warn('Local API failed, falling back to standard browser downloads', apiError);
-        
-        if (pdfResult) {
-          saveAs(pdfResult.blob, `${orderId}.pdf`);
-        }
-        if (excelResult.success && excelResult.buffer) {
-          const blob = new Blob([excelResult.buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-          saveAs(blob, `${orderId}.xlsx`);
-        }
-        const sqlBlob = new Blob([sqlContent], { type: 'text/plain;charset=utf-8' });
-        saveAs(sqlBlob, `${orderId}.sql`);
-        
-        toast.success('Downloaded files via browser (Cloud Fallback)');
-        return true;
-      }
+      const sqlBlob = new Blob([sqlContent], { type: 'text/plain;charset=utf-8' });
+      saveAs(sqlBlob, `${orderId}.sql`);
+      
+      toast.success('Downloaded files via browser (Cloud Fallback)');
+      return true;
     }
 
     return true;

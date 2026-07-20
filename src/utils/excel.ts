@@ -21,7 +21,7 @@ async function fetchImageBase64(url: string) {
 
 export const generateOrderExcel = async (orderId: string, cart: any[], details: any) => {
   try {
-    const isTauri = '__TAURI__' in window;
+    const isTauri = '__TAURI_INTERNALS__' in window || '__TAURI__' in window;
     
     const workbook = new ExcelJS.Workbook();
     const sheet = workbook.addWorksheet('Order Receipt', {

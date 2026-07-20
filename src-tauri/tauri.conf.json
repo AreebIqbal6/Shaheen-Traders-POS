@@ -1,8 +1,8 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
-  "productName": "pos-app",
+  "productName": "Shaheen Traders Booker",
   "version": "0.1.0",
-  "identifier": "com.tauri.dev",
+  "identifier": "com.shaheen.pos.booker",
   "build": {
     "frontendDist": "../dist",
     "devUrl": "http://localhost:5173",
@@ -10,6 +10,7 @@
     "beforeBuildCommand": "npm run build"
   },
   "app": {
+    "withGlobalTauri": true,
     "windows": [
       {
         "title": "Shaheen Traders POS",

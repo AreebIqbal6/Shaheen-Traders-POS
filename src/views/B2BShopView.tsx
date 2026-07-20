@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { playNotificationSound } from '../utils/audio';
 import { supabase } from '../lib/supabase';
 import { ShoppingCart, Store, CreditCard, Search, ArrowRight, Package, User, LogOut, History, WifiOff, RefreshCw, CheckCircle2, FileText, Smartphone, Trash2, X } from 'lucide-react';
@@ -26,6 +26,30 @@ interface CartItem extends Product {
   uom?: 'Pcs' | 'Box' | 'Ctn';
   basePrice?: number;
 }
+
+// MEMOIZED PRODUCT CARD (Priority 3: CPU Stutter Fix)
+const ProductCard = React.memo(({ product, onAdd }: { product: Product, onAdd: (p: Product) => void }) => {
+  return (
+    <div 
+      onClick={() => onAdd(product)} 
+      className="bg-white dark:bg-zinc-900/60 backdrop-blur-md border border-slate-200 dark:border-zinc-800/50 rounded-sm p-3 flex flex-col justify-between cursor-pointer hover:border-slate-400 dark:hover:border-slate-500 transition-all active:scale-[0.98] group text-left"
+    > 
+      <div className="w-full"> 
+        <h4 className="font-semibold text-slate-800 dark:text-slate-200 leading-tight mb-1 text-sm truncate w-full">{product.name}</h4> 
+        <p className="text-xs text-slate-500 dark:text-slate-400 font-mono mb-3 truncate w-full">{product.barcode || "\u00A0"}</p> 
+      </div> 
+      <div className="mt-auto w-full flex justify-between items-center"> 
+        <span className="font-bold text-slate-900 dark:text-slate-50 text-[14px]">Rs {product.price.toLocaleString()}</span> 
+        <button 
+          onClick={(e) => { e.stopPropagation(); onAdd(product); }} 
+          className="bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-600 px-2 py-0.5 rounded-sm font-semibold hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors shrink-0 text-[11px] active:scale-95" 
+        > 
+          + Add 
+        </button> 
+      </div> 
+    </div>
+  );
+});
 
 const UomSelector = ({ item, currentProduct, updateCartUom }: { item: CartItem, currentProduct: any, updateCartUom: (id: string, uom: string) => void }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -64,7 +88,6 @@ const UomSelector = ({ item, currentProduct, updateCartUom }: { item: CartItem, 
   );
 };
 
-// Fallback mock data removed for production
 interface B2BShopViewProps {
   isImpersonating?: boolean;
 }
@@ -76,10 +99,10 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
   const [previewOrder, setPreviewOrder] = useState<any>(null);
   const [simpleViewOrder, setSimpleViewOrder] = useState<any>(null);
 
-  const setActiveTab = (tab: 'shop' | 'cart' | 'checkout' | 'dashboard') => {
+  const setActiveTab = useCallback((tab: 'shop' | 'cart' | 'checkout' | 'dashboard') => {
     setActiveTabState(tab);
     window.history.pushState({ tab }, '', `#${tab}`);
-  };
+  }, []);
 
   useEffect(() => {
     const handlePopState = (e: PopStateEvent) => {
@@ -92,6 +115,7 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
+  
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -128,7 +152,6 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
             .select('*')
             .order('created_at', { ascending: false });
           
-          // If there's a specific booker, filter by their ID; otherwise show all
           if (activeBooker.id) {
             query = query.eq('b2b_user_id', activeBooker.id);
           }
@@ -142,11 +165,18 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
       }
 
       const offlineOrders = JSON.parse(localStorage.getItem('shaheen_offline_orders') || '[]');
+      let allOrders = [...offlineOrders.map((o: any) => ({...o, isOffline: true})), ...onlineOrders];
       
-      // Merge and sort — offline orders always included
-      const allOrders = [...offlineOrders.map((o: any) => ({...o, isOffline: true})), ...onlineOrders];
+      // APPLY OFFLINE STATUS QUEUE SO BOOKER IMMEDIATELY SEES CANCELLED ORDERS
+      const statusQueue = JSON.parse(localStorage.getItem('shaheen_offline_status_updates') || '[]');
+      if (statusQueue.length > 0) {
+        allOrders = allOrders.map(o => {
+          const update = statusQueue.find((u: any) => u.id === o.id || u.id === o.receipt_number);
+          return update ? { ...o, status: update.status } : o;
+        });
+      }
+
       allOrders.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-      
       setPastOrders(allOrders);
     } finally {
       setIsRefreshing(false);
@@ -155,14 +185,26 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
 
   const syncOfflineOrders = async () => {
     const offlineOrders = JSON.parse(localStorage.getItem('shaheen_offline_orders') || '[]');
-    if (offlineOrders.length === 0 || !navigator.onLine) return;
+    const statusQueue = JSON.parse(localStorage.getItem('shaheen_offline_status_updates') || '[]');
+    
+    if ((offlineOrders.length === 0 && statusQueue.length === 0) || !navigator.onLine) return;
     
     setIsLoading(true);
     const failedOrders: any[] = [];
+    
+    // Sync Statuses First (Cancellations)
+    const failedStatuses = [];
+    for (const update of statusQueue) {
+      try {
+        const { error } = await supabase.from('orders').update({ status: update.status }).eq('id', update.id);
+        if (error) failedStatuses.push(update);
+      } catch { failedStatuses.push(update); }
+    }
+    localStorage.setItem('shaheen_offline_status_updates', JSON.stringify(failedStatuses));
+
     try {
       for (const order of offlineOrders) {
         try {
-          // Remove local-only flags before insert just in case
           const { isOffline, contact_number, b2b_user_id, idempotency_key, source, receipt_number, payment_terms, area, booker_name, ...supabasePayload } = order;
           const finalPayload = {
             ...supabasePayload,
@@ -218,7 +260,6 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
     const activeBooker = JSON.parse(activeBookerStr);
     const bookerUsername = activeBooker.username;
 
-    // Only track if logged in and not Admin
     if (!bookerUsername || bookerUsername.includes('@')) return;
 
     if (!navigator.geolocation) {
@@ -226,7 +267,6 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
       return;
     }
 
-    // Request WakeLock to keep screen on and tracker running continuously
     let wakeLock: any = null;
     const requestWakeLock = async () => {
       try {
@@ -242,13 +282,10 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
     let isUpdating = false;
     let latestPosition: GeolocationPosition | null = null;
 
-    // watchPosition keeps the GPS radio alive and refining accuracy
     const watchId = navigator.geolocation.watchPosition(
-      (position) => {
-        latestPosition = position;
-      },
+      (position) => { latestPosition = position; },
       (error) => console.error('Geolocation error:', error),
-      { enableHighAccuracy: true, maximumAge: 0, timeout: 20000 } // maximumAge: 0 forces fresh GPS data
+      { enableHighAccuracy: true, maximumAge: 0, timeout: 20000 }
     );
 
     const pushLocation = async () => {
@@ -256,8 +293,6 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
       isUpdating = true;
       try {
         const { latitude, longitude } = latestPosition.coords;
-        
-        // Check if booker already has a record
         const { data: existing } = await supabase
           .from('booker_locations')
           .select('id')
@@ -281,18 +316,16 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
       }
     };
 
-    // Heartbeat every 10 seconds regardless of movement
     const intervalId = setInterval(pushLocation, 10000);
-
+    
     return () => {
       navigator.geolocation.clearWatch(watchId);
       clearInterval(intervalId);
       if (wakeLock) wakeLock.release().catch(() => {});
     };
-  }, []); // Empty array ensures GPS lock is maintained continuously
-  // ------------------------------------
+  }, []); 
 
-  const handleCancelOrder = async (orderId: string) => {
+  const handleCancelOrder = useCallback(async (orderId: string) => {
     toast((t) => (
       <span className="flex flex-col gap-2">
         <span className="font-semibold text-slate-900">Cancel this order?</span>
@@ -313,23 +346,29 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
                  toast.success('Offline order cancelled');
                  fetchPastOrders();
               } else {
-                const { error } = await supabase
-                  .from('orders')
-                  .update({ status: 'CANCELLED' })
-                  .eq('id', orderId);
-                  
-                if (error) toast.error('Failed to cancel order: ' + error.message);
-                else {
+                try {
+                  if (!navigator.onLine) throw new Error('Offline');
+                  const { error } = await supabase
+                    .from('orders')
+                    .update({ status: 'CANCELLED' })
+                    .eq('id', orderId);
+                    
+                  if (error) throw error;
                   toast.success('Order cancelled');
-                  fetchPastOrders();
+                } catch (e: any) {
+                  const queue = JSON.parse(localStorage.getItem('shaheen_offline_status_updates') || '[]');
+                  queue.push({ id: orderId, status: 'CANCELLED' });
+                  localStorage.setItem('shaheen_offline_status_updates', JSON.stringify(queue));
+                  toast.success('Order cancelled (Queued offline)');
                 }
+                fetchPastOrders();
               }
             }}
           >Yes, Cancel</button>
         </div>
       </span>
     ), { duration: 5000 });
-  };
+  }, []);
 
   useEffect(() => {
     localStorage.setItem('b2b_cart', JSON.stringify(cart));
@@ -347,11 +386,11 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
     setIsLoading(true);
     try {
       const { data, error } = await supabase.from('products').select('*');
-      if (error) {
-        throw error;
-      }
+      if (error) throw error;
+
       if (!data || data.length === 0) {
         setProducts([]);
+        localStorage.removeItem('shaheen_b2b_products');
       } else {
         const mappedData = data.map((p: any) => ({
           ...p,
@@ -359,24 +398,19 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
           pcsPerBox: p.pcs_per_box || p.pcsPerBox || 12,
           boxPerCtn: p.box_per_ctn || p.boxPerCtn || 6
         }));
-        localStorage.setItem('shaheen_b2b_products', JSON.stringify(mappedData));
+        
+        localStorage.setItem('shaheen_b2b_products_v2', JSON.stringify(mappedData));
         setProducts(mappedData);
       }
     } catch (err) {
-      console.warn("Failed to fetch from Supabase. Using mock data for UI testing.", err);
-      // Fallback for UI testing since we are using placeholders
-      const cached = localStorage.getItem('shaheen_b2b_products');
-      if (cached) {
-        setProducts(JSON.parse(cached));
-      } else {
-        setProducts([]);
-      }
+      console.error("Connection failed:", err);
+      setProducts(JSON.parse(localStorage.getItem('shaheen_b2b_products_v2') || '[]')); 
     } finally {
       setIsLoading(false);
     }
   };
 
-  const addToCart = (product: Product) => {
+  const addToCart = useCallback((product: Product) => {
     setCart(prev => {
       const existing = prev.find(item => item.id === product.id);
       if (existing) {
@@ -384,9 +418,9 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
       }
       return [...prev, { ...product, cartId: Date.now().toString(), quantity: 1, uom: 'Pcs', basePrice: product.price }];
     });
-  };
+  }, []);
 
-  const updateCartQuantity = (cartId: string, delta: number) => {
+  const updateCartQuantity = useCallback((cartId: string, delta: number) => {
     setCart(prev => prev.map(item => {
       if (item.cartId === cartId) {
         const newQuantity = Math.max(0, item.quantity + delta);
@@ -394,9 +428,9 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
       }
       return item;
     }).filter(item => item.quantity > 0));
-  };
+  }, []);
 
-  const updateCartUom = (cartId: string, newUom: 'Pcs' | 'Box' | 'Ctn') => {
+  const updateCartUom = useCallback((cartId: string, newUom: 'Pcs' | 'Box' | 'Ctn') => {
     setCart(prev => prev.map(item => {
       if (item.cartId === cartId) {
         const bp = item.basePrice || item.price;
@@ -407,26 +441,35 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
       }
       return item;
     }));
-  };
+  }, []);
 
-  const cartTotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  const cartTotal = useMemo(() => cart.reduce((sum, item) => sum + (item.price * item.quantity), 0), [cart]);
 
-  const filteredProducts = products.filter(p => 
-    p.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-    (p.category && p.category.toLowerCase().includes(searchQuery.toLowerCase()))
-  );
+  const filteredProducts = useMemo(() => {
+    return products.filter(p => 
+      p.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+      (p.category && p.category.toLowerCase().includes(searchQuery.toLowerCase()))
+    );
+  }, [products, searchQuery]);
 
-  const handleCheckoutSuccess = () => {
+  const handleCheckoutSuccess = useCallback(() => {
     playNotificationSound();
     setIsCheckoutSuccess(true);
     setCart([]);
     setActiveTab('shop'); 
-  };
+  }, [setActiveTab]);
 
-  // Render Logic
+  const renderedProducts = useMemo(() => {
+    if (filteredProducts.length === 0) return <div className="col-span-full text-center py-10 text-slate-400 font-medium">No products found.</div>;
+    return filteredProducts.map(product => (
+      <ProductCard key={product.id} product={product} onAdd={addToCart} />
+    ));
+  }, [filteredProducts, addToCart]);
+
+
   if (isCheckoutSuccess) {
     return (
-      <div className="flex flex-col h-screen w-full bg-slate-50 dark:bg-[#0a0a0c] items-center justify-center p-6 text-center">
+      <div className="flex flex-col h-screen w-full mx-auto relative shadow-2xl bg-slate-50 dark:bg-[#0a0a0c] items-center justify-center p-6 text-center">
         <div className="w-20 h-20 bg-green-100 text-green-600 dark:text-green-400 rounded-full flex items-center justify-center mb-6 shadow-sm">
           <Package size={40} />
         </div>
@@ -444,28 +487,38 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
 
   return (
     <>
-      <div className="flex flex-col h-full w-full bg-slate-50 dark:bg-[#0a0a0c] text-slate-900 dark:text-slate-50 font-sans print:hidden">
+      <div className="flex flex-col h-full w-full relative bg-slate-50 dark:bg-[#0a0a0c] text-slate-900 dark:text-slate-50 font-sans print:hidden">
       
-      {/* Top Header */}
-      <div className="bg-white dark:bg-zinc-900/60 backdrop-blur-md px-4 py-4 flex items-center justify-between border-b border-slate-200 dark:border-zinc-800/50 shrink-0 sticky top-0 z-10">
-        <div className="flex items-center gap-3 cursor-pointer" onClick={() => setActiveTabState('shop')}>
-           <div className="w-8 h-8 flex items-center justify-center shrink-0">
-             <img src="/logo_transparent.png" alt="S" className="w-full h-full object-contain drop-shadow-sm" />
-           </div>
-           <div>
-             <h1 className="font-bold text-[18px] leading-tight text-slate-900 dark:text-slate-50 tracking-tight hover:text-blue-600 transition-colors">Shaheen Wholesale</h1>
-             <p className="text-[10px] text-blue-500 font-bold uppercase tracking-wider">B2B Portal</p>
-           </div>
+        {/* Top Header */}
+        <div className="bg-white dark:bg-zinc-900/60 backdrop-blur-md px-4 md:px-8 py-4 flex items-center justify-between border-b border-slate-200 dark:border-zinc-800/50 shrink-0 sticky top-0 z-10 w-full">
+          <div className="flex items-center gap-3 cursor-pointer" onClick={() => setActiveTabState('shop')}>
+             <div className="w-8 h-8 flex items-center justify-center shrink-0">
+               <img src="/logo_transparent.png" alt="S" className="w-full h-full object-contain drop-shadow-sm" />
+             </div>
+             <div>
+               <h1 className="font-bold text-[18px] leading-tight text-slate-900 dark:text-slate-50 tracking-tight">Shaheen Wholesale</h1>
+               <p className="text-[10px] text-blue-500 font-bold uppercase tracking-wider">B2B Portal</p>
+             </div>
+          </div>
+          
+          {/* Desktop Nav - Visible only on PC */}
+          <div className="hidden md:flex gap-8 items-center pr-4">
+            <button onClick={() => setActiveTab('shop')} className={`font-bold transition-colors ${activeTab === 'shop' ? 'text-blue-600' : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'}`}>Shop</button>
+            <button onClick={() => setActiveTab('cart')} className={`font-bold transition-colors ${activeTab === 'cart' ? 'text-blue-600' : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'}`}>
+              Cart {cart.length > 0 && <span className="ml-1 bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded text-xs">{cart.length}</span>}
+            </button>
+            <button onClick={() => setActiveTab('checkout')} className={`font-bold transition-colors ${activeTab === 'checkout' ? 'text-blue-600' : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'}`}>Checkout</button>
+            <button onClick={() => setActiveTab('dashboard')} className={`font-bold transition-colors ${activeTab === 'dashboard' ? 'text-blue-600' : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'}`}>Profile</button>
+          </div>
         </div>
-      </div>
 
       {/* Main Content Area */}
-      <div className="flex-1 pb-32 overflow-y-auto">
+      <div className="flex-1 pb-32 overflow-y-auto w-full">
         {activeTab === 'shop' && (
-          <div className="p-4">
+          <div className="p-4 md:p-8 w-full max-w-[1400px] mx-auto">
              {/* Search Bar */}
              <div className="relative mb-6">
-               <div className="flex items-center bg-white dark:bg-zinc-900/60 backdrop-blur-md border border-slate-200 dark:border-zinc-800/50 rounded-lg px-4 py-2.5 shadow-sm focus-within:border-blue-500 transition-all">
+               <div className="flex items-center bg-white dark:bg-zinc-900/60 backdrop-blur-md border border-slate-200 dark:border-zinc-800/50 rounded-lg px-4 py-2.5 shadow-sm focus-within:border-blue-500 transition-all w-full md:max-w-2xl">
                  <Search className="text-slate-400 mr-3" size={18} />
                  <input 
                    type="text" 
@@ -479,8 +532,8 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
 
              {/* Product List */}
              {isLoading ? (
-               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 animate-slide-up">
-                 {[...Array(8)].map((_, i) => (
+               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 animate-slide-up w-full">
+                 {[...Array(12)].map((_, i) => (
                    <div key={i} className="bg-white dark:bg-zinc-900/60 backdrop-blur-md border border-slate-200 dark:border-zinc-800/50 rounded-lg p-3 shadow-sm flex flex-col justify-between gap-3 h-28">
                       <div className="flex flex-col gap-2">
                         <Skeleton width="40%" height="10px" />
@@ -494,43 +547,15 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
                  ))}
                </div>
              ) : (
-                 <div className="grid grid-cols-[repeat(auto-fill,minmax(145px,1fr))] gap-3">
-                   {filteredProducts.map(product => (
-                     <div 
-                       key={product.id} 
-                       onClick={() => addToCart(product)}
-                       className="bg-white dark:bg-zinc-900/60 backdrop-blur-md border border-slate-200 dark:border-zinc-800/50 rounded-sm p-3 flex flex-col justify-between cursor-pointer hover:border-slate-400 dark:hover:border-slate-500 transition-all active:scale-[0.98] group text-left"
-                     >
-                        <div className="w-full">
-                           <h4 className="font-semibold text-slate-800 dark:text-slate-200 leading-tight mb-1 text-sm truncate w-full">{product.name}</h4>
-                           <p className="text-xs text-slate-500 dark:text-slate-400 font-mono mb-3 truncate w-full">{product.barcode || "\u00A0"}</p>
-                        </div>
-                        <div className="mt-auto w-full flex justify-between items-center">
-                           <span className="font-bold text-slate-900 dark:text-slate-50 text-[14px]">Rs {product.price.toLocaleString()}</span>
-                           <button 
-                             onClick={(e) => {
-                                e.stopPropagation();
-                                addToCart(product);
-                             }}
-                             className="bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-600 px-2 py-0.5 rounded-sm font-semibold hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors shrink-0 text-[11px] active:scale-95"
-                           >
-                             + Add
-                           </button>
-                        </div>
-                     </div>
-                   ))}
-                   {filteredProducts.length === 0 && (
-                     <div className="col-span-full text-center py-10 text-slate-400 font-medium">
-                       No products found.
-                     </div>
-                   )}
+                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 w-full">
+                   {renderedProducts}
                  </div>
                )}
           </div>
         )}
 
         {activeTab === 'cart' && (
-          <div className="p-4 h-full flex flex-col">
+          <div className="p-4 md:p-8 h-full flex flex-col w-full max-w-4xl mx-auto">
              <div className="flex items-center gap-3 mb-4 shrink-0">
                <button onClick={() => setActiveTab('shop')} className="text-slate-500 hover:text-slate-900 dark:hover:text-slate-50 transition-colors p-1 bg-white dark:bg-zinc-900/60 backdrop-blur-md rounded shadow-sm border border-slate-200 dark:border-zinc-800/50">
                  <ArrowRight size={20} className="rotate-180" />
@@ -558,24 +583,22 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
                      </div>
                      {(() => {
                         const currentProduct = products.find(p => p.id === item.id);
-                        const pcsPerBox = item.pcsPerBox || currentProduct?.pcsPerBox || 12;
-                        const boxPerCtn = item.boxPerCtn || currentProduct?.boxPerCtn || 6;
                         return (
                            <div className="flex justify-between items-center mt-1 border-t border-slate-700/50 pt-2">
                               <span className="text-[11px] text-slate-500 font-semibold font-mono">Rs {item.price.toLocaleString()} / {item.uom || 'each'}</span>
                               <div className="flex items-center gap-0.5 bg-slate-50 dark:bg-[#0a0a0c] border border-slate-200 dark:border-zinc-800/50 rounded-lg p-0.5 h-7">
                                  <UomSelector item={item} currentProduct={currentProduct} updateCartUom={updateCartUom} />
-                           <button 
-                             onClick={() => updateCartQuantity(item.cartId, -1)}
-                             className="w-8 h-8 flex items-center justify-center text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-slate-50 rounded-md transition-colors text-sm leading-none"
-                           >−</button>
-                           <span className="w-8 bg-transparent text-center font-semibold text-slate-900 dark:text-slate-50 text-[13px]">{item.quantity}</span>
-                           <button 
-                             onClick={() => updateCartQuantity(item.cartId, 1)}
-                             className="w-8 h-8 flex items-center justify-center text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-slate-50 rounded-md transition-colors text-sm leading-none"
-                           >+</button>
-                        </div>
-                     </div>
+                                 <button 
+                                   onClick={() => updateCartQuantity(item.cartId, -1)}
+                                   className="w-8 h-8 flex items-center justify-center text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-slate-50 rounded-md transition-colors text-sm leading-none"
+                                 >−</button>
+                                 <span className="w-8 bg-transparent text-center font-semibold text-slate-900 dark:text-slate-50 text-[13px]">{item.quantity}</span>
+                                 <button 
+                                   onClick={() => updateCartQuantity(item.cartId, 1)}
+                                   className="w-8 h-8 flex items-center justify-center text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-slate-50 rounded-md transition-colors text-sm leading-none"
+                                 >+</button>
+                              </div>
+                           </div>
                         );
                      })()}
                    </div>
@@ -621,7 +644,7 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
         )}
 
         {activeTab === 'dashboard' && (
-          <div className="p-4 flex flex-col gap-6 h-full">
+          <div className="p-4 md:p-8 flex flex-col gap-6 h-full w-full max-w-4xl mx-auto">
             <div className="flex items-center gap-3 mt-2 shrink-0">
                <button onClick={() => setActiveTab('shop')} className="text-slate-500 hover:text-slate-900 dark:hover:text-slate-50 transition-colors p-1 bg-white dark:bg-zinc-900/60 backdrop-blur-md rounded shadow-sm border border-slate-200 dark:border-zinc-800/50">
                  <ArrowRight size={20} className="rotate-180" />
@@ -812,8 +835,8 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
         />
       )}
 
-      {/* Mobile Bottom Navigation - ALWAYS VISIBLE (But hidden during print) */}
-      <div className={`${isImpersonating ? 'absolute' : 'fixed'} bottom-0 left-0 right-0 w-full bg-white/90 dark:bg-[#0a0a0c]/90 backdrop-blur-xl border-t border-slate-200 dark:border-zinc-900 flex justify-around items-center pt-3 pb-[calc(1rem+env(safe-area-inset-bottom))] px-2 z-30 shadow-none print:hidden`}>
+      {/* Mobile Bottom Navigation - Hidden on Desktop */}
+      <div className={`md:hidden ${isImpersonating ? 'absolute' : 'fixed'} bottom-0 left-0 w-full bg-white/90 dark:bg-[#0a0a0c]/90 backdrop-blur-xl border-t border-slate-200 dark:border-zinc-900 flex justify-around items-center pt-3 pb-[calc(1rem+env(safe-area-inset-bottom))] px-2 z-30 shadow-none print:hidden`}>
         <button 
           onClick={() => setActiveTab('shop')} 
           className={`flex flex-col items-center p-2 transition-colors flex-1 ${activeTab === 'shop' ? 'text-blue-600 dark:text-blue-400' : 'text-slate-500 hover:text-slate-900 dark:hover:text-slate-100'}`}
@@ -856,6 +879,7 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
           <span className="text-xs font-bold mt-1">Profile</span>
         </button>
       </div>
+      
     </>
   );
 }
