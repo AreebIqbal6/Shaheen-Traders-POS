@@ -10,9 +10,6 @@ import { X } from 'lucide-react';
 import { supabase } from './lib/supabase';
 import { saveOrderBackup } from './utils/exportManager';
 
-import { check } from '@tauri-apps/plugin-updater';
-import { ask, message } from '@tauri-apps/plugin-dialog';
-import { relaunch } from '@tauri-apps/plugin-process';
 
 const RootRedirect = () => {
   const [target, setTarget] = React.useState<string | null>(null);
@@ -54,6 +51,10 @@ const RootRedirect = () => {
 
 async function checkForUpdates() {
   try {
+    const { check } = await import('@tauri-apps/plugin-updater');
+    const { ask } = await import('@tauri-apps/plugin-dialog');
+    const { relaunch } = await import('@tauri-apps/plugin-process');
+    
     const update = await check();
     if (update) {
       const yes = await ask(`Update to ${update.version} is available!\n\nRelease notes: ${update.body || 'Bug fixes and improvements.'}\n\nDo you want to install it now?`, { 
