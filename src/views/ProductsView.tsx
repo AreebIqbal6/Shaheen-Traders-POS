@@ -323,7 +323,7 @@ export default function ProductsView({ products = [], setProducts }: ProductsVie
         const [barcode, name, priceStr, stockStr] = line.split(',');
         const sku = generateSKU(name?.trim() || 'Product', barcode?.trim() || '');
         newProducts.push({
-          id: Date.now().toString() + Math.random() + i,
+          id: 'temp-' + Date.now().toString() + Math.random() + i,
           barcode: barcode?.trim() || '',
           sku: sku,
           name: name?.trim() || 'Unknown Product',
