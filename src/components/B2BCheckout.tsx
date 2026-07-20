@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import type { Order, CartItem, Booker } from '../types/index';
+import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '../lib/supabase';
-import { Package, MapPin, User, CreditCard, Send, Building, Phone, ChevronDown } from 'lucide-react';
+import { Package, MapPin, User, CreditCard, Send, Building, Phone, ChevronDown, Search } from 'lucide-react';
 
 interface CartItem {
   id: string;
@@ -24,6 +25,19 @@ export default function B2BCheckout({ cart, total, onSuccess, onBack }: B2BCheck
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isCustomPayment, setIsCustomPayment] = useState(false);
+  const [showShopDropdown, setShowShopDropdown] = useState(false);
+  const [shopSearch, setShopSearch] = useState('');
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setShowShopDropdown(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
   const [shops, setShops] = useState<any[]>(() => {
     const saved = localStorage.getItem('shaheen_shops');
     return saved ? JSON.parse(saved) : [];
@@ -109,7 +123,7 @@ export default function B2BCheckout({ cart, total, onSuccess, onBack }: B2BCheck
       if (submitError) throw submitError;
 
       onSuccess();
-    } catch (err: any) {
+    } catch (err: unknown) {
       // If offline or network error, push to offline queue
       console.warn('Network error, saving to offline queue:', err);
       const queue = JSON.parse(localStorage.getItem('shaheen_offline_orders') || '[]');
@@ -139,33 +153,56 @@ export default function B2BCheckout({ cart, total, onSuccess, onBack }: B2BCheck
                 <label className="text-sm font-bold text-slate-500 uppercase tracking-wide flex items-center gap-1.5 mb-1.5">
                   <Building size={12} className="text-blue-600 dark:text-blue-400" /> Business / Shop Name
                 </label>
-                <input 
-                  type="text" 
-                  name="businessName"
-                  list="shops-list"
-                  value={formData.businessName}
-                  onChange={e => {
-                    const val = e.target.value;
-                    const matchedShop = shops.find(s => s.name === val);
-                    if (matchedShop) {
-                       setFormData({
-                          ...formData, 
-                          businessName: val, 
-                          areaName: matchedShop.address || '', 
-                          contactNumber: matchedShop.contactNumber || ''
-                       });
-                    } else {
-                       setFormData({...formData, businessName: val});
-                    }
-                  }}
-                  className="w-full h-11 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-sm px-3 text-[14px] text-slate-900 dark:text-slate-50 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-all"
-                  placeholder="Select or type a shop..."
-                />
-                <datalist id="shops-list">
-                  {shops.map((shop, i) => (
-                    <option key={i} value={shop.name} />
-                  ))}
-                </datalist>
+                                <div className="relative" ref={dropdownRef}>
+                  <div 
+                    onClick={() => setShowShopDropdown(true)}
+                    className="w-full h-11 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-sm px-3 flex items-center justify-between text-[14px] text-slate-900 dark:text-slate-50 cursor-pointer"
+                  >
+                    <span>{formData.businessName || 'Select or type a shop...'}</span>
+                    <Search size={16} className="text-slate-400" />
+                  </div>
+                  
+                  {showShopDropdown && (
+                    <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-xl z-50 max-h-64 flex flex-col overflow-hidden">
+                      <div className="p-2 border-b border-slate-100 dark:border-slate-700">
+                        <input
+                          type="text"
+                          autoFocus
+                          placeholder="Search shop by name..."
+                          value={shopSearch}
+                          onChange={e => {
+                             setShopSearch(e.target.value);
+                             setFormData({...formData, businessName: e.target.value});
+                          }}
+                          className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-500"
+                        />
+                      </div>
+                      <div className="overflow-y-auto">
+                        {shops
+                          .filter(s => s.name.toLowerCase().includes(shopSearch.toLowerCase()))
+                          .map((shop, i) => (
+                            <div
+                              key={i}
+                              onClick={() => {
+                                setFormData({
+                                  ...formData,
+                                  businessName: shop.name,
+                                  areaName: shop.address || '',
+                                  contactNumber: shop.contactNumber || ''
+                                });
+                                setShopSearch('');
+                                setShowShopDropdown(false);
+                              }}
+                              className="px-3 py-2.5 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700/50 border-b border-slate-50 dark:border-slate-700/50 last:border-0"
+                            >
+                              <div className="font-semibold text-sm text-slate-800 dark:text-slate-200">{shop.name}</div>
+                              <div className="text-xs text-slate-500">{shop.address} {shop.contactNumber && `• ${shop.contactNumber}`}</div>
+                            </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div>
