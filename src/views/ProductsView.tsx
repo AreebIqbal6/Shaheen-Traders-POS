@@ -1,25 +1,16 @@
+import type { Product } from '../types/index';
 import React, { useState, useRef, useEffect } from 'react';
 import { Search, Plus, Edit2, Trash2, X, AlertTriangle, Upload, Loader2, ScanLine } from 'lucide-react';
 import CameraScanner from '../components/CameraScanner';
 import toast from 'react-hot-toast';
 import { supabase } from '../lib/supabase';
 
-export interface Product {
-  id: string;
-  barcode: string;
-  name: string;
-  price: number;
-  stock: number;
-  sku?: string;
-  category?: string;
-  pcsPerBox?: number;
-  boxPerCtn?: number;
-}
+
 
 export const generateSKU = (name: string, barcode: string) => {
   const safeName = name || 'Product';
   const words = safeName.split(' ').filter(w => w.length > 0);
-  let prefix = '';
+  
   if (words.length >= 2) {
     prefix = (words[0].substring(0, 3) + words[1].substring(0, 3)).toUpperCase().replace(/[^A-Z]/g, 'X');
   } else if (words.length === 1) {
@@ -132,7 +123,7 @@ export default function ProductsView({ products = [], setProducts }: ProductsVie
       if (typeof setProducts === 'function') {
         setProducts(mappedData);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Failed to fetch products from Supabase:', err);
       // Suppressed the error toast here to stop the UI from crashing if offline
     }
@@ -228,7 +219,7 @@ export default function ProductsView({ products = [], setProducts }: ProductsVie
       try {
         const { error } = await supabase.from('products').update(mapProductToRow(updatedProduct)).eq('id', editingProduct.id);
         if (error) throw error;
-      } catch (err: any) {
+      } catch (err: unknown) {
         clearPending(editingProduct.id);
         toast.error('Failed to save changes: ' + err.message);
         fetchProducts(); 
@@ -253,7 +244,7 @@ export default function ProductsView({ products = [], setProducts }: ProductsVie
         if (typeof setProducts === 'function') {
            setProducts(prev => prev.map(p => p.id === tempId ? savedProduct : p));
         }
-      } catch (err: any) {
+      } catch (err: unknown) {
         toast.error('Failed to save product: ' + err.message);
         if (typeof setProducts === 'function') setProducts(prev => prev.filter(p => p.id !== tempId));
         fetchProducts();
@@ -291,7 +282,7 @@ export default function ProductsView({ products = [], setProducts }: ProductsVie
       setMinStockDict(newMinStockDict);
       localStorage.setItem('shaheen_min_stock', JSON.stringify(newMinStockDict));
       toast.success('Product deleted.');
-    } catch (err: any) {
+    } catch (err: unknown) {
       clearPending(id);
       toast.error('Failed to delete product: ' + err.message);
       fetchProducts(); 
@@ -472,7 +463,7 @@ export default function ProductsView({ products = [], setProducts }: ProductsVie
 
                             toast.success("Inventory cleared successfully!", { id: "clear-inv" });
                             toast.dismiss(t.id);
-                          } catch (e: any) { 
+                          } catch (e: unknown) { 
                             toast.error("Failed to clear cloud inventory: " + e.message, { id: "clear-inv" }); 
                           } finally {
                             setTimeout(() => { isWipingRef.current = false; }, 1500);

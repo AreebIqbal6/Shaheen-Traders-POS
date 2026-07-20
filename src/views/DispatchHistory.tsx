@@ -1,3 +1,4 @@
+import type { Order, Booker } from '../types/index';
 import React, { useState, useMemo } from 'react';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { DollarSign, ShoppingCart, Activity, FileText, X, AlertTriangle } from 'lucide-react';

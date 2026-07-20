@@ -1,3 +1,4 @@
+import type { Product, Order, CartItem, Booker } from '../types/index';
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { playNotificationSound } from '../utils/audio';
 import { saveSilentBackup } from '../utils/silentBackup';
@@ -10,6 +11,7 @@ import BookersView from './BookersView';
 import TrackersView from './TrackersView';
 import OrderPreviewModal from '../components/OrderPreviewModal';
 import SimpleOrderViewModal from '../components/SimpleOrderViewModal';
+
 import Receipt from '../components/Receipt';
 import CameraScanner from '../components/CameraScanner';
 import DashboardView from './DashboardView';
@@ -25,24 +27,9 @@ import { supabase } from '../lib/supabase';
 import { CloudUpload } from 'lucide-react';
 import { generateSKU } from './ProductsView';
 
-interface CartItem extends Product {
-  cartId: string;
-  quantity: number;
-  uom?: string;
-}
 
-export interface Order {
-  receiptNumber: string | number;
-  date: Date;
-  items: CartItem[];
-  total: number;
-  clientName: string;
-  paymentTerms: string;
-  area?: string;
-  bookerName?: string;
-  contactNumber?: string;
-  totalWords?: string;
-}
+
+
 
 export interface OurOrderItem {
   id: string;
@@ -55,7 +42,7 @@ export default function AdminPOSView() {
   const [products, setProducts] = useState<Product[]>(() => {
     const saved = localStorage.getItem('shaheen_products');
     const parsed = saved ? JSON.parse(saved) : [];
-    return parsed.map((p: any) => {
+    return parsed.map((p: Product) => {
       const needsNewSku = !p.sku || p.sku === p.barcode || p.sku.trim() === '';
       return {
         ...p,
@@ -71,9 +58,9 @@ export default function AdminPOSView() {
     const saved = localStorage.getItem('shaheen_orders');
     if (saved) {
       const orders = JSON.parse(saved);
-      return orders.map((o: any) => ({
+      return orders.map((o: Order) => ({
         ...o,
-        items: o.items.map((i: any) => ({ ...i, sku: i.sku || generateSKU(i.name, i.barcode) }))
+        items: o.items.map((i: CartItem) => ({ ...i, sku: i.sku || generateSKU(i.name, i.barcode) }))
       }));
     }
     return [];
@@ -115,6 +102,7 @@ export default function AdminPOSView() {
   const [draftOrderId, setDraftOrderId] = useState('');
   const [activeSupabaseId, setActiveSupabaseId] = useState('');
   const [viewOrderDetails, setViewOrderDetails] = useState<any>(null);
+  
   const [receiptOrderDetails, setReceiptOrderDetails] = useState<any>(null);
   
   // B2B Wholesale Fields
@@ -232,7 +220,7 @@ export default function AdminPOSView() {
       await pullProductsFromCloud();
       
       if (!silent) toast.success('Manual synchronization flawless and complete.');
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Sync error:', err);
       if (!silent) toast.error('Failed to sync to cloud: ' + err.message);
     } finally {
@@ -450,9 +438,9 @@ export default function AdminPOSView() {
       
       let allOrders = data || [];
       
-      allOrders = allOrders.map((o: any) => ({
+      allOrders = allOrders.map((o: Order) => ({
         ...o,
-        items: (o.items || []).map((i: any) => ({ ...i, sku: i.sku || generateSKU(i.name, i.barcode) }))
+        items: (o.items || []).map((i: CartItem) => ({ ...i, sku: i.sku || generateSKU(i.name, i.barcode) }))
       }));
         
       const statusQueue = JSON.parse(localStorage.getItem('shaheen_offline_status_updates') || '[]');
@@ -460,43 +448,43 @@ export default function AdminPOSView() {
          const hiddenIds = statusQueue
            .filter((u: any) => u.status === 'COMPLETED' || u.status === 'CANCELLED')
            .map((u: any) => u.id);
-         allOrders = allOrders.filter((o: any) => !hiddenIds.includes(o.id));
+         allOrders = allOrders.filter((o: Order) => !hiddenIds.includes(o.id));
       }
 
       const offlineOrders = JSON.parse(localStorage.getItem('shaheen_offline_orders') || '[]');
       if (offlineOrders.length > 0) {
-        let pendingOffline = offlineOrders.filter((o: any) => o.status === 'PENDING' || o.status === 'ACCEPTED' || o.status === 'PROCESSING');
+        let pendingOffline = offlineOrders.filter((o: Order) => o.status === 'PENDING' || o.status === 'ACCEPTED' || o.status === 'PROCESSING');
         if (statusQueue.length > 0) {
            const hiddenIds = statusQueue
              .filter((u: any) => u.status === 'COMPLETED' || u.status === 'CANCELLED')
              .map((u: any) => u.id);
-           pendingOffline = pendingOffline.filter((o: any) => !hiddenIds.includes(o.id) && !hiddenIds.includes(o.receipt_number));
+           pendingOffline = pendingOffline.filter((o: Order) => !hiddenIds.includes(o.id) && !hiddenIds.includes(o.receipt_number));
         }
         
-        pendingOffline = pendingOffline.map((o: any) => ({
+        pendingOffline = pendingOffline.map((o: Order) => ({
           ...o,
-          items: (o.items || []).map((i: any) => ({ ...i, sku: i.sku || generateSKU(i.name, i.barcode) }))
+          items: (o.items || []).map((i: CartItem) => ({ ...i, sku: i.sku || generateSKU(i.name, i.barcode) }))
         }));
-        const existingIds = new Set(allOrders.map((o: any) => o.id).filter(Boolean));
-        const existingReceipts = new Set(allOrders.map((o: any) => o.receipt_number).filter(Boolean));
+        const existingIds = new Set(allOrders.map((o: Order) => o.id).filter(Boolean));
+        const existingReceipts = new Set(allOrders.map((o: Order) => o.receipt_number).filter(Boolean));
         
-        pendingOffline = pendingOffline.filter((o: any) => 
+        pendingOffline = pendingOffline.filter((o: Order) => 
            !(o.id && existingIds.has(o.id)) && !(o.receipt_number && existingReceipts.has(o.receipt_number))
         );
         
         allOrders = [...pendingOffline, ...allOrders];
       }
       
-      setIncomingOrders(allOrders.filter((o: any) => !permanentlyHiddenOrders.includes(o.id) && !permanentlyHiddenOrders.includes(o.receipt_number)));
+      setIncomingOrders(allOrders.filter((o: Order) => !permanentlyHiddenOrders.includes(o.id) && !permanentlyHiddenOrders.includes(o.receipt_number)));
     } catch (err) {
       console.warn('Failed to fetch from Supabase, loading local orders instead:', err);
       const offlineOrders = JSON.parse(localStorage.getItem('shaheen_offline_orders') || '[]');
-      let pendingOffline = offlineOrders.filter((o: any) => o.status === 'PENDING' || o.status === 'ACCEPTED' || o.status === 'PROCESSING');
-      const formattedOffline = pendingOffline.map((o: any) => ({
+      const pendingOffline = offlineOrders.filter((o: Order) => o.status === 'PENDING' || o.status === 'ACCEPTED' || o.status === 'PROCESSING');
+      const formattedOffline = pendingOffline.map((o: Order) => ({
         ...o,
-        items: (o.items || []).map((i: any) => ({ ...i, sku: i.sku || generateSKU(i.name, i.barcode) }))
+        items: (o.items || []).map((i: CartItem) => ({ ...i, sku: i.sku || generateSKU(i.name, i.barcode) }))
       }));
-      setIncomingOrders(formattedOffline.filter((o: any) => !permanentlyHiddenOrders.includes(o.id) && !permanentlyHiddenOrders.includes(o.receipt_number)));
+      setIncomingOrders(formattedOffline.filter((o: Order) => !permanentlyHiddenOrders.includes(o.id) && !permanentlyHiddenOrders.includes(o.receipt_number)));
     }
   };
 
@@ -510,7 +498,7 @@ export default function AdminPOSView() {
     const queue = JSON.parse(localStorage.getItem('shaheen_offline_status_updates') || '[]');
     if (queue.length === 0 || !navigator.onLine) return;
 
-    const failed: any[] = [];
+    const failed: string[] = [];
     for (const update of queue) {
       try {
         const { error } = await supabase
@@ -573,7 +561,7 @@ export default function AdminPOSView() {
     };
   }, []);
 
-  const handleAcknowledgeOrder = useCallback(async (order: any) => {
+  const handleAcknowledgeOrder = useCallback(async (order: Order) => {
     try {
       if (order.id) {
         const { error } = await supabase.from('orders').update({ status: 'ACCEPTED' }).eq('id', order.id);
@@ -601,10 +589,10 @@ export default function AdminPOSView() {
         saveSilentBackup(mappedOrder as any).catch(err => console.error("Silent backup failed:", err));
       }
       toast.success('Order acknowledged and saved locally!');
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.warn('Supabase update failed, updating local order:', err);
-      let offlineOrders = JSON.parse(localStorage.getItem('shaheen_offline_orders') || '[]');
-      const orderIndex = offlineOrders.findIndex((o: any) => (order.id && o.id === order.id) || (order.receipt_number && o.receipt_number === order.receipt_number));
+      const offlineOrders = JSON.parse(localStorage.getItem('shaheen_offline_orders') || '[]');
+      const orderIndex = offlineOrders.findIndex((o: Order) => (order.id && o.id === order.id) || (order.receipt_number && o.receipt_number === order.receipt_number));
       if (orderIndex !== -1) {
          offlineOrders[orderIndex].status = 'ACCEPTED';
          localStorage.setItem('shaheen_offline_orders', JSON.stringify(offlineOrders));
@@ -613,7 +601,7 @@ export default function AdminPOSView() {
     }
   }, []);
 
-  const handleCancelIncomingOrder = useCallback(async (order: any) => {
+  const handleCancelIncomingOrder = useCallback(async (order: Order) => {
     toast((t) => (
       <span className="flex flex-col gap-2">
         <span className="font-semibold text-slate-900">Cancel this order?</span>
@@ -630,8 +618,8 @@ export default function AdminPOSView() {
                 if (order.id) {
                    await supabase.from('orders').update({ status: 'CANCELLED' }).eq('id', order.id);
                 } else if (order.receipt_number) {
-                   let offline = JSON.parse(localStorage.getItem('shaheen_offline_orders') || '[]');
-                   let idx = offline.findIndex((o: any) => o.receipt_number === order.receipt_number);
+                   const offline = JSON.parse(localStorage.getItem('shaheen_offline_orders') || '[]');
+                   const idx = offline.findIndex((o: Order) => o.receipt_number === order.receipt_number);
                    if (idx !== -1) {
                       offline[idx].status = 'CANCELLED';
                       localStorage.setItem('shaheen_offline_orders', JSON.stringify(offline));
@@ -645,7 +633,7 @@ export default function AdminPOSView() {
                 localStorage.setItem('shaheen_cancelled_orders', JSON.stringify(cancelled));
                 
                 toast.success('Order Cancelled');
-              } catch (e: any) {
+              } catch (e: unknown) {
                 toast.error('Failed to cancel order: ' + e.message);
               }
             }}
@@ -655,13 +643,13 @@ export default function AdminPOSView() {
     ), { duration: 5000 });
   }, []);
 
-  const handleRestoreOrder = useCallback(async (order: any) => {
+  const handleRestoreOrder = useCallback(async (order: Order) => {
     try {
       if (order.id) {
         await supabase.from('orders').update({ status: 'PENDING' }).eq('id', order.id);
       } else if (order.receipt_number) {
-        let offline = JSON.parse(localStorage.getItem('shaheen_offline_orders') || '[]');
-        let idx = offline.findIndex((o: any) => o.receipt_number === order.receipt_number);
+        const offline = JSON.parse(localStorage.getItem('shaheen_offline_orders') || '[]');
+        const idx = offline.findIndex((o: Order) => o.receipt_number === order.receipt_number);
         if (idx !== -1) {
           offline[idx].status = 'PENDING';
           localStorage.setItem('shaheen_offline_orders', JSON.stringify(offline));
@@ -669,7 +657,7 @@ export default function AdminPOSView() {
       }
       
       let cancelled = JSON.parse(localStorage.getItem('shaheen_cancelled_orders') || '[]');
-      cancelled = cancelled.filter((o: any) => {
+      cancelled = cancelled.filter((o: Order) => {
         const id1 = String(order.id || '').toLowerCase();
         const id2 = String(o.id || '').toLowerCase();
         const r1 = String(order.receipt_number || order.receiptNumber || '').toLowerCase();
@@ -685,18 +673,18 @@ export default function AdminPOSView() {
       setIncomingOrders(prev => [{...order, status: 'PENDING'}, ...prev]);
       
       toast.success('Order Restored to Queue');
-    } catch (e: any) {
+    } catch (e: unknown) {
       toast.error('Failed to restore order: ' + e.message);
     }
   }, []);
 
-  const handleAcceptOrder = useCallback(async (order: any) => {
+  const handleAcceptOrder = useCallback(async (order: Order) => {
     const receiptNumber = order.receipt_number || order.id;
     
     setActiveSupabaseId(order.id || '');
     setDraftOrderId(receiptNumber);
     
-    const loadedCart: CartItem[] = (order.items || []).map((item: any) => {
+    const loadedCart: CartItem[] = (order.items || []).map((item: CartItem) => {
       const matchedProduct = products.find(p => p.id === item.id);
       return {
         id: item.id,
@@ -835,7 +823,7 @@ export default function AdminPOSView() {
     
     setCart(prev => prev.map(item => {
       if (item.cartId !== cartId) return item;
-      let newItem = { ...item, ...updates };
+      const newItem = { ...item, ...updates };
       
       if (updates.uom) {
          const product = products.find(p => p.id === item.id || p.barcode === item.barcode);
@@ -960,8 +948,8 @@ export default function AdminPOSView() {
               console.warn("Supabase update failed:", err);
             }
           }
-          let offlineOrders = JSON.parse(localStorage.getItem('shaheen_offline_orders') || '[]');
-          const orderIndex = offlineOrders.findIndex((o: any) => o.id === draftOrderId || o.receipt_number === draftOrderId);
+          const offlineOrders = JSON.parse(localStorage.getItem('shaheen_offline_orders') || '[]');
+          const orderIndex = offlineOrders.findIndex((o: Order) => o.id === draftOrderId || o.receipt_number === draftOrderId);
           if (orderIndex !== -1) {
             offlineOrders[orderIndex].status = 'COMPLETED';
             localStorage.setItem('shaheen_offline_orders', JSON.stringify(offlineOrders));
@@ -1090,7 +1078,7 @@ export default function AdminPOSView() {
         );
       case 'Orders': {
         const aggregatedItems = incomingOrders.reduce((acc, order) => {
-          (order.items || []).forEach((item: any) => {
+          (order.items || []).forEach((item: CartItem) => {
             const key = item.name;
             if (!acc[key]) acc[key] = 0;
             acc[key] += item.quantity;

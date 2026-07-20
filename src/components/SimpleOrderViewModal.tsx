@@ -1,3 +1,4 @@
+import type { Order } from '../types/index';
 import React from 'react';
 import { X } from 'lucide-react';
 

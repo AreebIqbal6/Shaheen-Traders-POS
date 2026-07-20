@@ -121,7 +121,7 @@ export default function ShopsManagement() {
         toast.success('Shop added successfully');
       }
       closeForm();
-    } catch (err: any) {
+    } catch (err: unknown) {
       toast.error(err.message || 'Failed to save shop');
     } finally {
       setIsLoading(false);

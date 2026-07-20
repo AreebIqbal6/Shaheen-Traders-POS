@@ -32,7 +32,7 @@ export default function AuthView({ onLogin }: AuthViewProps) {
       if (data.session) {
         onLogin('Admin');
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       setError(err.message || 'Invalid email or password.');
     } finally {
       setLoading(false);

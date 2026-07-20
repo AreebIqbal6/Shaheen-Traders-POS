@@ -1,14 +1,9 @@
+import type { LedgerPayment } from '../types/index';
 import React, { useState, useEffect } from 'react';
 import { BookOpen, Search, Plus, Trash2, ArrowUpRight, ArrowDownRight, Printer } from 'lucide-react';
 import toast from 'react-hot-toast';
 
-export interface LedgerPayment {
-  id: string;
-  clientName: string;
-  amount: number;
-  date: string;
-  notes: string;
-}
+
 
 interface LedgerViewProps {
   pastOrders: any[];

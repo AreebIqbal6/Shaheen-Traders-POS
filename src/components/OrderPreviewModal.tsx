@@ -1,3 +1,4 @@
+import type { Product, Order, CartItem } from '../types/index';
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import type { Product } from '../views/ProductsView';
@@ -6,11 +7,7 @@ import { FolderDown, Globe, Printer, X, Check, Download } from 'lucide-react';
 import { saveOrderBackup } from '../utils/exportManager';
 import toast from 'react-hot-toast';
 
-interface CartItem extends Product {
-  cartId: string;
-  quantity: number;
-  uom?: string;
-}
+
 
 interface OrderPreviewModalProps {
   isOpen: boolean;

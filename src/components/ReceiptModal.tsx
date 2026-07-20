@@ -1,12 +1,9 @@
+import type { Product, CartItem } from '../types/index';
 import React from 'react';
 import Barcode from 'react-barcode';
 import type { Product } from '../views/ProductsView';
 
-interface CartItem extends Product {
-  cartId: string;
-  quantity: number;
-  uom?: string;
-}
+
 
 interface ReceiptModalProps {
   isOpen: boolean;

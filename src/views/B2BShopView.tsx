@@ -1,3 +1,4 @@
+import type { Product, Order, CartItem } from '../types/index';
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { playNotificationSound } from '../utils/audio';
 import { supabase } from '../lib/supabase';
@@ -9,23 +10,9 @@ import SimpleOrderViewModal from '../components/SimpleOrderViewModal';
 import { Skeleton } from '../components/Skeleton';
 import { generateSKU } from './ProductsView';
 
-export interface Product {
-  id: string;
-  name: string;
-  price: number;
-  stock: number;
-  barcode: string;
-  category?: string;
-  pcsPerBox?: number;
-  boxPerCtn?: number;
-}
 
-interface CartItem extends Product {
-  cartId: string;
-  quantity: number;
-  uom?: 'Pcs' | 'Box' | 'Ctn';
-  basePrice?: number;
-}
+
+
 
 // MEMOIZED PRODUCT CARD (Priority 3: CPU Stutter Fix)
 const ProductCard = React.memo(({ product, onAdd }: { product: Product, onAdd: (p: Product) => void }) => {
@@ -131,7 +118,7 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
 
   useEffect(() => {
-    const handleBeforeInstallPrompt = (e: any) => {
+    const handleBeforeInstallPrompt = (e: unknown) => {
       e.preventDefault();
       setDeferredPrompt(e);
     };
@@ -165,7 +152,7 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
       }
 
       const offlineOrders = JSON.parse(localStorage.getItem('shaheen_offline_orders') || '[]');
-      let allOrders = [...offlineOrders.map((o: any) => ({...o, isOffline: true})), ...onlineOrders];
+      let allOrders = [...offlineOrders.map((o: Order) => ({...o, isOffline: true})), ...onlineOrders];
       
       // APPLY OFFLINE STATUS QUEUE SO BOOKER IMMEDIATELY SEES CANCELLED ORDERS
       const statusQueue = JSON.parse(localStorage.getItem('shaheen_offline_status_updates') || '[]');
@@ -215,7 +202,7 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
             booker_name: booker_name,
             payment_terms: payment_terms,
             b2b_user_id: b2b_user_id,
-            items: order.items?.map((i: any) => ({
+            items: order.items?.map((i: CartItem) => ({
               ...i,
               basePrice: i.basePrice || i.price
             })) || []
@@ -226,7 +213,7 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
             toast.error(`Sync failed for ${receipt_number || finalPayload.id}: ${error.message}`);
             failedOrders.push(order);
           }
-        } catch (e: any) {
+        } catch (e: unknown) {
           console.error('Sync exception for order', order.receipt_number, e);
           toast.error(`Sync error: ${e.message || 'Unknown'}`);
           failedOrders.push(order);
@@ -339,7 +326,7 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
             onClick={async () => {
               toast.dismiss(t.id);
               const offline = JSON.parse(localStorage.getItem('shaheen_offline_orders') || '[]');
-              const idx = offline.findIndex((o: any) => o.receipt_number === orderId || o.id === orderId);
+              const idx = offline.findIndex((o: Order) => o.receipt_number === orderId || o.id === orderId);
               if (idx !== -1) {
                  offline[idx].status = 'CANCELLED';
                  localStorage.setItem('shaheen_offline_orders', JSON.stringify(offline));
@@ -355,7 +342,7 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
                     
                   if (error) throw error;
                   toast.success('Order cancelled');
-                } catch (e: any) {
+                } catch (e: unknown) {
                   const queue = JSON.parse(localStorage.getItem('shaheen_offline_status_updates') || '[]');
                   queue.push({ id: orderId, status: 'CANCELLED' });
                   localStorage.setItem('shaheen_offline_status_updates', JSON.stringify(queue));
@@ -382,7 +369,7 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
     fetchProducts();
   }, []);
 
-  const fetchProducts = async () => {
+  async function fetchProducts() {
     setIsLoading(true);
     try {
       const { data, error } = await supabase.from('products').select('*');
@@ -392,7 +379,7 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
         setProducts([]);
         localStorage.removeItem('shaheen_b2b_products');
       } else {
-        const mappedData = data.map((p: any) => ({
+        const mappedData = data.map((p: Product) => ({
           ...p,
           sku: p.sku || generateSKU(p.name, p.barcode),
           pcsPerBox: p.pcs_per_box || p.pcsPerBox || 12,

@@ -1,3 +1,4 @@
+import type { BookerLocation } from '../types/index';
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
@@ -13,13 +14,7 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
 });
 
-interface BookerLocation {
-  id: string;
-  booker_name: string;
-  lat: number;
-  lng: number;
-  updated_at: string;
-}
+
 
 export default function TrackersView() {
   const [locations, setLocations] = useState<BookerLocation[]>([]);
@@ -46,6 +41,7 @@ export default function TrackersView() {
   };
 
   useEffect(() => {
+     
     fetchLocations();
     
     // Subscribe to realtime changes in booker_locations
@@ -54,7 +50,7 @@ export default function TrackersView() {
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'booker_locations' },
-        (payload) => {
+        () => {
           // You can also optimistically update local state here instead of re-fetching, 
           // but for simplicity and consistency, re-fetching works well for small lists.
           fetchLocations();

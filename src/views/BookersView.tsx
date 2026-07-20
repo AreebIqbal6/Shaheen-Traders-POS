@@ -1,3 +1,4 @@
+import type { Booker } from '../types/index';
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { Users, Plus, Save, X, Phone, Mail, MapPin, User, Key, Hash, Edit2, AlertTriangle, Navigation, LogIn, ArrowLeft, Trash2 } from 'lucide-react';
@@ -7,15 +8,7 @@ import TrackingMap from '../components/TrackingMap';
 import B2BShopView from './B2BShopView';
 import ShopsManagement from '../components/ShopsManagement';
 
-export interface Booker {
-  id?: string;
-  booker_number: string;
-  name: string;
-  username: string;
-  phone: string;
-  email: string;
-  address: string;
-}
+
 
 export default function BookersView() {
   const [activeTab, setActiveTab] = useState<'bookers' | 'shops'>('bookers');
@@ -128,13 +121,13 @@ export default function BookersView() {
     };
   }, []);
 
-  const fetchBookers = async () => {
+  async function fetchBookers() {
     let fetchedData: Booker[] = [];
     try {
       const { data, error } = await supabase.from('bookers').select('*').order('created_at', { ascending: false });
       if (error) throw error;
       if (data) fetchedData = data;
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Fetch bookers error (falling back to local):", err.message);
       const cached = localStorage.getItem('shaheen_bookers');
       if (cached) fetchedData = JSON.parse(cached);
@@ -157,7 +150,7 @@ export default function BookersView() {
     }
   };
 
-  const syncOfflineBookers = async () => {
+  async function syncOfflineBookers() {
     const offlineBookers = JSON.parse(localStorage.getItem('shaheen_offline_bookers') || '[]');
     if (offlineBookers.length === 0 || !navigator.onLine) return;
 
@@ -277,7 +270,7 @@ export default function BookersView() {
       }
       
       closeForm();
-    } catch (err: any) {
+    } catch (err: unknown) {
       setError(err.message || 'Failed to save booker.');
     } finally {
       setIsLoading(false);
@@ -321,7 +314,7 @@ export default function BookersView() {
                 const offlineStr = localStorage.getItem('shaheen_offline_bookers');
                 if (offlineStr) {
                   const offlineBookers = JSON.parse(offlineStr);
-                  const newOffline = offlineBookers.filter((b: any) => b.booker_number !== bookerNumber);
+                  const newOffline = offlineBookers.filter((b: Booker) => b.booker_number !== bookerNumber);
                   localStorage.setItem('shaheen_offline_bookers', JSON.stringify(newOffline));
                 }
                 
@@ -333,7 +326,7 @@ export default function BookersView() {
                 }
                 
                 toast.success('Booker removed successfully');
-              } catch (err: any) {
+              } catch (err: unknown) {
                 toast.error('Failed to remove booker');
               }
             }}

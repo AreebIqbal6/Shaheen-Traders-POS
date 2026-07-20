@@ -1,15 +1,9 @@
+import type { Product, CartItem } from '../types/index';
 import React, { useState } from 'react';
 
-interface Product {
-  id: number;
-  name: string;
-  price: number;
-  color: string;
-}
 
-interface CartItem extends Product {
-  quantity: number;
-}
+
+
 
 export default function SellView() {
   const [cart, setCart] = useState<CartItem[]>([]);

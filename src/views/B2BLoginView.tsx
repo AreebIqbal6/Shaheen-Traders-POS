@@ -1,3 +1,4 @@
+import type { Booker } from '../types/index';
 import React, { useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { Shield, ArrowRight, User, Key, WifiOff } from 'lucide-react';
@@ -14,7 +15,7 @@ export default function B2BLoginView({ onLoginSuccess }: { onLoginSuccess: () =>
     const cachedBookers = localStorage.getItem('shaheen_bookers');
     if (cachedBookers) {
       const bookers = JSON.parse(cachedBookers);
-      const target = bookers.find((b: any) => b.username === username);
+      const target = bookers.find((b: Booker) => b.username === username);
       if (target && await verifyPassword(password, target.auth_token)) {
         // Authenticated offline!
         localStorage.setItem('shaheen_active_booker', JSON.stringify(target));
@@ -60,8 +61,8 @@ export default function B2BLoginView({ onLoginSuccess }: { onLoginSuccess: () =>
 
         // Success! Cache it for future offline use
         const cachedBookers = localStorage.getItem('shaheen_bookers');
-        let bookersList = cachedBookers ? JSON.parse(cachedBookers) : [];
-        if (!bookersList.find((b: any) => b.username === data.username)) {
+        const bookersList = cachedBookers ? JSON.parse(cachedBookers) : [];
+        if (!bookersList.find((b: Booker) => b.username === data.username)) {
           bookersList.push(data);
           localStorage.setItem('shaheen_bookers', JSON.stringify(bookersList));
         }
@@ -71,7 +72,7 @@ export default function B2BLoginView({ onLoginSuccess }: { onLoginSuccess: () =>
         onLoginSuccess();
       }
 
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Login Error:', err);
       setError(err.message || 'Failed to authenticate. Check your connection.');
     } finally {

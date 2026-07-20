@@ -1,3 +1,4 @@
+import type { Product, Order, CartItem, Booker } from '../types/index';
 import React, { useState, useMemo, useEffect } from 'react';
 import { PieChart as RePieChart, Pie, Cell, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as ReTooltip, ResponsiveContainer } from 'recharts';
 import { PieChart, TrendingUp, Package, DollarSign, FileText, X, AlertTriangle, RotateCcw } from 'lucide-react';
@@ -8,7 +9,7 @@ import OrderPreviewModal from '../components/OrderPreviewModal';
 interface DashboardViewProps {
   pastOrders: Order[];
   products: Product[];
-  onRestoreOrder?: (order: any) => void;
+  onRestoreOrder?: (order: Order) => void;
 }
 
 type FilterPeriod = 'Today' | 'Week' | 'Month' | 'Year' | 'Custom';
@@ -29,7 +30,7 @@ export default function DashboardView({ pastOrders, products, onRestoreOrder }: 
       const stored = JSON.parse(localStorage.getItem('shaheen_cancelled_orders') || '[]');
       const now = new Date();
       // Purge older than 30 days
-      const validOrders = stored.filter((o: any) => {
+      const validOrders = stored.filter((o: Order) => {
         if (!o.cancelledAt) return true;
         const cancelDate = new Date(o.cancelledAt);
         const diffDays = (now.getTime() - cancelDate.getTime()) / (1000 * 3600 * 24);
@@ -115,7 +116,7 @@ export default function DashboardView({ pastOrders, products, onRestoreOrder }: 
 
       // Product grouping
       if (order.items) {
-        order.items.forEach((item: any) => {
+        order.items.forEach((item: CartItem) => {
            itemsSold += item.quantity;
            if (!productSales[item.id]) productSales[item.id] = { name: item.name, qty: 0, revenue: 0 };
            productSales[item.id].qty += item.quantity;
