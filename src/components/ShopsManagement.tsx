@@ -162,7 +162,7 @@ export default function ShopsManagement() {
         </div>
         <button
           onClick={isAdding ? closeForm : openAddForm}
-          className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 rounded-md font-semibold transition-colors flex items-center gap-2 shadow-sm whitespace-nowrap"
+          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-md font-semibold transition-colors flex items-center gap-2 shadow-sm whitespace-nowrap"
         >
           {isAdding ? <X size={18} /> : <Plus size={18} />}
           {isAdding ? 'Cancel' : 'Add Shop'}

@@ -376,7 +376,7 @@ export default function BookersView() {
           </button>
           <button 
             onClick={() => setActiveTab('shops')}
-            className={`px-6 py-3 font-bold text-sm transition-colors border-b-2 ${activeTab === 'shops' ? 'border-emerald-600 text-emerald-600 dark:text-emerald-400' : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-300'}`}
+            className={`px-6 py-3 font-bold text-sm transition-colors border-b-2 ${activeTab === 'shops' ? 'border-blue-600 text-blue-600 dark:text-blue-400' : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-300'}`}
           >
             Shops Management
           </button>
