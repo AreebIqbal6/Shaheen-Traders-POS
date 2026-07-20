@@ -5,6 +5,7 @@ import toast from 'react-hot-toast';
 import { hashPassword } from '../utils/cryptoUtils';
 import TrackingMap from '../components/TrackingMap';
 import B2BShopView from './B2BShopView';
+import ShopsManagement from '../components/ShopsManagement';
 
 export interface Booker {
   id?: string;
@@ -17,6 +18,7 @@ export interface Booker {
 }
 
 export default function BookersView() {
+  const [activeTab, setActiveTab] = useState<'bookers' | 'shops'>('bookers');
   const [bookers, setBookers] = useState<Booker[]>(() => {
     const saved = localStorage.getItem('shaheen_bookers');
     return saved ? JSON.parse(saved) : [];
@@ -370,7 +372,28 @@ export default function BookersView() {
   return (
     <div className="flex-1 overflow-y-auto p-4 md:p-8 bg-slate-50 dark:bg-[#0a0a0c]/30">
       <div className="max-w-4xl mx-auto">
-        <div className="flex justify-between items-center mb-8">
+        
+        {/* Tabs */}
+        <div className="flex border-b border-slate-200 dark:border-zinc-800 mb-8">
+          <button 
+            onClick={() => setActiveTab('bookers')}
+            className={`px-6 py-3 font-bold text-sm transition-colors border-b-2 ${activeTab === 'bookers' ? 'border-blue-600 text-blue-600 dark:text-blue-400' : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-300'}`}
+          >
+            Field Agents (Bookers)
+          </button>
+          <button 
+            onClick={() => setActiveTab('shops')}
+            className={`px-6 py-3 font-bold text-sm transition-colors border-b-2 ${activeTab === 'shops' ? 'border-emerald-600 text-emerald-600 dark:text-emerald-400' : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-300'}`}
+          >
+            Shops Management
+          </button>
+        </div>
+
+        {activeTab === 'shops' ? (
+          <ShopsManagement />
+        ) : (
+          <>
+            <div className="flex justify-between items-center mb-8">
           <div>
             <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-50 tracking-tight">Bookers Management</h2>
             <p className="text-slate-500 dark:text-slate-400 mt-1">Add and manage field agents.</p>
@@ -599,6 +622,8 @@ export default function BookersView() {
             </>
           )}
         </div>
+          </>
+        )}
       </div>
       
       {/* Tracking Modal */}

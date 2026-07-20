@@ -39,8 +39,9 @@ export default function Receipt({ data, className = '', isPrintable = true }: Re
   // For barcode, ensure the value isn't too long (UUIDs crash the barcode renderer)
   const barcodeValue = data.id.length > 15 ? 'ORD-' + data.id.substring(0, 6).toUpperCase() : data.id;
   const storeAddress = localStorage.getItem('shaheen_address') || 'Gulberg';
-  const storeName = localStorage.getItem('shaheen_store_name') || 'Shaheen Traders';
+  const storeName = localStorage.getItem('shaheen_store_name') || 'Shaheen Global Traders';
   const outletLocation = localStorage.getItem('shaheen_outlet_location') || 'Main Outlet';
+  const logo = localStorage.getItem('shaheen_logo');
   
   // Smart chunking: first page gets fewer items (has header), continuation pages get more
   const chunks: typeof data.items[] = [];
@@ -102,8 +103,12 @@ export default function Receipt({ data, className = '', isPrintable = true }: Re
                     />
                     <span className="text-[10px] text-slate-500 font-mono mt-0.5 font-bold tracking-widest">{displayId}</span>
                   </div>
-                  <div className="flex flex-col items-center justify-center w-1/3">
-                    <img src="/logo_transparent.png" alt="Shaheen Logo" className="w-[60px] h-[60px] object-contain drop-shadow-sm" />
+                  <div className="flex flex-col items-center justify-center w-1/3 overflow-hidden">
+                    {logo ? (
+                      <img src={logo} alt="Store Logo" className="w-[60px] h-[60px] object-cover mix-blend-multiply" />
+                    ) : (
+                      <img src="/logo_transparent.png" alt="Shaheen Logo" className="w-[60px] h-[60px] object-contain drop-shadow-sm" />
+                    )}
                   </div>
                   <div className="flex flex-col items-end w-1/3 pt-1">
                     <span className="text-[6.5px] font-bold tracking-[0.2em] text-slate-800 mb-0.5 mr-0.5 uppercase">Scan to Verify</span>

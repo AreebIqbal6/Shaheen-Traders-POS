@@ -24,6 +24,10 @@ export default function B2BCheckout({ cart, total, onSuccess, onBack }: B2BCheck
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isCustomPayment, setIsCustomPayment] = useState(false);
+  const [shops, setShops] = useState<any[]>(() => {
+    const saved = localStorage.getItem('shaheen_shops');
+    return saved ? JSON.parse(saved) : [];
+  });
 
   const activeBooker = JSON.parse(localStorage.getItem('shaheen_active_booker') || '{}');
   const [formData, setFormData] = useState({
@@ -138,11 +142,30 @@ export default function B2BCheckout({ cart, total, onSuccess, onBack }: B2BCheck
                 <input 
                   type="text" 
                   name="businessName"
+                  list="shops-list"
                   value={formData.businessName}
-                  onChange={e => setFormData({...formData, businessName: e.target.value})}
+                  onChange={e => {
+                    const val = e.target.value;
+                    const matchedShop = shops.find(s => s.name === val);
+                    if (matchedShop) {
+                       setFormData({
+                          ...formData, 
+                          businessName: val, 
+                          areaName: matchedShop.address || '', 
+                          contactNumber: matchedShop.contactNumber || ''
+                       });
+                    } else {
+                       setFormData({...formData, businessName: val});
+                    }
+                  }}
                   className="w-full h-11 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-sm px-3 text-[14px] text-slate-900 dark:text-slate-50 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-all"
-                  placeholder="e.g. Shaheen Traders"
+                  placeholder="Select or type a shop..."
                 />
+                <datalist id="shops-list">
+                  {shops.map((shop, i) => (
+                    <option key={i} value={shop.name} />
+                  ))}
+                </datalist>
               </div>
 
               <div>

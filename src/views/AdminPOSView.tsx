@@ -125,6 +125,9 @@ export default function AdminPOSView() {
   const [bookerName, setBookerName] = useState(() => { const n = localStorage.getItem('shaheen_bookerName'); return (n && n.includes('@')) ? 'Admin' : (n || 'Admin'); });
   const [contactNumber, setContactNumber] = useState('');
   
+  const storeName = localStorage.getItem('shaheen_store_name') || 'Shaheen Global Traders';
+  const logo = localStorage.getItem('shaheen_logo');
+  
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isAuthChecking, setIsAuthChecking] = useState(true);
 
@@ -1103,10 +1106,38 @@ export default function AdminPOSView() {
              </div>
           </div>
         );
-      case 'Orders': 
+      case 'Orders': {
+        const aggregatedItems = incomingOrders.reduce((acc, order) => {
+          (order.items || []).forEach((item: any) => {
+            const key = item.name;
+            if (!acc[key]) acc[key] = 0;
+            acc[key] += item.quantity;
+          });
+          return acc;
+        }, {} as Record<string, number>);
+        const aggregatedList = Object.entries(aggregatedItems).sort((a, b) => b[1] - a[1]);
+
         return (
           <div className="flex-1 flex flex-col h-full bg-slate-50 dark:bg-[#0a0a0c] overflow-y-auto p-6">
         <h2 className="text-2xl font-bold mb-6 text-slate-900 dark:text-white">Incoming B2B Orders</h2>
+        
+        {incomingOrders.length > 0 && (
+          <div className="max-w-3xl mx-auto w-full mb-8 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-5 shadow-sm">
+             <h3 className="text-lg font-bold text-slate-900 dark:text-slate-50 mb-4 flex items-center gap-2">
+               <Package size={18} className="text-blue-500" /> Inventory Pick List
+             </h3>
+             <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">Time-saving aggregated list of all items across {incomingOrders.length} pending orders.</p>
+             <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+               {aggregatedList.map(([name, qty], idx) => (
+                 <div key={idx} className="flex justify-between items-center bg-slate-50 dark:bg-slate-900 px-3 py-2 rounded-md border border-slate-100 dark:border-slate-700/50">
+                    <span className="font-semibold text-sm text-slate-800 dark:text-slate-200">{name}</span>
+                    <span className="text-xs font-bold bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400 px-2 py-0.5 rounded-sm">{qty}x</span>
+                 </div>
+               ))}
+             </div>
+          </div>
+        )}
+
         <div className="max-w-3xl mx-auto w-full flex-1 flex flex-col">
                 {incomingOrders.length === 0 ? (
                   <div className="flex-1 flex flex-col items-center justify-center text-slate-400 py-12">
@@ -1178,6 +1209,7 @@ export default function AdminPOSView() {
         </div>
           </div>
         );
+      }
       case 'Settings': 
         return <SettingsView />;
       case 'Register':
@@ -1595,10 +1627,14 @@ export default function AdminPOSView() {
           <div className="w-full bg-white dark:bg-[#0a0a0c] h-auto max-h-[85vh] shadow-[0_-10px_40px_rgba(0,0,0,0.1)] dark:shadow-[0_-10px_40px_rgba(0,0,0,0.5)] rounded-t-2xl relative flex flex-col z-50 border-t border-slate-200 dark:border-zinc-900 overflow-y-auto animate-in slide-in-from-bottom duration-300">
             <div className="p-4 border-b border-slate-200 dark:border-zinc-900 flex justify-between items-center bg-white/80 dark:bg-[#0a0a0c]/80 sticky top-0 z-10 backdrop-blur-md rounded-t-2xl">
               <div className="flex items-center gap-3 cursor-pointer" onClick={() => { setActiveMenu('Register'); setIsMobileMenuOpen(false); }}>
-                <div className="w-8 h-8 flex items-center justify-center shrink-0">
-                  <img src="/logo_transparent.png" alt="S" className="w-full h-full object-contain drop-shadow-sm" />
+                <div className="w-8 h-8 flex items-center justify-center shrink-0 overflow-hidden rounded-md">
+                  {logo ? (
+                    <img src={logo} alt="Logo" className="w-full h-full object-cover" />
+                  ) : (
+                    <img src="/logo_transparent.png" alt="S" className="w-full h-full object-contain drop-shadow-sm" />
+                  )}
                 </div>
-                <span className="text-base font-bold tracking-tight text-slate-900 dark:text-white">Shaheen <span className="text-blue-600 dark:text-blue-400">POS</span></span>
+                <span className="text-base font-bold tracking-tight text-slate-900 dark:text-white">{storeName}</span>
               </div>
               <button onClick={() => setIsMobileMenuOpen(false)} className="p-2 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-white bg-slate-100 dark:bg-zinc-900/60 backdrop-blur-md rounded-full"><X size={20} /></button>
             </div>
@@ -1691,10 +1727,14 @@ export default function AdminPOSView() {
       {/* Sidebar Navigation (Hidden on Mobile) */}
       <aside className="hidden md:flex w-64 bg-slate-50 dark:bg-zinc-950 border-r border-slate-200 dark:border-zinc-800 flex-col shrink-0 z-30 px-3 py-4 print:hidden overflow-y-auto custom-scrollbar shadow-xl shadow-black/5">
         <div className="flex items-center gap-2.5 px-1.5 pb-4 mb-1.5 border-b border-slate-200 dark:border-zinc-800/50 cursor-pointer" onClick={() => setActiveMenu('Register')}>
-          <div className="w-8 h-8 flex items-center justify-center shrink-0">
-            <img src="/logo_transparent.png" alt="S" className="w-full h-full object-contain drop-shadow-sm" />
+          <div className="w-8 h-8 flex items-center justify-center shrink-0 overflow-hidden rounded-md">
+            {logo ? (
+              <img src={logo} alt="Logo" className="w-full h-full object-cover" />
+            ) : (
+              <img src="/logo_transparent.png" alt="S" className="w-full h-full object-contain drop-shadow-sm" />
+            )}
           </div>
-          <span className="text-[14px] font-semibold text-slate-900 dark:text-slate-50 hover:text-blue-600 transition-colors">Shaheen Traders</span>
+          <span className="text-[14px] font-semibold text-slate-900 dark:text-slate-50 hover:text-blue-600 transition-colors">{storeName}</span>
         </div>
 
         <nav className="flex-1 flex flex-col gap-[1px]">

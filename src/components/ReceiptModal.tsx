@@ -60,9 +60,9 @@ export default function ReceiptModal({ isOpen, onClose, cart, total, clientName,
           {/* Header */}
           <div className="flex justify-between items-start mb-10 print:mb-6">
             <div>
-              <h1 className="text-3xl mb-1 font-black text-slate-900 dark:text-slate-50 uppercase tracking-widest">Shaheen Traders</h1>
+              <h1 className="text-3xl mb-1 font-black text-slate-900 dark:text-slate-50 uppercase tracking-widest">{localStorage.getItem('shaheen_store_name') || 'Shaheen Global Traders'}</h1>
               <p className="text-sm text-slate-500 dark:text-slate-400 font-bold">B2B Wholesale Distributor</p>
-              <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">123 Commerce Blvd, Tech Park</p>
+              <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">{localStorage.getItem('shaheen_address') || 'Gulberg'}</p>
               <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">NTN: 893247-9</p>
             </div>
             <div className="text-right">

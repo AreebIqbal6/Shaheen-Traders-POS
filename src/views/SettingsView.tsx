@@ -35,7 +35,10 @@ export default function SettingsView() {
   });
   
   const [storeName, setStoreName] = useState(() => {
-    return localStorage.getItem('shaheen_store_name') || 'Shaheen Traders';
+    return localStorage.getItem('shaheen_store_name') || 'Shaheen Global Traders';
+  });
+  const [logo, setLogo] = useState(() => {
+    return localStorage.getItem('shaheen_logo') || '';
   });
   const [outletLocation, setOutletLocation] = useState(() => {
     return localStorage.getItem('shaheen_outlet_location') || 'Main Outlet';
@@ -50,6 +53,19 @@ export default function SettingsView() {
   const [cashDrawerKick, setCashDrawerKick] = useState(() => {
     return localStorage.getItem('shaheen_cashdrawerkick') !== 'false';
   });
+
+  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const base64 = event.target?.result as string;
+      setLogo(base64);
+      localStorage.setItem('shaheen_logo', base64);
+      toast.success('Logo updated! (Refresh to see changes everywhere)');
+    };
+    reader.readAsDataURL(file);
+  };
 
   const handleSave = () => {
     localStorage.setItem('shaheen_backuppath', backupPath.trim());
@@ -152,6 +168,28 @@ export default function SettingsView() {
 
         <div className="flex flex-col gap-4">
           
+          {/* Branding Settings */}
+          <div className="bg-white dark:bg-zinc-900/60 backdrop-blur-md border border-zinc-200 dark:border-zinc-700 rounded-sm shadow-sm overflow-hidden mb-4">
+            <div className="border-b border-zinc-100 bg-zinc-50 dark:bg-zinc-900 px-5 py-4 flex items-center gap-2">
+              <Store className="text-zinc-600" size={18} />
+              <h2 className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">Branding</h2>
+            </div>
+            <div className="p-5 flex flex-col gap-4">
+              <div className="flex flex-col gap-2">
+                <label className="text-[13px] font-semibold text-zinc-600">Global Store Logo</label>
+                <div className="flex items-center gap-4">
+                  {logo ? (
+                    <img src={logo} alt="Store Logo" className="w-16 h-16 object-contain border border-slate-200 rounded-md bg-white p-1" />
+                  ) : (
+                    <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md flex items-center justify-center text-slate-400 text-xs text-center">No Logo</div>
+                  )}
+                  <input type="file" accept="image/*" onChange={handleLogoUpload} className="text-sm text-slate-500 dark:text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" />
+                </div>
+                <p className="text-xs text-zinc-500">This logo will be displayed everywhere across the app.</p>
+              </div>
+            </div>
+          </div>
+
           {/* General Store Settings */}
           <div className="bg-white dark:bg-zinc-900/60 backdrop-blur-md border border-zinc-200 dark:border-zinc-700 rounded-sm shadow-sm overflow-hidden">
             <div className="border-b border-zinc-100 bg-zinc-50 dark:bg-zinc-900 px-5 py-4 flex items-center gap-2">

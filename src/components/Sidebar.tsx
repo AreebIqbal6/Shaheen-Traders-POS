@@ -16,6 +16,9 @@ interface SidebarProps {
 }
 
 export default function Sidebar({ activeModule, setModule, activeView, setView }: SidebarProps) {
+  const storeName = localStorage.getItem('shaheen_store_name') || 'Shaheen Global Traders';
+  const logo = localStorage.getItem('shaheen_logo');
+  const outletLocation = localStorage.getItem('shaheen_outlet_location') || 'Main Outlet';
   
   // Leftmost Module Strip Icons
   const moduleIcons = [
@@ -62,8 +65,12 @@ export default function Sidebar({ activeModule, setModule, activeView, setView }
       
       {/* Primary Module Strip (Always Dark) */}
       <div className="w-14 bg-[#151515] flex flex-col border-r border-[#2d2d2d] items-center py-4 text-gray-400">
-        <div className="w-8 h-8 flex justify-center items-center mb-6 text-white cursor-pointer">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+        <div className="w-8 h-8 flex justify-center items-center mb-6 text-white cursor-pointer overflow-hidden rounded-md">
+          {logo ? (
+            <img src={logo} alt="Logo" className="w-full h-full object-cover" />
+          ) : (
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+          )}
         </div>
 
         <div className="flex-1 flex flex-col gap-4">
@@ -101,8 +108,8 @@ export default function Sidebar({ activeModule, setModule, activeView, setView }
         {/* Module Header */}
         {activeModule === 'register' && (
           <div className="mt-6 px-4 flex flex-col mb-4">
-            <span className="font-bold text-lg leading-tight">Main Register</span>
-            <span className="text-sm text-gray-400">Main Outlet</span>
+            <span className="font-bold text-lg leading-tight">{storeName}</span>
+            <span className="text-sm text-gray-400">{outletLocation}</span>
             <span className="text-xs text-gray-500 mt-1 cursor-pointer hover:text-gray-300">Switch ⌄</span>
           </div>
         )}

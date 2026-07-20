@@ -39,16 +39,23 @@ export default function AuthView({ onLogin }: AuthViewProps) {
     }
   };
 
+  const storeName = localStorage.getItem('shaheen_store_name') || 'Shaheen Global Traders';
+  const logo = localStorage.getItem('shaheen_logo');
+
   return (
     <div className="fixed inset-0 bg-slate-50 dark:bg-[#0a0a0c] flex items-center justify-center font-sans">
       <div className="bg-white dark:bg-zinc-900/60 backdrop-blur-md border border-slate-200 dark:border-zinc-800/50 rounded-lg shadow-sm p-10 w-[440px] max-w-[90%] flex flex-col items-center">
         
         {/* Logo */}
-        <div className="w-28 h-28 mb-4 transform hover:scale-105 transition-transform duration-300">
-          <img src="/logo_transparent.png" alt="Shaheen Traders" className="w-full h-full object-contain drop-shadow-sm" />
+        <div className="w-28 h-28 mb-4 transform hover:scale-105 transition-transform duration-300 rounded-xl overflow-hidden">
+          {logo ? (
+            <img src={logo} alt="Logo" className="w-full h-full object-cover" />
+          ) : (
+            <img src="/logo_transparent.png" alt="Shaheen Traders" className="w-full h-full object-contain drop-shadow-sm" />
+          )}
         </div>
         
-        <h1 className="text-2xl font-black tracking-tight text-slate-900 dark:text-slate-50 mb-1">Shaheen Traders</h1>
+        <h1 className="text-2xl font-black tracking-tight text-slate-900 dark:text-slate-50 mb-1">{storeName}</h1>
         <p className="text-sm text-slate-500 dark:text-slate-400 mb-8 text-center flex items-center justify-center gap-1.5 font-medium">
           <Lock size={14} className="text-indigo-500" /> Admin Access Portal
         </p>
