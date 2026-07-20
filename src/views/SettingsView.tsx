@@ -255,7 +255,7 @@ export default function SettingsView() {
                 <label className="text-[13px] font-semibold text-zinc-600">Global Store Logo</label>
                 <div className="flex items-center gap-4">
                   {logo ? (
-                    <img src={logo} alt="Store Logo" className="w-16 h-16 object-contain border border-slate-200 rounded-md bg-white p-1" />
+                    <img src={logo} alt="Store Logo" className="w-16 h-16 object-contain border border-slate-200 rounded-md bg-white p-1 mix-blend-multiply" />
                   ) : (
                     <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md flex items-center justify-center text-slate-400 text-xs text-center">No Logo</div>
                   )}

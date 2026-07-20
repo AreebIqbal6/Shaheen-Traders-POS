@@ -67,7 +67,7 @@ export default function Sidebar({ activeModule, setModule, activeView, setView }
       <div className="w-14 bg-[#151515] flex flex-col border-r border-[#2d2d2d] items-center py-4 text-gray-400">
         <div className="w-8 h-8 flex justify-center items-center mb-6 text-white cursor-pointer overflow-hidden rounded-md">
           {logo ? (
-            <img src={logo} alt="Logo" className="w-full h-full object-cover" />
+            <img src={logo} alt="Logo" className="w-full h-full object-contain mix-blend-multiply" />
           ) : (
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
           )}

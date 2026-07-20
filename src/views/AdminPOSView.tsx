@@ -1605,9 +1605,9 @@ export default function AdminPOSView() {
               <div className="flex items-center gap-3 cursor-pointer" onClick={() => { setActiveMenu('Register'); setIsMobileMenuOpen(false); }}>
                 <div className="w-8 h-8 flex items-center justify-center shrink-0 overflow-hidden rounded-md">
                   {logo ? (
-                    <img src={logo} alt="Logo" className="w-full h-full object-cover" />
+                    <img src={logo} alt="Logo" className="w-full h-full object-contain mix-blend-multiply" />
                   ) : (
-                    <img src="/logo_transparent.png" alt="S" className="w-full h-full object-contain drop-shadow-sm" />
+                    <img src="/logo_transparent.png" alt="S" className="w-full h-full object-contain drop-shadow-sm mix-blend-multiply" />
                   )}
                 </div>
                 <span className="text-base font-bold tracking-tight text-slate-900 dark:text-white">{storeName}</span>
@@ -1705,9 +1705,9 @@ export default function AdminPOSView() {
         <div className="flex items-center gap-2.5 px-1.5 pb-4 mb-1.5 border-b border-slate-200 dark:border-zinc-800/50 cursor-pointer" onClick={() => setActiveMenu('Register')}>
           <div className="w-8 h-8 flex items-center justify-center shrink-0 overflow-hidden rounded-md">
             {logo ? (
-              <img src={logo} alt="Logo" className="w-full h-full object-cover" />
+              <img src={logo} alt="Logo" className="w-full h-full object-contain mix-blend-multiply" />
             ) : (
-              <img src="/logo_transparent.png" alt="S" className="w-full h-full object-contain drop-shadow-sm" />
+              <img src="/logo_transparent.png" alt="S" className="w-full h-full object-contain drop-shadow-sm mix-blend-multiply" />
             )}
           </div>
           <span className="text-[14px] font-semibold text-slate-900 dark:text-slate-50 hover:text-blue-600 transition-colors">{storeName}</span>

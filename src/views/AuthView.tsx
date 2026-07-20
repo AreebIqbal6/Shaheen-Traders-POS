@@ -49,9 +49,9 @@ export default function AuthView({ onLogin }: AuthViewProps) {
         {/* Logo */}
         <div className="w-28 h-28 mb-4 transform hover:scale-105 transition-transform duration-300 rounded-xl overflow-hidden">
           {logo ? (
-            <img src={logo} alt="Logo" className="w-full h-full object-cover" />
+            <img src={logo} alt="Logo" className="w-full h-full object-contain mix-blend-multiply" />
           ) : (
-            <img src="/logo_transparent.png" alt="Shaheen Traders" className="w-full h-full object-contain drop-shadow-sm" />
+            <img src="/logo_transparent.png" alt="Shaheen Traders" className="w-full h-full object-contain drop-shadow-sm mix-blend-multiply" />
           )}
         </div>
         

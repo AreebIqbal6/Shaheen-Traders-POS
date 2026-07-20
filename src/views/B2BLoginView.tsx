@@ -88,9 +88,9 @@ export default function B2BLoginView({ onLoginSuccess }: { onLoginSuccess: () =>
       <div className="sm:mx-auto sm:w-full sm:max-w-md text-center">
         <div className="mx-auto h-24 w-24 mb-6 transform hover:scale-105 transition-transform duration-300 rounded-xl overflow-hidden">
           {logo ? (
-            <img src={logo} alt="Logo" className="w-full h-full object-cover" />
+            <img src={logo} alt="Logo" className="w-full h-full object-contain mix-blend-multiply" />
           ) : (
-            <img src="/logo_transparent.png" alt="Shaheen Traders Booker Portal" className="w-full h-full object-contain drop-shadow-sm" />
+            <img src="/logo_transparent.png" alt="Shaheen Traders Booker Portal" className="w-full h-full object-contain drop-shadow-sm mix-blend-multiply" />
           )}
         </div>
         <h2 className="text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">

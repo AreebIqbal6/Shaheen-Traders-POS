@@ -84,7 +84,7 @@ export default function Receipt({ data, className = '', isPrintable = true }: Re
           >
             {/* Watermark Logo */}
             <div className="absolute inset-0 flex items-center justify-center opacity-[0.03] pointer-events-none overflow-hidden z-0">
-               <img src="/logo_transparent.png" alt="Watermark" className="w-[150mm] h-[150mm] object-contain rotate-[-15deg] grayscale" />
+               <img src="/logo_transparent.png" alt="Watermark" className="w-[150mm] h-[150mm] object-contain rotate-[-15deg] grayscale mix-blend-multiply" />
             </div>
 
             <div className="flex-1 flex flex-col z-10">
@@ -108,7 +108,7 @@ export default function Receipt({ data, className = '', isPrintable = true }: Re
                     {logo ? (
                       <img src={logo} alt="Store Logo" className="w-[60px] h-[60px] object-cover mix-blend-multiply" />
                     ) : (
-                      <img src="/logo_transparent.png" alt="Shaheen Logo" className="w-[60px] h-[60px] object-contain drop-shadow-sm" />
+                      <img src="/logo_transparent.png" alt="Shaheen Logo" className="w-[60px] h-[60px] object-contain drop-shadow-sm mix-blend-multiply" />
                     )}
                   </div>
                   <div className="flex flex-col items-end w-1/3 pt-1">
@@ -176,7 +176,7 @@ export default function Receipt({ data, className = '', isPrintable = true }: Re
                    <span className="text-[10px] text-slate-500 font-mono mt-0.5 font-bold tracking-widest">{displayId}</span>
                  </div>
                  <div className="flex flex-col items-center justify-center w-1/3">
-                   <img src="/logo_transparent.png" alt="Shaheen Logo" className="w-16 h-16 object-contain" />
+                   <img src="/logo_transparent.png" alt="Shaheen Logo" className="w-16 h-16 object-contain mix-blend-multiply" />
                  </div>
                  <div className="flex flex-col items-end w-1/3 pt-0">
                    <span className="text-[6.5px] font-bold tracking-[0.2em] text-slate-800 mb-0.5 mr-0.5">SCAN TO VERIFY</span>
