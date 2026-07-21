@@ -12,6 +12,9 @@ html, body, #root {
   overflow-x: hidden !important;
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: none;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 /* Removed zoom as Chrome 128+ standardizes zoom to act like scale and breaks layout causing right-hand empty space */

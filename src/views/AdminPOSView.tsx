@@ -163,22 +163,61 @@ export default function AdminPOSView() {
     if (!silent) setIsSyncing(true);
     
     try {
-      // 1. Sync Products (Strict Upsert)
-      const productsToSync = products.map(p => {
-        const hasRealSku = p.sku && p.sku !== p.barcode && p.sku.trim() !== '';
-        return {
-          id: p.id,
-          name: p.name || 'Unknown Product',
-          price: p.price,
-          stock: p.stock,
-          barcode: p.barcode,
-          sku: hasRealSku ? p.sku : generateSKU(p.name || 'Product', p.barcode || ''),
-          category: p.category || null
-        };
+      // 1. Sync Offline Products (Instead of wholesale upsert to prevent overriding cloud edits)
+      const offlineQueue = JSON.parse(localStorage.getItem('shaheen_offline_products') || '[]');
+      const tempProducts = products.filter(p => p.id.startsWith('temp-'));
+      
+      const combinedToSync = [...offlineQueue];
+      tempProducts.forEach(tp => {
+        if (!combinedToSync.some(oq => oq.id === tp.id)) {
+          combinedToSync.push(tp);
+        }
       });
+      
+      if (combinedToSync.length > 0) {
+        const productsToSync = combinedToSync.map(p => {
+          const hasRealSku = p.sku && p.sku !== p.barcode && p.sku.trim() !== '';
+          const out = {
+            id: p.id,
+            name: p.name || 'Unknown Product',
+            price: p.price,
+            stock: p.stock,
+            barcode: p.barcode,
+            sku: hasRealSku ? p.sku : generateSKU(p.name || 'Product', p.barcode || ''),
+            category: p.category || null
+          };
+          if (out.id.startsWith('temp-')) {
+            delete (out as any).id; // Let Supabase generate actual ID for temps if ID is serial
+            // wait, if ID is serial/UUID, inserting without it is better. But tempId is locally used. 
+            // The insert must return the new ID, but upsert with missing ID will create. 
+            // Actually, in ProductsView, the tempID was inserted directly to supabase. If it's serial, we can't upsert string tempId.
+            // But let's leave it as is if Supabase allows UUID string in 'id' column. If the DB id is int, tempId will fail. 
+            // In ProductsView, they use Omit<Product, 'id'> for inserts.
+            // If they are here, we must insert them and let Supabase return. 
+            // For now, to keep it simple and robust, we will just delete the temp- id and use insert for them, or upsert.
+          }
+          return out;
+        });
+        
+        const toUpdate = productsToSync.filter(p => p.id && !p.id.startsWith('temp-'));
+        const toInsert = productsToSync.filter(p => !p.id || p.id.startsWith('temp-')).map(p => {
+            const copy = {...p};
+            delete (copy as any).id;
+            return copy;
+        });
 
-      const { error: prodError } = await supabase.from('products').upsert(productsToSync, { onConflict: 'id' });
-      if (prodError) throw prodError;
+        if (toUpdate.length > 0) {
+            const { error: updateErr } = await supabase.from('products').upsert(toUpdate, { onConflict: 'id' });
+            if (updateErr) throw updateErr;
+        }
+        
+        if (toInsert.length > 0) {
+            const { error: insErr } = await supabase.from('products').insert(toInsert);
+            if (insErr) throw insErr;
+        }
+        
+        localStorage.removeItem('shaheen_offline_products');
+      }
       
       // 2. Sync Offline Status Updates
       await syncOfflineStatusUpdates();
@@ -228,7 +267,7 @@ export default function AdminPOSView() {
     }
   };
 
-  // Background Auto-Sync every 5 seconds (Silent Mode)
+  // Background Auto-Sync every 10 seconds (Silent Mode)
   const syncRef = useRef(handleSyncToCloud);
   useEffect(() => {
     syncRef.current = handleSyncToCloud;
@@ -236,7 +275,7 @@ export default function AdminPOSView() {
   useEffect(() => {
     const timer = setInterval(() => {
       if (syncRef.current) syncRef.current(true);
-    }, 5000);
+    }, 10000);
     return () => clearInterval(timer);
   }, []);
 
@@ -262,7 +301,15 @@ export default function AdminPOSView() {
   const pullProductsFromCloud = useCallback(async () => {
     try {
       const { data: cloudProducts, error } = await supabase.from('products').select('*');
-      if (error || !cloudProducts) return;
+      if (error) return;
+      
+      // Handle cloud wipe: if cloud is empty, clear local products immediately
+      if (!cloudProducts || cloudProducts.length === 0) {
+        setProducts([]);
+        localStorage.removeItem('shaheen_products');
+        localStorage.removeItem('shaheen_b2b_products_v2');
+        return;
+      }
       
       setProducts(prev => {
         const cloudIds = new Set(cloudProducts.map(p => p.id));
@@ -532,8 +579,20 @@ export default function AdminPOSView() {
       syncOfflineStatusUpdates();
       pullProductsFromCloud();
       pullBookersFromCloud();
+      fetchOrders();
     };
     window.addEventListener('online', handleOnline);
+
+    // Visibility change: re-sync when PC wakes from sleep/lock
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        pullProductsFromCloud();
+        pullBookersFromCloud();
+        fetchOrders();
+        syncOfflineStatusUpdates();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
 
     const ordersChannel = supabase.channel('public:orders')
       .on(
@@ -558,10 +617,22 @@ export default function AdminPOSView() {
       )
       .subscribe();
 
+    const bookersChannel = supabase.channel('public:bookers')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'bookers' },
+        () => {
+          pullBookersFromCloud();
+        }
+      )
+      .subscribe();
+
     return () => {
       window.removeEventListener('online', handleOnline);
+      document.removeEventListener('visibilitychange', handleVisibility);
       supabase.removeChannel(ordersChannel);
       supabase.removeChannel(productsChannel);
+      supabase.removeChannel(bookersChannel);
     };
   }, []);
 

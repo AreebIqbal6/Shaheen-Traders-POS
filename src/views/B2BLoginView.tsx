@@ -1,5 +1,5 @@
 import type { Booker } from '../types/index';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { Shield, ArrowRight, User, Key, WifiOff } from 'lucide-react';
 import { verifyPassword } from '../utils/cryptoUtils';
@@ -80,8 +80,17 @@ export default function B2BLoginView({ onLoginSuccess }: { onLoginSuccess: () =>
     }
   };
 
-  const storeName = localStorage.getItem('shaheen_store_name') || 'Shaheen Global Traders';
-  const logo = localStorage.getItem('shaheen_logo');
+  const [storeName, setStoreName] = useState(() => localStorage.getItem('shaheen_store_name') || 'Shaheen Global Traders');
+  const [logo, setLogo] = useState(() => localStorage.getItem('shaheen_logo'));
+
+  useEffect(() => {
+    const handleBranding = () => {
+      setStoreName(localStorage.getItem('shaheen_store_name') || 'Shaheen Global Traders');
+      setLogo(localStorage.getItem('shaheen_logo'));
+    };
+    window.addEventListener('branding_updated', handleBranding);
+    return () => window.removeEventListener('branding_updated', handleBranding);
+  }, []);
 
   return (
     <div className="fixed inset-0 bg-slate-50 dark:bg-[#0a0a0c] flex flex-col items-center justify-center py-12 sm:px-6 lg:px-8">

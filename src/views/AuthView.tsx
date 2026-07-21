@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Shield, Lock } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import toast from 'react-hot-toast';
@@ -39,8 +39,17 @@ export default function AuthView({ onLogin }: AuthViewProps) {
     }
   };
 
-  const storeName = localStorage.getItem('shaheen_store_name') || 'Shaheen Global Traders';
-  const logo = localStorage.getItem('shaheen_logo');
+  const [storeName, setStoreName] = useState(() => localStorage.getItem('shaheen_store_name') || 'Shaheen Global Traders');
+  const [logo, setLogo] = useState(() => localStorage.getItem('shaheen_logo'));
+
+  useEffect(() => {
+    const handleBranding = () => {
+      setStoreName(localStorage.getItem('shaheen_store_name') || 'Shaheen Global Traders');
+      setLogo(localStorage.getItem('shaheen_logo'));
+    };
+    window.addEventListener('branding_updated', handleBranding);
+    return () => window.removeEventListener('branding_updated', handleBranding);
+  }, []);
 
   return (
     <div className="fixed inset-0 bg-slate-50 dark:bg-[#0a0a0c] flex items-center justify-center font-sans">

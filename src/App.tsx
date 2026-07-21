@@ -90,16 +90,27 @@ export default function App() {
   const [remountKey, setRemountKey] = React.useState(0);
   
   React.useEffect(() => {
-    // Check for OTA updates on startup (only runs in Tauri desktop, silently fails in web)
+    // Check for OTA updates on startup and every hour
     checkForUpdates();
+    const updateInterval = setInterval(checkForUpdates, 1000 * 60 * 60); // 1 hour
 
     const handler = () => setRemountKey(k => k + 1);
     window.addEventListener('force_remount', handler);
     
     // Branding Sync
     const syncBranding = async () => {
-      const storeName = localStorage.getItem('shaheen_store_name') || 'Shaheen Traders';
-      const logo = localStorage.getItem('shaheen_store_logo') || '/pwa-192x192.png';
+      let storeName = localStorage.getItem('shaheen_store_name') || 'Shaheen Traders';
+      let logo = localStorage.getItem('shaheen_store_logo') || '/logo_transparent.png';
+      
+      try {
+        const { data, error } = await supabase.from('settings').select('*');
+        if (!error && data) {
+          const cloudName = data.find(d => d.key === 'shaheen_store_name')?.value;
+          const cloudLogo = data.find(d => d.key === 'shaheen_logo')?.value;
+          if (cloudName) { storeName = cloudName; localStorage.setItem('shaheen_store_name', cloudName); }
+          if (cloudLogo) { logo = cloudLogo; localStorage.setItem('shaheen_store_logo', cloudLogo); localStorage.setItem('shaheen_logo', cloudLogo); }
+        }
+      } catch(e) {}
       
       // Update HTML Title
       document.title = storeName;
@@ -126,8 +137,28 @@ export default function App() {
     
     syncBranding(); // Initial sync
     window.addEventListener('branding_updated', syncBranding);
+    
+    // Visibility change: re-sync when device wakes from sleep
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        syncBranding();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+    
+    // Subscribe to settings changes from other devices
+    const settingsSub = supabase
+      .channel('public:settings')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'settings' }, () => {
+        syncBranding();
+        window.dispatchEvent(new Event('branding_updated'));
+      })
+      .subscribe();
 
     return () => {
+      clearInterval(updateInterval);
+      settingsSub.unsubscribe();
+      document.removeEventListener('visibilitychange', handleVisibility);
       window.removeEventListener('force_remount', handler);
       window.removeEventListener('branding_updated', syncBranding);
     };
@@ -143,6 +174,54 @@ export default function App() {
     
     if (!isDesktop) return;
 
+    // STARTUP: Back up ALL completed orders that haven't been backed up yet
+    const backupMissedOrders = async () => {
+      try {
+        const { data: completedOrders, error } = await supabase
+          .from('orders')
+          .select('*')
+          .in('status', ['COMPLETED', 'ACCEPTED'])
+          .order('created_at', { ascending: false })
+          .limit(200);
+
+        if (error || !completedOrders) return;
+
+        const autoBackedUp = JSON.parse(localStorage.getItem('shaheen_auto_backed_up') || '[]');
+        const isTauri = '__TAURI_INTERNALS__' in window || '__TAURI__' in window;
+        
+        for (const order of completedOrders) {
+          const orderId = (order.receipt_number || order.id).toString();
+          if (autoBackedUp.includes(orderId)) continue;
+          
+          try {
+            const details = {
+              clientName: order.client_name,
+              area: order.area,
+              contactNumber: order.contact_number || order.client_phone,
+              bookerName: order.booker_name,
+              total: order.total || order.total_amount
+            };
+
+            if (isTauri) {
+              const success = await saveOrderBackup(orderId, order.items || [], details);
+              if (success) {
+                autoBackedUp.push(orderId);
+                localStorage.setItem('shaheen_auto_backed_up', JSON.stringify(autoBackedUp));
+                console.log(`[Startup Sync] Backed up missed order: ${orderId}`);
+              }
+            }
+          } catch (err) {
+            console.error(`[Startup Sync] Failed to backup order ${orderId}:`, err);
+          }
+        }
+      } catch (err) {
+        console.error('[Startup Sync] Failed to fetch completed orders:', err);
+      }
+    };
+
+    // Run startup backup
+    backupMissedOrders();
+
     // 2. Establish the silent global listener
     const syncChannel = supabase
       .channel('global-silent-sync')
@@ -153,7 +232,7 @@ export default function App() {
           const order = payload.new;
           
           // 3. Catch orders completed from the mobile admin app
-          if (order && order.status === 'COMPLETED') {
+          if (order && (order.status === 'COMPLETED' || order.status === 'ACCEPTED')) {
             try {
               const orderId = (order.receipt_number || order.id).toString();
               const autoBackedUp = JSON.parse(localStorage.getItem('shaheen_auto_backed_up') || '[]');
@@ -165,18 +244,20 @@ export default function App() {
                 const details = {
                   clientName: order.client_name,
                   area: order.area,
-                  contactNumber: order.contact_number,
+                  contactNumber: order.contact_number || order.client_phone,
                   bookerName: order.booker_name,
-                  total: order.total
+                  total: order.total || order.total_amount
                 };
 
                 // 5. Trigger the silent file-system backup without UI prompts
-                const success = await saveOrderBackup(orderId, order.items || [], details);
-                
-                if (success) {
-                  autoBackedUp.push(orderId);
-                  localStorage.setItem('shaheen_auto_backed_up', JSON.stringify(autoBackedUp));
-                  console.log(`[Bedrock Sync] Order ${orderId} secured on local hardware successfully.`);
+                const isTauri = '__TAURI_INTERNALS__' in window || '__TAURI__' in window;
+                if (isTauri) {
+                  const success = await saveOrderBackup(orderId, order.items || [], details);
+                  if (success) {
+                    autoBackedUp.push(orderId);
+                    localStorage.setItem('shaheen_auto_backed_up', JSON.stringify(autoBackedUp));
+                    console.log(`[Bedrock Sync] Order ${orderId} secured on local hardware successfully.`);
+                  }
                 }
               }
             } catch (err) {
@@ -187,8 +268,17 @@ export default function App() {
       )
       .subscribe();
 
+    // Also re-check missed orders when PC wakes from sleep
+    const handleWake = () => {
+      if (document.visibilityState === 'visible') {
+        backupMissedOrders();
+      }
+    };
+    document.addEventListener('visibilitychange', handleWake);
+
     return () => {
       supabase.removeChannel(syncChannel);
+      document.removeEventListener('visibilitychange', handleWake);
     };
   }, []);
 

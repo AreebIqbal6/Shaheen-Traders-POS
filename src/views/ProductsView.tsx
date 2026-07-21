@@ -219,10 +219,12 @@ export default function ProductsView({ products = [], setProducts }: ProductsVie
       try {
         const { error } = await supabase.from('products').update(mapProductToRow(updatedProduct)).eq('id', editingProduct.id);
         if (error) throw error;
-      } catch (err: unknown) {
+      } catch (err: any) {
         clearPending(editingProduct.id);
-        toast.error('Failed to save changes: ' + err.message);
-        fetchProducts(); 
+        toast.error('Offline mode: Saved locally. Will sync when online.');
+        const offlineQ = JSON.parse(localStorage.getItem('shaheen_offline_products') || '[]');
+        offlineQ.push(updatedProduct);
+        localStorage.setItem('shaheen_offline_products', JSON.stringify(offlineQ));
       }
     } else {
       const tempId = 'temp-' + Date.now().toString() + Math.random().toString(36).slice(2);
@@ -244,10 +246,11 @@ export default function ProductsView({ products = [], setProducts }: ProductsVie
         if (typeof setProducts === 'function') {
            setProducts(prev => prev.map(p => p.id === tempId ? savedProduct : p));
         }
-      } catch (err: unknown) {
-        toast.error('Failed to save product: ' + err.message);
-        if (typeof setProducts === 'function') setProducts(prev => prev.filter(p => p.id !== tempId));
-        fetchProducts();
+      } catch (err: any) {
+        toast.error('Offline mode: Saved locally. Will sync when online.');
+        const offlineQ = JSON.parse(localStorage.getItem('shaheen_offline_products') || '[]');
+        offlineQ.push(tempProduct);
+        localStorage.setItem('shaheen_offline_products', JSON.stringify(offlineQ));
       }
     }
   };
@@ -367,7 +370,7 @@ export default function ProductsView({ products = [], setProducts }: ProductsVie
       </div>
 
       <div className="mb-4 flex flex-col md:flex-row md:justify-between items-start md:items-center gap-4">
-        <div className="flex bg-white dark:bg-zinc-900/60 backdrop-blur-md p-1 rounded-lg border border-slate-200 dark:border-zinc-800/50 overflow-x-auto w-full md:w-auto custom-scrollbar shadow-inner">
+        <div className="flex flex-wrap bg-white dark:bg-zinc-900/60 backdrop-blur-md p-1 rounded-lg border border-slate-200 dark:border-zinc-800/50 w-full md:w-auto shadow-inner gap-1">
           <button 
             onClick={() => setCurrentFilter('all')}
             className={`px-4 py-1.5 rounded-md text-[13px] font-medium whitespace-nowrap transition-all ${currentFilter === 'all' ? 'bg-slate-800 dark:bg-slate-100 text-white dark:text-slate-900 shadow-sm border border-slate-800 dark:border-slate-100' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-50 hover:bg-slate-100 dark:hover:bg-slate-700'}`}

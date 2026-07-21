@@ -80,6 +80,18 @@ interface B2BShopViewProps {
 }
 
 export default function B2BShopView({ isImpersonating = false }: B2BShopViewProps) {
+  const [storeName, setStoreName] = useState(() => localStorage.getItem('shaheen_store_name') || 'Shaheen Wholesale');
+  const [logo, setLogo] = useState(() => localStorage.getItem('shaheen_store_logo') || '/logo_transparent.png');
+
+  useEffect(() => {
+    const handleBranding = () => {
+      setStoreName(localStorage.getItem('shaheen_store_name') || 'Shaheen Wholesale');
+      setLogo(localStorage.getItem('shaheen_store_logo') || '/logo_transparent.png');
+    };
+    window.addEventListener('branding_updated', handleBranding);
+    return () => window.removeEventListener('branding_updated', handleBranding);
+  }, []);
+
   const [activeTab, setActiveTabState] = useState<'shop' | 'cart' | 'checkout' | 'dashboard'>(() => {
     return (localStorage.getItem('b2b_activeTab') as any) || 'shop';
   });
@@ -367,7 +379,55 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
 
   useEffect(() => {
     fetchProducts();
-  }, []);
+    syncOfflineOrders();
+
+    // Real-time: Products (inventory wipe, price changes, new products)
+    const productsChannel = supabase.channel('b2b-products-realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'products' }, () => {
+        fetchProducts();
+      })
+      .subscribe();
+
+    // Real-time: Orders (status changes from admin)
+    const ordersChannel = supabase.channel('b2b-orders-realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, () => {
+        if (activeTab === 'dashboard') fetchPastOrders();
+      })
+      .subscribe();
+
+    // Visibility change: re-sync when phone wakes from sleep
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        fetchProducts();
+        syncOfflineOrders();
+        if (activeTab === 'dashboard') fetchPastOrders();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+
+    // Online handler: sync queued data immediately
+    const handleOnline = () => {
+      syncOfflineOrders();
+      fetchProducts();
+    };
+    window.addEventListener('online', handleOnline);
+
+    // 10-second background auto-sync
+    const autoSyncTimer = setInterval(() => {
+      if (navigator.onLine) {
+        fetchProducts();
+        syncOfflineOrders();
+      }
+    }, 10000);
+
+    return () => {
+      supabase.removeChannel(productsChannel);
+      supabase.removeChannel(ordersChannel);
+      document.removeEventListener('visibilitychange', handleVisibility);
+      window.removeEventListener('online', handleOnline);
+      clearInterval(autoSyncTimer);
+    };
+  }, [activeTab]);
 
   async function fetchProducts() {
     setIsLoading(true);
@@ -378,6 +438,7 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
       if (!data || data.length === 0) {
         setProducts([]);
         localStorage.removeItem('shaheen_b2b_products');
+        localStorage.removeItem('shaheen_b2b_products_v2');
       } else {
         const mappedData = data.map((p: Product) => ({
           ...p,
@@ -480,10 +541,10 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
         <div className="bg-white dark:bg-zinc-900/60 backdrop-blur-md px-4 md:px-8 py-4 flex items-center justify-between border-b border-slate-200 dark:border-zinc-800/50 shrink-0 sticky top-0 z-10 w-full">
           <div className="flex items-center gap-3 cursor-pointer" onClick={() => setActiveTabState('shop')}>
              <div className="w-8 h-8 flex items-center justify-center shrink-0">
-               <img src={localStorage.getItem('shaheen_store_logo') || '/logo_transparent.png'} alt="S" className="w-full h-full object-contain mix-blend-multiply" />
+               <img src={logo} alt="S" className="w-full h-full object-contain mix-blend-multiply" />
              </div>
              <div>
-               <h1 className="font-bold text-[18px] leading-tight text-slate-900 dark:text-slate-50 tracking-tight">{localStorage.getItem('shaheen_store_name') || 'Shaheen Wholesale'}</h1>
+               <h1 className="font-bold text-[18px] leading-tight text-slate-900 dark:text-slate-50 tracking-tight">{storeName}</h1>
                <p className="text-[10px] text-blue-500 font-bold uppercase tracking-wider">Booker Portal</p>
              </div>
           </div>

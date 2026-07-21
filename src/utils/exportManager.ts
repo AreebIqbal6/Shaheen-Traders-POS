@@ -67,7 +67,7 @@ export const saveOrderBackup = async (orderId: string, cart: any[], details: any
         
         try {
           // Construct explicit order hierarchy cleanly on top of valid target base
-          const orderFolderPath = `${validBase}\\ORDER HISTORY\\${dateStr}\\${orderId}`;
+          const orderFolderPath = `${validBase}\\ORDERS\\${dateStr}\\${orderId}`;
           console.log("Creating Folder Structure:", orderFolderPath); 
           
           await mkdir(orderFolderPath, { recursive: true });
@@ -92,61 +92,6 @@ export const saveOrderBackup = async (orderId: string, cart: any[], details: any
         }
       }
     } else {
-      // WEB BROWSER MODE FALLBACK
-      try {
-        const { getBackupDirectoryHandle } = await import('./fileSystem');
-        const primaryHandle = await getBackupDirectoryHandle('primary');
-        const secondaryHandle = await getBackupDirectoryHandle('secondary');
-
-        if (primaryHandle) {
-          const handles = [primaryHandle];
-          if (secondaryHandle) handles.push(secondaryHandle);
-
-          let savedSuccessfully = false;
-
-          for (const baseHandle of handles) {
-            try {
-              const stBackupHandle = await baseHandle.getDirectoryHandle('SHAHEEN TRADERS BACKUP', { create: true });
-              const ohHandle = await stBackupHandle.getDirectoryHandle('ORDER HISTORY', { create: true });
-              const dateHandle = await ohHandle.getDirectoryHandle(dateStr, { create: true });
-              const orderHandle = await dateHandle.getDirectoryHandle(orderId, { create: true });
-
-              if (pdfResult) {
-                const fileHandle = await orderHandle.getFileHandle(`${orderId}.pdf`, { create: true });
-                const writable = await fileHandle.createWritable();
-                await writable.write(pdfResult.blob);
-                await writable.close();
-              }
-
-              if (excelResult.success && excelResult.buffer) {
-                const blob = new Blob([excelResult.buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-                const fileHandle = await orderHandle.getFileHandle(`${orderId}.xlsx`, { create: true });
-                const writable = await fileHandle.createWritable();
-                await writable.write(blob);
-                await writable.close();
-              }
-
-              const sqlFileHandle = await orderHandle.getFileHandle(`${orderId}.sql`, { create: true });
-              const sqlWritable = await sqlFileHandle.createWritable();
-              await sqlWritable.write(sqlContent);
-              await sqlWritable.close();
-              
-              savedSuccessfully = true;
-            } catch (err) {
-              console.error('File System Access API error on handle', baseHandle, err);
-            }
-          }
-          
-          if (savedSuccessfully) {
-             toast.success('Saved securely to selected folders!');
-             return true;
-          }
-        }
-      } catch (fsError) {
-        console.warn('File System Access API failed or unavailable', fsError);
-      }
-
-      console.warn('Falling back to standard browser downloads');
       
       if (pdfResult) {
         saveAs(pdfResult.blob, `${orderId}.pdf`);

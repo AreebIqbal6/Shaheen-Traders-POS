@@ -132,11 +132,20 @@ export default function SettingsView() {
     const file = e.target.files?.[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = (event) => {
+    reader.onload = async (event) => {
       const base64 = event.target?.result as string;
       setLogo(base64);
       localStorage.setItem('shaheen_logo', base64);
-      toast.success('Logo updated! (Refresh to see changes everywhere)');
+      localStorage.setItem('shaheen_store_logo', base64);
+      
+      try {
+        await supabase.from('settings').upsert({ key: 'shaheen_logo', value: base64 });
+      } catch (err) {
+        console.error('Failed to sync logo to cloud', err);
+      }
+      
+      window.dispatchEvent(new Event('branding_updated'));
+      toast.success('Logo updated globally!');
     };
     reader.readAsDataURL(file);
   };
@@ -150,6 +159,14 @@ export default function SettingsView() {
     localStorage.setItem('shaheen_autoprint', String(autoPrintReceipt));
     localStorage.setItem('shaheen_globalbarcode', String(globalBarcode));
     localStorage.setItem('shaheen_cashdrawerkick', String(cashDrawerKick));
+
+    try {
+      await supabase.from('settings').upsert({ key: 'shaheen_store_name', value: storeName.trim() });
+    } catch (err) {
+      console.error('Failed to sync store name to cloud', err);
+    }
+    
+    window.dispatchEvent(new Event('branding_updated'));
 
     if ('__TAURI_INTERNALS__' in window || '__TAURI__' in window) {
       toast.loading("Validating backup folders...", { id: "save-val" });
