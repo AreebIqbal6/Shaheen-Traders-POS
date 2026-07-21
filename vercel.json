@@ -1,4 +1,5 @@
 {
+  "installCommand": "npm install --legacy-peer-deps",
   "headers": [
     {
       "source": "/(sw\\.js|index\\.html|manifest\\.webmanifest|workbox-.*\\.js)",
@@ -17,3 +18,4 @@
     }
   ]
 }
+
