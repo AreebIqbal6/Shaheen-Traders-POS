@@ -112,6 +112,26 @@ export default function AdminPOSView() {
   const [bookerName, setBookerName] = useState(() => { const n = localStorage.getItem('shaheen_bookerName'); return (n && n.includes('@')) ? 'Admin' : (n || 'Admin'); });
   const [contactNumber, setContactNumber] = useState('');
   
+  const [showShopDropdown, setShowShopDropdown] = useState(false);
+  const [shopSearch, setShopSearch] = useState('');
+  const [shops, setShops] = useState<any[]>(() => {
+    try {
+      const saved = localStorage.getItem('shaheen_shops');
+      return saved ? JSON.parse(saved) : [];
+    } catch { return []; }
+  });
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setShowShopDropdown(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+  
   const storeName = localStorage.getItem('shaheen_store_name') || 'Shaheen Global Traders';
   const logo = localStorage.getItem('shaheen_logo');
   
@@ -1518,18 +1538,79 @@ export default function AdminPOSView() {
                     </div>
 
                     <div className="bg-white dark:bg-zinc-900/60 backdrop-blur-md border border-slate-200 dark:border-zinc-800/50 rounded-sm p-3 flex flex-col gap-2.5 mb-4 shrink-0 shadow-sm">
-                      <div>
-                        <label className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide flex items-center gap-1.5 mb-1">
-                          <User size={10} className="text-slate-400" /> Client / Business Name
-                        </label>
-                        <input 
-                          type="text" 
-                          value={clientName}
-                          onChange={e => setClientName(e.target.value)}
-                          className="w-full bg-slate-50 dark:bg-[#0a0a0c] border border-slate-200 dark:border-zinc-800/50 rounded-sm py-1.5 px-2 font-medium focus:outline-none focus:border-slate-400 transition-all text-xs"
-                          placeholder="e.g. Metro Wholesale"
-                        />
-                      </div>
+                        <div ref={dropdownRef} className="relative z-10">
+                          <label className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide flex items-center gap-1.5 mb-1">
+                            <User size={10} className="text-slate-400" /> Client / Business Name
+                          </label>
+                          <div className="relative">
+                            <input 
+                              type="text" 
+                              value={showShopDropdown ? shopSearch : clientName}
+                              onChange={e => {
+                                if (showShopDropdown) {
+                                  setShopSearch(e.target.value);
+                                } else {
+                                  setClientName(e.target.value);
+                                }
+                              }}
+                              onFocus={() => {
+                                setShowShopDropdown(true);
+                                setShopSearch('');
+                              }}
+                              className="w-full bg-slate-50 dark:bg-[#0a0a0c] border border-slate-200 dark:border-zinc-800/50 rounded-sm py-1.5 px-2 pr-8 font-medium focus:outline-none focus:border-blue-500 transition-all text-xs"
+                              placeholder="e.g. Metro Wholesale"
+                            />
+                            <ChevronDown 
+                              size={14} 
+                              className={`absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 transition-transform cursor-pointer ${showShopDropdown ? 'rotate-180' : ''}`}
+                              onClick={() => {
+                                setShowShopDropdown(!showShopDropdown);
+                                if (!showShopDropdown) setShopSearch('');
+                              }}
+                            />
+                          </div>
+
+                          {showShopDropdown && (
+                            <div className="absolute top-full left-0 w-full mt-1 bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-md shadow-xl overflow-hidden max-h-60 overflow-y-auto">
+                              {shops.filter(s => s.name.toLowerCase().includes(shopSearch.toLowerCase())).length === 0 ? (
+                                <div className="p-3 text-center text-xs text-slate-500 dark:text-slate-400">
+                                  No shops found. Type to enter a new one.
+                                </div>
+                              ) : (
+                                <div className="py-1">
+                                  {shops
+                                    .filter(s => s.name.toLowerCase().includes(shopSearch.toLowerCase()))
+                                    .map((shop, i) => (
+                                      <div 
+                                        key={i}
+                                        className="px-3 py-2 hover:bg-slate-50 dark:hover:bg-zinc-700/50 cursor-pointer border-b border-slate-100 dark:border-zinc-700/50 last:border-0"
+                                        onClick={() => {
+                                          setClientName(shop.name);
+                                          if (shop.area) setArea(shop.area);
+                                          if (shop.contact_number) setContactNumber(shop.contact_number);
+                                          setShowShopDropdown(false);
+                                        }}
+                                      >
+                                        <div className="font-semibold text-slate-800 dark:text-slate-200 text-[13px]">{shop.name}</div>
+                                        <div className="flex items-center gap-3 mt-1">
+                                          {shop.area && (
+                                            <div className="flex items-center gap-1 text-[10px] text-slate-500">
+                                              <MapPin size={10} /> {shop.area}
+                                            </div>
+                                          )}
+                                          {shop.contact_number && (
+                                            <div className="flex items-center gap-1 text-[10px] text-slate-500">
+                                              <Phone size={10} /> {shop.contact_number}
+                                            </div>
+                                          )}
+                                        </div>
+                                      </div>
+                                    ))}
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
                       <div>
                         <label className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide flex items-center gap-1.5 mb-1">
                           <FileText size={10} className="text-slate-400" /> Payment Terms
