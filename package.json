@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "main": "main.cjs",
- "scripts": {
+  "scripts": {
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
@@ -49,6 +49,7 @@
     "react-hot-toast": "^2.6.0",
     "react-leaflet": "^5.0.0",
     "react-router-dom": "^7.18.0",
+    "react-zoom-pan-pinch": "^4.0.3",
     "recharts": "^3.8.1",
     "sql.js": "^1.14.1",
     "xlsx": "^0.18.5",

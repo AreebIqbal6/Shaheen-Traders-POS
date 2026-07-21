@@ -6,6 +6,7 @@ import Receipt from './Receipt';
 import { FolderDown, Globe, Printer, X, Check, Download } from 'lucide-react';
 import { saveOrderBackup } from '../utils/exportManager';
 import toast from 'react-hot-toast';
+import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch';
 
 
 
@@ -71,24 +72,32 @@ export default function OrderPreviewModal({
         </button>
         
         {/* Invoice Content (Preview) */}
-        <div className="flex-1 overflow-hidden text-black bg-slate-100 dark:bg-zinc-900 font-sans">
-          <div className="w-full h-full overflow-y-auto overflow-x-hidden custom-scrollbar p-4 md:p-8">
-            <div className="flex justify-center w-full mx-auto pb-8">
-             <Receipt 
-               isPrintable={true}
-               data={{
-                 id: draftOrderId,
-                 clientName: clientName || 'General Cash Sale',
-                 area: area || 'Samnabad',
-                 contactNumber: contactNumber || '-',
-                 bookerName: bookerName || 'Irfan',
-                 createdAt: new Date().toISOString(),
-                 items: cart,
-                 total: total
-               }} 
-             />
-            </div>
-         </div>
+        <div className="flex-1 overflow-hidden text-black bg-slate-100 dark:bg-zinc-900 font-sans relative">
+           <TransformWrapper
+             initialScale={window.innerWidth < 768 ? 0.45 : 1}
+             minScale={0.2}
+             maxScale={3}
+             centerOnInit={true}
+             wheel={{ wheelDisabled: false }}
+           >
+             <TransformComponent wrapperClass="!w-full !h-full" contentClass="w-full h-full flex justify-center pb-8 p-4 md:p-8">
+               <div id="receipt-print-area" className="w-auto h-auto">
+                 <Receipt 
+                   isPrintable={true}
+                   data={{
+                     id: draftOrderId,
+                     clientName: clientName || 'General Cash Sale',
+                     area: area || 'Samnabad',
+                     contactNumber: contactNumber || '-',
+                     bookerName: bookerName || 'Irfan',
+                     createdAt: new Date().toISOString(),
+                     items: cart,
+                     total: total
+                   }} 
+                 />
+               </div>
+             </TransformComponent>
+           </TransformWrapper>
         </div>
         
         {/* Action Bar */}

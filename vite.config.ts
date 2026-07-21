@@ -93,7 +93,7 @@ export default defineConfig({
       workbox: {
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024 // 5 MB
       },
-      includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'mask-icon.svg'],
+      includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'mask-icon.svg', 'logo.png', 'logo_transparent.png'],
       manifest: {
         name: 'Shaheen Traders',
         short_name: 'Shaheen',
