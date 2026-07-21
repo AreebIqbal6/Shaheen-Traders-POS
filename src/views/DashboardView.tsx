@@ -1,7 +1,7 @@
 import type { Product, Order, CartItem, Booker } from '../types/index';
 import React, { useState, useMemo, useEffect } from 'react';
 import { PieChart as RePieChart, Pie, Cell, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as ReTooltip, ResponsiveContainer } from 'recharts';
-import { PieChart, TrendingUp, Package, DollarSign, FileText, X, AlertTriangle, RotateCcw } from 'lucide-react';
+import { PieChart, TrendingUp, Package, DollarSign, FileText, X, AlertTriangle, RotateCcw, Clock } from 'lucide-react';
 import type { Product } from './ProductsView';
 import type { Order } from './AdminPOSView';
 import OrderPreviewModal from '../components/OrderPreviewModal';
@@ -24,6 +24,13 @@ export default function DashboardView({ pastOrders, products, onRestoreOrder }: 
   const [cancelledOrders, setCancelledOrders] = useState<any[]>([]);
   const [selectedOrder, setSelectedOrder] = useState<any | null>(null);
   const [previewOrder, setPreviewOrder] = useState<Order | null>(null);
+
+  const [currentTime, setCurrentTime] = useState(new Date());
+
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   useEffect(() => {
     try {
@@ -236,12 +243,35 @@ export default function DashboardView({ pastOrders, products, onRestoreOrder }: 
         {/* Stats Grid */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8 shrink-0">
           <div className="bg-white dark:bg-zinc-900/60 border border-slate-200 dark:border-zinc-800/50 p-5 rounded-2xl flex items-center gap-4 hover:border-slate-300 transition-colors">
+            <div className="hidden sm:flex w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800 items-center justify-center text-slate-600 dark:text-slate-400 shrink-0">
+              <Clock size={24} />
+            </div>
+            <div>
+              <p className="text-slate-500 dark:text-slate-400 text-xs font-bold uppercase tracking-wider mb-1">Live Clock</p>
+              <p className="text-xl font-black text-slate-900 dark:text-slate-50 whitespace-nowrap">
+                {currentTime.toLocaleTimeString('en-US', {
+                  timeZone: localStorage.getItem('shaheen_timezone') || Intl.DateTimeFormat().resolvedOptions().timeZone,
+                  hour12: false
+                })}
+              </p>
+            </div>
+          </div>
+          <div className="bg-white dark:bg-zinc-900/60 border border-slate-200 dark:border-zinc-800/50 p-5 rounded-2xl flex items-center gap-4 hover:border-slate-300 transition-colors">
             <div className="hidden sm:flex w-12 h-12 rounded-full bg-blue-50 dark:bg-blue-900/20 items-center justify-center text-blue-600 dark:text-blue-400 shrink-0">
               <DollarSign size={24} />
             </div>
             <div>
-              <p className="text-slate-500 dark:text-slate-400 text-xs font-bold uppercase tracking-wider mb-1">Revenue</p>
+              <p className="text-slate-500 dark:text-slate-400 text-xs font-bold uppercase tracking-wider mb-1">Total Revenue</p>
               <p className="text-xl font-black text-slate-900 dark:text-slate-50 whitespace-nowrap">Rs {stats.totalRevenue.toLocaleString('en-PK', { maximumFractionDigits: 0 })}</p>
+            </div>
+          </div>
+          <div className="bg-white dark:bg-zinc-900/60 border border-slate-200 dark:border-zinc-800/50 p-5 rounded-2xl flex items-center gap-4 hover:border-slate-300 transition-colors">
+            <div className="hidden sm:flex w-12 h-12 rounded-full bg-purple-50 dark:bg-purple-900/20 items-center justify-center text-purple-600 dark:text-purple-400 shrink-0">
+              <Package size={24} />
+            </div>
+            <div>
+              <p className="text-slate-500 dark:text-slate-400 text-xs font-bold uppercase tracking-wider mb-1">Total Orders</p>
+              <p className="text-xl font-black text-slate-900 dark:text-slate-50">{stats.totalOrders}</p>
             </div>
           </div>
           <div className="bg-white dark:bg-zinc-900/60 border border-slate-200 dark:border-zinc-800/50 p-5 rounded-2xl flex items-center gap-4 hover:border-slate-300 transition-colors">
@@ -249,26 +279,8 @@ export default function DashboardView({ pastOrders, products, onRestoreOrder }: 
               <TrendingUp size={24} />
             </div>
             <div>
-              <p className="text-slate-500 dark:text-slate-400 text-xs font-bold uppercase tracking-wider mb-1">Orders</p>
-              <p className="text-xl font-black text-slate-900 dark:text-slate-50">{stats.totalOrders}</p>
-            </div>
-          </div>
-          <div className="bg-white dark:bg-zinc-900/60 border border-slate-200 dark:border-zinc-800/50 p-5 rounded-2xl flex items-center gap-4 hover:border-slate-300 transition-colors">
-            <div className="hidden sm:flex w-12 h-12 rounded-full bg-amber-50 dark:bg-amber-900/20 items-center justify-center text-amber-600 dark:text-amber-400 shrink-0">
-              <Package size={24} />
-            </div>
-            <div>
-              <p className="text-slate-500 dark:text-slate-400 text-xs font-bold uppercase tracking-wider mb-1">Items Sold</p>
-              <p className="text-xl font-black text-slate-900 dark:text-slate-50">{stats.itemsSold}</p>
-            </div>
-          </div>
-          <div className="bg-white dark:bg-zinc-900/60 border border-slate-200 dark:border-zinc-800/50 p-5 rounded-2xl flex items-center gap-4 hover:border-slate-300 transition-colors">
-            <div className="hidden sm:flex w-12 h-12 rounded-full bg-purple-50 dark:bg-purple-900/20 items-center justify-center text-purple-600 dark:text-purple-400 shrink-0">
-              <FileText size={24} />
-            </div>
-            <div>
-              <p className="text-slate-500 dark:text-slate-400 text-xs font-bold uppercase tracking-wider mb-1">Avg Order</p>
-              <p className="text-xl font-black text-slate-900 dark:text-slate-50 whitespace-nowrap">Rs {stats.avgOrderValue.toLocaleString('en-PK', { maximumFractionDigits: 0 })}</p>
+              <p className="text-slate-500 dark:text-slate-400 text-xs font-bold uppercase tracking-wider mb-1">Total Products</p>
+              <p className="text-xl font-black text-slate-900 dark:text-slate-50">{products.length}</p>
             </div>
           </div>
         </div>

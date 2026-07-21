@@ -39,7 +39,12 @@ export default function SettingsView() {
   const [storeName, setStoreName] = useState(() => {
     return localStorage.getItem('shaheen_store_name') || 'Shaheen Global Traders';
   });
-    const [isCheckingUpdate, setIsCheckingUpdate] = useState(false);
+  
+  const [timezone, setTimezone] = useState(() => {
+    return localStorage.getItem('shaheen_timezone') || Intl.DateTimeFormat().resolvedOptions().timeZone;
+  });
+
+  const [isCheckingUpdate, setIsCheckingUpdate] = useState(false);
   const [updateStatus, setUpdateStatus] = useState('');
   const [logo, setLogo] = useState(() => {
     return localStorage.getItem('shaheen_logo') || '';
@@ -159,6 +164,7 @@ export default function SettingsView() {
     localStorage.setItem('shaheen_autoprint', String(autoPrintReceipt));
     localStorage.setItem('shaheen_globalbarcode', String(globalBarcode));
     localStorage.setItem('shaheen_cashdrawerkick', String(cashDrawerKick));
+    localStorage.setItem('shaheen_timezone', timezone);
 
     try {
       await supabase.from('settings').upsert({ key: 'shaheen_store_name', value: storeName.trim() });
@@ -374,21 +380,41 @@ export default function SettingsView() {
               <div className="flex flex-col gap-1.5">
                 <label className="text-[13px] font-semibold text-zinc-600">Store Name</label>
                 <input type="text" value={storeName} onChange={(e) => setStoreName(e.target.value)} className="border border-zinc-200 dark:border-zinc-700 rounded-sm px-3 py-2 focus:outline-none focus:border-zinc-400 focus:ring-1 focus:ring-zinc-400 transition-all text-zinc-800 dark:text-zinc-200 font-medium text-[13px]" />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <label className="text-[13px] font-semibold text-zinc-600">Outlet Location</label>
-              <input type="text" value={outletLocation} onChange={(e) => setOutletLocation(e.target.value)} className="border border-zinc-200 dark:border-zinc-700 rounded-sm px-3 py-2 focus:outline-none focus:border-zinc-400 focus:ring-1 focus:ring-zinc-400 transition-all text-zinc-800 dark:text-zinc-200 font-medium text-[13px]" />
-            </div>
-            <div className="flex flex-col gap-1.5 col-span-1 md:col-span-2">
-              <label className="text-[13px] font-semibold text-zinc-600">Address on Receipt</label>
-              <input 
-                 type="text" 
-                 value={address} 
-                 onChange={(e) => setAddress(e.target.value)}
-                 className="border border-zinc-200 dark:border-zinc-700 rounded-sm px-3 py-2 focus:outline-none focus:border-zinc-400 focus:ring-1 focus:ring-zinc-400 transition-all text-zinc-800 dark:text-zinc-200 font-medium text-[13px]" 
-              />
-            </div>
-            <div className="col-span-1 md:col-span-2 flex justify-end mt-1">
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[13px] font-semibold text-zinc-600">Outlet Location</label>
+                <input type="text" value={outletLocation} onChange={(e) => setOutletLocation(e.target.value)} className="border border-zinc-200 dark:border-zinc-700 rounded-sm px-3 py-2 focus:outline-none focus:border-zinc-400 focus:ring-1 focus:ring-zinc-400 transition-all text-zinc-800 dark:text-zinc-200 font-medium text-[13px]" />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[13px] font-semibold text-zinc-600">Address on Receipt</label>
+                <input 
+                   type="text" 
+                   value={address} 
+                   onChange={(e) => setAddress(e.target.value)}
+                   className="border border-zinc-200 dark:border-zinc-700 rounded-sm px-3 py-2 focus:outline-none focus:border-zinc-400 focus:ring-1 focus:ring-zinc-400 transition-all text-zinc-800 dark:text-zinc-200 font-medium text-[13px]" 
+                />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[13px] font-semibold text-zinc-600">System Timezone</label>
+                <select 
+                   value={timezone} 
+                   onChange={(e) => setTimezone(e.target.value)}
+                   className="border border-zinc-200 dark:border-zinc-700 rounded-sm px-3 py-2 focus:outline-none focus:border-zinc-400 focus:ring-1 focus:ring-zinc-400 transition-all text-zinc-800 dark:text-zinc-200 font-medium text-[13px] bg-white dark:bg-zinc-800"
+                >
+                  <option value="Asia/Karachi">Asia/Karachi (PKT)</option>
+                  <option value="Asia/Dubai">Asia/Dubai (GST)</option>
+                  <option value="Europe/London">Europe/London (GMT)</option>
+                  <option value="America/New_York">America/New_York (EST)</option>
+                  <option value="UTC">UTC</option>
+                  {/* Keep current system zone if not in list */}
+                  {![
+                    'Asia/Karachi', 'Asia/Dubai', 'Europe/London', 'America/New_York', 'UTC'
+                  ].includes(timezone) && (
+                    <option value={timezone}>{timezone} (System Default)</option>
+                  )}
+                </select>
+              </div>
+              <div className="col-span-1 md:col-span-2 flex justify-end mt-1">
                <button onClick={handleSave} className="bg-blue-600 text-white px-5 py-2 rounded-sm font-semibold shadow-sm hover:bg-blue-700 transition-colors text-[12px]">
                  Save Store Info
                </button>
