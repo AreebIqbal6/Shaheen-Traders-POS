@@ -440,7 +440,22 @@ export default function ProductsView({ products = [], setProducts }: ProductsVie
                         <button onClick={() => toast.dismiss(t.id)} className="bg-slate-100 dark:bg-zinc-800 text-slate-800 dark:text-slate-200 px-4 py-2 rounded-md text-[13px] font-semibold">Cancel</button>
                         <button onClick={async () => {
                           const pwdInput = document.getElementById("wipe-inventory-" + t.id) as HTMLInputElement;
-                          if (pwdInput.value !== '1234') { toast.error("Incorrect Password!"); return; }
+                          const { data: userData } = await supabase.auth.getUser();
+                          if (!userData.user?.email) {
+                            toast.error("Admin user not found.");
+                            return;
+                          }
+                          
+                          toast.loading("Verifying credentials...", { id: "clear-inv" });
+                          const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+                            email: userData.user.email,
+                            password: pwdInput?.value || '',
+                          });
+                          
+                          if (authError || !authData.session) {
+                            toast.error("Incorrect Admin Password!", { id: "clear-inv" });
+                            return;
+                          }
                           
                           isWipingRef.current = true;
                           pendingOpsRef.current.clear();

@@ -61,6 +61,47 @@ export default function SettingsView() {
     return localStorage.getItem('shaheen_cashdrawerkick') !== 'false';
   });
 
+  const [adminEmail, setAdminEmail] = useState('');
+  const [adminPassword, setAdminPassword] = useState('');
+  const [isUpdatingAuth, setIsUpdatingAuth] = useState(false);
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      const { data } = await supabase.auth.getUser();
+      if (data?.user?.email) {
+        setAdminEmail(data.user.email);
+      }
+    };
+    fetchUser();
+  }, []);
+
+  const handleUpdateAuth = async () => {
+    if (!adminEmail || !adminPassword) {
+      toast.error('Email and password are required');
+      return;
+    }
+    if (adminPassword.length < 6) {
+      toast.error('Password must be at least 6 characters');
+      return;
+    }
+    
+    setIsUpdatingAuth(true);
+    toast.loading('Updating credentials...', { id: 'auth-update' });
+    try {
+      const { error } = await supabase.auth.updateUser({
+        email: adminEmail,
+        password: adminPassword
+      });
+      if (error) throw error;
+      toast.success('Admin credentials updated! You will need to use these to login and clear data.', { id: 'auth-update' });
+      setAdminPassword(''); // Clear password field for safety
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to update credentials', { id: 'auth-update' });
+    } finally {
+      setIsUpdatingAuth(false);
+    }
+  };
+
   const handleCheckUpdate = async () => {
     try {
       setIsCheckingUpdate(true);
@@ -211,8 +252,20 @@ export default function SettingsView() {
           <button
             onClick={async () => {
               const pwdInput = document.getElementById("wipe-password-" + t.id) as HTMLInputElement;
-              if (pwdInput?.value !== '1234') {
-                toast.error("Incorrect Admin Password!");
+              const { data: userData } = await supabase.auth.getUser();
+              if (!userData.user?.email) {
+                toast.error("Admin user not found. Cannot verify password.");
+                return;
+              }
+              
+              toast.loading("Verifying credentials...", { id: "wipe-auth" });
+              const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+                email: userData.user.email,
+                password: pwdInput?.value || '',
+              });
+              
+              if (authError || !authData.session) {
+                toast.error("Incorrect Admin Password!", { id: "wipe-auth" });
                 return;
               }
 
@@ -380,6 +433,45 @@ export default function SettingsView() {
               >
                 <div className={"w-3.5 h-3.5 bg-white dark:bg-zinc-900/60 backdrop-blur-md rounded-full absolute top-[3px] shadow-sm transition-all " + (cashDrawerKick ? "right-1" : "left-1")}></div>
               </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Admin Account */}
+        <div className="bg-white dark:bg-zinc-900/60 backdrop-blur-md border border-zinc-200 dark:border-zinc-700 rounded-sm shadow-sm overflow-hidden mb-6">
+          <div className="border-b border-zinc-100 bg-zinc-50 dark:bg-zinc-900 px-5 py-4 flex items-center gap-2">
+            <AlertTriangle className="text-zinc-600" size={18} />
+            <h2 className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">Admin Credentials</h2>
+          </div>
+          <div className="p-5 flex flex-col gap-4">
+            <p className="text-xs text-zinc-500 dark:text-zinc-400">Update your primary admin login. This password is required for wiping the system or making dangerous changes.</p>
+            <div className="flex flex-col gap-3 max-w-sm">
+              <div>
+                <label className="text-xs font-semibold text-zinc-600 mb-1 block">Admin Email</label>
+                <input 
+                  type="email" 
+                  value={adminEmail} 
+                  onChange={e => setAdminEmail(e.target.value)}
+                  className="w-full bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-500" 
+                />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-zinc-600 mb-1 block">New Password</label>
+                <input 
+                  type="password" 
+                  value={adminPassword} 
+                  onChange={e => setAdminPassword(e.target.value)}
+                  placeholder="Leave blank to keep unchanged"
+                  className="w-full bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-500" 
+                />
+              </div>
+              <button 
+                onClick={handleUpdateAuth}
+                disabled={isUpdatingAuth}
+                className="mt-2 bg-zinc-800 hover:bg-black text-white px-4 py-2 rounded text-sm font-semibold transition-colors disabled:opacity-50"
+              >
+                {isUpdatingAuth ? 'Updating...' : 'Update Credentials'}
+              </button>
             </div>
           </div>
         </div>

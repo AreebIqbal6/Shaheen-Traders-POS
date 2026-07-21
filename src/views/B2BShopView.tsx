@@ -484,7 +484,7 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
              </div>
              <div>
                <h1 className="font-bold text-[18px] leading-tight text-slate-900 dark:text-slate-50 tracking-tight">{localStorage.getItem('shaheen_store_name') || 'Shaheen Wholesale'}</h1>
-               <p className="text-[10px] text-blue-500 font-bold uppercase tracking-wider">B2B Portal</p>
+               <p className="text-[10px] text-blue-500 font-bold uppercase tracking-wider">Booker Portal</p>
              </div>
           </div>
           

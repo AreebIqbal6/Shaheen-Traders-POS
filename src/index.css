@@ -10,6 +10,8 @@ html, body, #root {
   padding: 0;
   font-family: 'Inter', system-ui, sans-serif;
   overflow-x: hidden !important;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
 /* Removed zoom as Chrome 128+ standardizes zoom to act like scale and breaks layout causing right-hand empty space */

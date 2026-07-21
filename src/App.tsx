@@ -95,7 +95,42 @@ export default function App() {
 
     const handler = () => setRemountKey(k => k + 1);
     window.addEventListener('force_remount', handler);
-    return () => window.removeEventListener('force_remount', handler);
+    
+    // Branding Sync
+    const syncBranding = async () => {
+      const storeName = localStorage.getItem('shaheen_store_name') || 'Shaheen Traders';
+      const logo = localStorage.getItem('shaheen_store_logo') || '/pwa-192x192.png';
+      
+      // Update HTML Title
+      document.title = storeName;
+      
+      // Update Favicon
+      const icon = document.querySelector('link[rel="icon"]') || document.querySelector('link[rel="apple-touch-icon"]');
+      if (icon) {
+        icon.setAttribute('href', logo);
+      } else {
+        const newIcon = document.createElement('link');
+        newIcon.rel = 'icon';
+        newIcon.href = logo;
+        document.head.appendChild(newIcon);
+      }
+      
+      // Update Tauri Title
+      try {
+        const { getCurrentWindow } = await import('@tauri-apps/api/window');
+        await getCurrentWindow().setTitle(storeName);
+      } catch (err) {
+        // Not in Tauri, ignore
+      }
+    };
+    
+    syncBranding(); // Initial sync
+    window.addEventListener('branding_updated', syncBranding);
+
+    return () => {
+      window.removeEventListener('force_remount', handler);
+      window.removeEventListener('branding_updated', syncBranding);
+    };
   }, []);
 
   // ==========================================

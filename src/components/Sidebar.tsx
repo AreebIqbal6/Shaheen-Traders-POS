@@ -1,5 +1,5 @@
-import React from 'react';
-import { Home, ShoppingCart, Box, BarChart2, Tag, Wrench, Package, Users, Settings, LogOut } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Home, ShoppingCart, Box, BarChart2, Tag, Wrench, Package, Users, Settings, LogOut, Smartphone } from 'lucide-react';
 
 export type ModuleState = 'register' | 'inventory';
 export type ViewState = 
@@ -16,6 +16,17 @@ interface SidebarProps {
 }
 
 export default function Sidebar({ activeModule, setModule, activeView, setView }: SidebarProps) {
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+
+  useEffect(() => {
+    const handleBeforeInstallPrompt = (e: unknown) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    };
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+  }, []);
+
   const storeName = localStorage.getItem('shaheen_store_name') || 'Shaheen Global Traders';
   const logo = localStorage.getItem('shaheen_logo');
   const outletLocation = localStorage.getItem('shaheen_outlet_location') || 'Main Outlet';
@@ -133,6 +144,21 @@ export default function Sidebar({ activeModule, setModule, activeView, setView }
             ))}
           </ul>
         </nav>
+        
+        {deferredPrompt && (
+          <div className="p-3 border-t border-gray-200 dark:border-zinc-800">
+            <button 
+              onClick={async () => {
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                if (outcome === 'accepted') setDeferredPrompt(null);
+              }}
+              className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded text-sm font-semibold transition-colors"
+            >
+              <Smartphone size={16} /> Install App
+            </button>
+          </div>
+        )}
       </div>
 
     </div>
