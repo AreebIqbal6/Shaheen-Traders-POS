@@ -370,7 +370,7 @@ export default function ProductsView({ products = [], setProducts }: ProductsVie
       </div>
 
       <div className="mb-4 flex flex-col md:flex-row md:justify-between items-start md:items-center gap-4">
-        <div className="flex bg-white dark:bg-zinc-900/60 backdrop-blur-md p-1 rounded-lg border border-slate-200 dark:border-zinc-800/50 w-full md:w-auto shadow-inner gap-1 overflow-hidden justify-between md:justify-start">
+        <div className="flex flex-wrap bg-white dark:bg-zinc-900/60 backdrop-blur-md p-1 rounded-lg border border-slate-200 dark:border-zinc-800/50 w-full md:w-auto shadow-inner gap-1 justify-center sm:justify-between md:justify-start">
           <button 
             onClick={() => setCurrentFilter('all')}
             className={`px-2 sm:px-4 py-1.5 rounded-md text-[11px] sm:text-[13px] font-medium whitespace-nowrap transition-all ${currentFilter === 'all' ? 'bg-slate-800 dark:bg-slate-100 text-white dark:text-slate-900 shadow-sm border border-slate-800 dark:border-slate-100' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-50 hover:bg-slate-100 dark:hover:bg-slate-700'}`}
