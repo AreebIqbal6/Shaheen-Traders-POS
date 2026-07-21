@@ -251,7 +251,7 @@ export default function DashboardView({ pastOrders, products, onRestoreOrder }: 
               <p className="text-xl font-black text-slate-900 dark:text-slate-50 whitespace-nowrap">
                 {currentTime.toLocaleTimeString('en-US', {
                   timeZone: localStorage.getItem('shaheen_timezone') || Intl.DateTimeFormat().resolvedOptions().timeZone,
-                  hour12: false
+                  hour12: true
                 })}
               </p>
             </div>
