@@ -548,15 +548,32 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
                <p className="text-[10px] text-blue-500 font-bold uppercase tracking-wider">Booker Portal</p>
              </div>
           </div>
-          
-          {/* Desktop Nav - Visible only on PC */}
-          <div className="hidden md:flex gap-8 items-center pr-4">
-            <button onClick={() => setActiveTab('shop')} className={`font-bold transition-colors ${activeTab === 'shop' ? 'text-blue-600' : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'}`}>Shop</button>
-            <button onClick={() => setActiveTab('cart')} className={`font-bold transition-colors ${activeTab === 'cart' ? 'text-blue-600' : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'}`}>
-              Cart {cart.length > 0 && <span className="ml-1 bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded text-xs">{cart.length}</span>}
-            </button>
-            <button onClick={() => setActiveTab('checkout')} className={`font-bold transition-colors ${activeTab === 'checkout' ? 'text-blue-600' : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'}`}>Checkout</button>
-            <button onClick={() => setActiveTab('dashboard')} className={`font-bold transition-colors ${activeTab === 'dashboard' ? 'text-blue-600' : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'}`}>Profile</button>
+          <div className="flex items-center gap-4 md:gap-8">
+            {/* Install App Button (Dynamic based on PWA support) */}
+            {deferredPrompt && (
+              <button 
+                onClick={async () => {
+                  deferredPrompt.prompt();
+                  const { outcome } = await deferredPrompt.userChoice;
+                  if (outcome === 'accepted') setDeferredPrompt(null);
+                }}
+                className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 md:px-4 md:py-2 rounded-lg text-xs md:text-sm font-bold transition-colors shadow-sm"
+              >
+                <Smartphone size={16} className="md:w-5 md:h-5" />
+                <span className="hidden sm:inline">Install App</span>
+                <span className="sm:hidden">Install</span>
+              </button>
+            )}
+
+            {/* Desktop Nav - Visible only on PC */}
+            <div className="hidden md:flex gap-8 items-center pr-4">
+              <button onClick={() => setActiveTab('shop')} className={`font-bold transition-colors ${activeTab === 'shop' ? 'text-blue-600' : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'}`}>Shop</button>
+              <button onClick={() => setActiveTab('cart')} className={`font-bold transition-colors ${activeTab === 'cart' ? 'text-blue-600' : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'}`}>
+                Cart {cart.length > 0 && <span className="ml-1 bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded text-xs">{cart.length}</span>}
+              </button>
+              <button onClick={() => setActiveTab('checkout')} className={`font-bold transition-colors ${activeTab === 'checkout' ? 'text-blue-600' : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'}`}>Checkout</button>
+              <button onClick={() => setActiveTab('dashboard')} className={`font-bold transition-colors ${activeTab === 'dashboard' ? 'text-blue-600' : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'}`}>Profile</button>
+            </div>
           </div>
         </div>
 
