@@ -480,10 +480,10 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
         <div className="bg-white dark:bg-zinc-900/60 backdrop-blur-md px-4 md:px-8 py-4 flex items-center justify-between border-b border-slate-200 dark:border-zinc-800/50 shrink-0 sticky top-0 z-10 w-full">
           <div className="flex items-center gap-3 cursor-pointer" onClick={() => setActiveTabState('shop')}>
              <div className="w-8 h-8 flex items-center justify-center shrink-0">
-               <img src="/logo_transparent.png" alt="S" className="w-full h-full object-contain drop-shadow-sm mix-blend-multiply" />
+               <img src={localStorage.getItem('shaheen_store_logo') || '/logo_transparent.png'} alt="S" className="w-full h-full object-contain mix-blend-multiply" />
              </div>
              <div>
-               <h1 className="font-bold text-[18px] leading-tight text-slate-900 dark:text-slate-50 tracking-tight">Shaheen Wholesale</h1>
+               <h1 className="font-bold text-[18px] leading-tight text-slate-900 dark:text-slate-50 tracking-tight">{localStorage.getItem('shaheen_store_name') || 'Shaheen Wholesale'}</h1>
                <p className="text-[10px] text-blue-500 font-bold uppercase tracking-wider">B2B Portal</p>
              </div>
           </div>

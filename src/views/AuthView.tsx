@@ -51,7 +51,7 @@ export default function AuthView({ onLogin }: AuthViewProps) {
           {logo ? (
             <img src={logo} alt="Logo" className="w-full h-full object-contain mix-blend-multiply" />
           ) : (
-            <img src="/logo_transparent.png" alt="Shaheen Traders" className="w-full h-full object-contain drop-shadow-sm mix-blend-multiply" />
+            <img src="/logo_transparent.png" alt="Shaheen Traders" className="w-full h-full object-contain mix-blend-multiply" />
           )}
         </div>
         

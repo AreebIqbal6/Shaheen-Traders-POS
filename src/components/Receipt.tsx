@@ -108,7 +108,7 @@ export default function Receipt({ data, className = '', isPrintable = true }: Re
                     {logo ? (
                       <img src={logo} alt="Store Logo" className="w-[60px] h-[60px] object-cover mix-blend-multiply" />
                     ) : (
-                      <img src="/logo_transparent.png" alt="Shaheen Logo" className="w-[60px] h-[60px] object-contain drop-shadow-sm mix-blend-multiply" />
+                      <img src="/logo_transparent.png" alt="Shaheen Logo" className="w-[60px] h-[60px] object-contain mix-blend-multiply" />
                     )}
                   </div>
                   <div className="flex flex-col items-end w-1/3 pt-1">

@@ -1607,7 +1607,7 @@ export default function AdminPOSView() {
                   {logo ? (
                     <img src={logo} alt="Logo" className="w-full h-full object-contain mix-blend-multiply" />
                   ) : (
-                    <img src="/logo_transparent.png" alt="S" className="w-full h-full object-contain drop-shadow-sm mix-blend-multiply" />
+                    <img src="/logo_transparent.png" alt="S" className="w-full h-full object-contain mix-blend-multiply" />
                   )}
                 </div>
                 <span className="text-base font-bold tracking-tight text-slate-900 dark:text-white">{storeName}</span>
@@ -1707,7 +1707,7 @@ export default function AdminPOSView() {
             {logo ? (
               <img src={logo} alt="Logo" className="w-full h-full object-contain mix-blend-multiply" />
             ) : (
-              <img src="/logo_transparent.png" alt="S" className="w-full h-full object-contain drop-shadow-sm mix-blend-multiply" />
+              <img src="/logo_transparent.png" alt="S" className="w-full h-full object-contain mix-blend-multiply" />
             )}
           </div>
           <span className="text-[14px] font-semibold text-slate-900 dark:text-slate-50 hover:text-blue-600 transition-colors">{storeName}</span>
