@@ -349,23 +349,23 @@ export default function ProductsView({ products = [], setProducts }: ProductsVie
   return (
     <div className="h-full flex flex-col relative bg-slate-50 dark:bg-[#0a0a0c] p-4 md:p-8 overflow-x-hidden">
       
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-6">
-        <div className="bg-white dark:bg-zinc-900/60 backdrop-blur-md border border-slate-200 dark:border-zinc-800/50 shadow-sm rounded-xl p-4 md:p-5 flex flex-col justify-between h-full min-h-[100px]">
-          <span className="text-[12px] font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Total Products</span>
-          <span className="text-xl lg:text-2xl xl:text-3xl font-bold text-slate-900 dark:text-slate-50">{totalProducts}</span>
+      <div className="grid grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4 mb-6">
+        <div className="col-span-1 bg-white dark:bg-zinc-900/60 backdrop-blur-md border border-slate-200 dark:border-zinc-800/50 shadow-sm rounded-xl p-3 md:p-4 flex flex-col justify-between h-full min-h-[90px]">
+          <span className="text-[11px] md:text-[12px] font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Total Products</span>
+          <span className="text-lg lg:text-2xl font-bold text-slate-900 dark:text-slate-50 mt-1">{totalProducts}</span>
         </div>
-        <div className="bg-white dark:bg-zinc-900/60 backdrop-blur-md border border-slate-200 dark:border-zinc-800/50 shadow-sm rounded-xl p-4 md:p-5 flex flex-col justify-between h-full min-h-[100px] relative overflow-hidden group">
-          <div className="absolute right-4 top-4 w-2 h-2 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.8)] animate-pulse"></div>
-          <span className="text-[12px] font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Critical Stock</span>
-          <span className="text-xl lg:text-2xl xl:text-3xl font-bold text-red-600 dark:text-red-400">{criticalStock}</span>
+        <div className="col-span-1 bg-white dark:bg-zinc-900/60 backdrop-blur-md border border-slate-200 dark:border-zinc-800/50 shadow-sm rounded-xl p-3 md:p-4 flex flex-col justify-between h-full min-h-[90px] relative overflow-hidden group">
+          <div className="absolute right-3 top-3 w-2 h-2 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.8)] animate-pulse"></div>
+          <span className="text-[11px] md:text-[12px] font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Critical</span>
+          <span className="text-lg lg:text-2xl font-bold text-red-600 dark:text-red-400 mt-1">{criticalStock}</span>
         </div>
-        <div className="bg-white dark:bg-zinc-900/60 backdrop-blur-md border border-slate-200 dark:border-zinc-800/50 shadow-sm rounded-xl p-4 md:p-5 flex flex-col justify-between h-full min-h-[100px]">
-          <span className="text-[12px] font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Low Stock</span>
-          <span className="text-xl lg:text-2xl xl:text-3xl font-bold text-amber-600 dark:text-amber-400">{lowStock}</span>
+        <div className="col-span-1 bg-white dark:bg-zinc-900/60 backdrop-blur-md border border-slate-200 dark:border-zinc-800/50 shadow-sm rounded-xl p-3 md:p-4 flex flex-col justify-between h-full min-h-[90px]">
+          <span className="text-[11px] md:text-[12px] font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Low Stock</span>
+          <span className="text-lg lg:text-2xl font-bold text-amber-600 dark:text-amber-400 mt-1">{lowStock}</span>
         </div>
-        <div className="bg-white dark:bg-zinc-900/60 backdrop-blur-md border border-slate-200 dark:border-zinc-800/50 shadow-sm rounded-xl p-4 md:p-5 flex flex-col justify-between h-full min-h-[100px]">
-          <span className="text-[12px] font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Inventory Value</span>
-          <span className="text-xl lg:text-2xl xl:text-3xl font-bold text-slate-900 dark:text-slate-50">{formatLakhs(inventoryValue)}</span>
+        <div className="col-span-3 lg:col-span-2 bg-white dark:bg-zinc-900/60 backdrop-blur-md border border-slate-200 dark:border-zinc-800/50 shadow-sm rounded-xl p-3 md:p-4 flex flex-col justify-between h-full min-h-[90px]">
+          <span className="text-[11px] md:text-[12px] font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Inventory Value</span>
+          <span className="text-xl lg:text-2xl xl:text-3xl font-bold text-slate-900 dark:text-slate-50 whitespace-nowrap mt-1">{formatLakhs(inventoryValue)}</span>
         </div>
       </div>
 
@@ -500,7 +500,7 @@ export default function ProductsView({ products = [], setProducts }: ProductsVie
       </div>
 
       <div className="flex-1 bg-white dark:bg-zinc-900/60 backdrop-blur-md border border-slate-200 dark:border-zinc-800/50 shadow-sm rounded-xl overflow-hidden flex flex-col">
-        <div className="overflow-y-auto overflow-x-auto custom-scrollbar flex-1">
+        <div className="overflow-y-auto overflow-x-hidden custom-scrollbar flex-1">
           <table className="hidden md:table w-full text-left text-[13px] whitespace-nowrap">
             <thead className="bg-slate-50/90 dark:bg-[#0a0a0c]/90 backdrop-blur-md border-b border-slate-200 dark:border-zinc-800/50 text-slate-600 dark:text-slate-400 uppercase tracking-wider text-[11px] sticky top-0 z-10">
               <tr>

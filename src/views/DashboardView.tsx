@@ -241,7 +241,7 @@ export default function DashboardView({ pastOrders, products, onRestoreOrder }: 
             </div>
             <div>
               <p className="text-slate-500 dark:text-slate-400 text-xs font-bold uppercase tracking-wider mb-1">Revenue</p>
-              <p className="text-xl font-black text-slate-900 dark:text-slate-50">Rs {stats.totalRevenue.toLocaleString('en-PK', { maximumFractionDigits: 0 })}</p>
+              <p className="text-xl font-black text-slate-900 dark:text-slate-50 whitespace-nowrap">Rs {stats.totalRevenue.toLocaleString('en-PK', { maximumFractionDigits: 0 })}</p>
             </div>
           </div>
           <div className="bg-white dark:bg-zinc-900/60 border border-slate-200 dark:border-zinc-800/50 p-5 rounded-2xl flex items-center gap-4 hover:border-slate-300 transition-colors">
@@ -268,7 +268,7 @@ export default function DashboardView({ pastOrders, products, onRestoreOrder }: 
             </div>
             <div>
               <p className="text-slate-500 dark:text-slate-400 text-xs font-bold uppercase tracking-wider mb-1">Avg Order</p>
-              <p className="text-xl font-black text-slate-900 dark:text-slate-50">Rs {stats.avgOrderValue.toLocaleString('en-PK', { maximumFractionDigits: 0 })}</p>
+              <p className="text-xl font-black text-slate-900 dark:text-slate-50 whitespace-nowrap">Rs {stats.avgOrderValue.toLocaleString('en-PK', { maximumFractionDigits: 0 })}</p>
             </div>
           </div>
         </div>
