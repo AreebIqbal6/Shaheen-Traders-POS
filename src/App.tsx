@@ -194,13 +194,7 @@ export default function App() {
           if (autoBackedUp.includes(orderId)) continue;
           
           try {
-            const details = {
-              clientName: order.client_name,
-              area: order.area,
-              contactNumber: order.contact_number || order.client_phone,
-              bookerName: order.booker_name,
-              total: order.total || order.total_amount
-            };
+            const details = { clientName: order.client_name, area: order.area, contactNumber: order.contact_number || order.client_phone, bookerName: order.booker_name, total: order.total || order.total_amount, createdAt: order.created_at || order.date };
 
             if (isTauri) {
               const success = await saveOrderBackup(orderId, order.items || [], details);
@@ -219,8 +213,11 @@ export default function App() {
       }
     };
 
-    // Run startup backup
-    backupMissedOrders();
+      // Run startup backup immediately, and then strictly every 10 seconds.
+      backupMissedOrders();
+      const syncInterval = setInterval(() => {
+        backupMissedOrders();
+      }, 10000);
 
     // 2. Establish the silent global listener
     const syncChannel = supabase
@@ -246,7 +243,8 @@ export default function App() {
                   area: order.area,
                   contactNumber: order.contact_number || order.client_phone,
                   bookerName: order.booker_name,
-                  total: order.total || order.total_amount
+                  total: order.total || order.total_amount,
+                  createdAt: order.created_at || order.date
                 };
 
                 // 5. Trigger the silent file-system backup without UI prompts
@@ -279,6 +277,7 @@ export default function App() {
     return () => {
       supabase.removeChannel(syncChannel);
       document.removeEventListener('visibilitychange', handleWake);
+      clearInterval(syncInterval);
     };
   }, []);
 
@@ -328,3 +327,4 @@ export default function App() {
     </>
   );
 }
+

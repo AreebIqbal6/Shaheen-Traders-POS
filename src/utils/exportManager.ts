@@ -1,4 +1,4 @@
-import { exportReceiptToPDF } from './exportPdf';
+import { exportReceiptToPDF, exportHeadlessReceiptToPDF } from './exportPdf';
 import { generateOrderExcel } from './excel';
 
 import { saveAs } from 'file-saver';
@@ -10,7 +10,26 @@ export const saveOrderBackup = async (orderId: string, cart: any[], details: any
 
   try {
     // 1. Generate PDF
-    const pdfResult = await exportReceiptToPDF(orderId, true); 
+    let pdfResult = null;
+    try {
+      pdfResult = await exportReceiptToPDF(orderId, true); 
+      if (!pdfResult) {
+        // Render perfectly offscreen if no DOM element exists (Background Sync)
+        const receiptData = {
+          id: orderId,
+          clientName: details.clientName || '',
+          area: details.area || '',
+          contactNumber: details.contactNumber || '',
+          bookerName: details.bookerName || '',
+          createdAt: new Date().toISOString(),
+          items: cart,
+          total: details.total || 0
+        };
+        pdfResult = await exportHeadlessReceiptToPDF(receiptData);
+      }
+    } catch (pdfErr) {
+      console.error("Headless PDF generation failed, continuing without PDF:", pdfErr);
+    }
     
     // 2. Generate Excel
     const excelResult = await generateOrderExcel(orderId, cart, details);
@@ -28,6 +47,8 @@ export const saveOrderBackup = async (orderId: string, cart: any[], details: any
     const m = String(dateObj.getMonth() + 1).padStart(2, '0');
     const y = dateObj.getFullYear();
     const dateStr = `${d}-${m}-${y}`;
+    const monthNames = ["JANUARY", "FEBRUARY", "MARCH", "APRIL", "MAY", "JUNE", "JULY", "AUGUST", "SEPTEMBER", "OCTOBER", "NOVEMBER", "DECEMBER"];
+    const monthName = monthNames[dateObj.getMonth()];
 
     if (isTauri) {
       const { desktopDir } = await import('@tauri-apps/api/path');
@@ -67,7 +88,7 @@ export const saveOrderBackup = async (orderId: string, cart: any[], details: any
         
         try {
           // Construct explicit order hierarchy cleanly on top of valid target base
-          const orderFolderPath = `${validBase}\\ORDERS\\${dateStr}\\${orderId}`;
+          const orderFolderPath = `${validBase}\\ORDERS\\${y}\\${monthName}\\${dateStr}\\${orderId}`;
           console.log("Creating Folder Structure:", orderFolderPath); 
           
           await mkdir(orderFolderPath, { recursive: true });
