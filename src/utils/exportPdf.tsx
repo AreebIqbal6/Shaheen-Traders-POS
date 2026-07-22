@@ -52,7 +52,10 @@ export const exportReceiptToPDF = async (orderId: string, silent: boolean = fals
         pdf.addPage();
       }
       
-      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+      const imgProps = pdf.getImageProperties(imgData);
+      const calculatedHeight = (imgProps.height * pdfWidth) / imgProps.width;
+      
+      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, calculatedHeight);
     }
 
     const filename = `${orderId}.pdf`;
@@ -125,7 +128,10 @@ export const exportHeadlessReceiptToPDF = async (receiptData: ReceiptData): Prom
             pdf.addPage();
           }
           
-          pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+          const imgProps = pdf.getImageProperties(imgData);
+          const calculatedHeight = (imgProps.height * pdfWidth) / imgProps.width;
+          
+          pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, calculatedHeight);
         }
 
         root.unmount();
