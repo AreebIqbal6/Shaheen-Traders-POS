@@ -239,21 +239,7 @@ export default function DashboardView({ pastOrders, products, onRestoreOrder }: 
         </div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8 shrink-0">
-          <div className="bg-white dark:bg-zinc-900/60 border border-slate-200 dark:border-zinc-800/50 p-5 rounded-2xl flex items-center gap-4 hover:border-slate-300 transition-colors">
-            <div className="hidden sm:flex w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800 items-center justify-center text-slate-600 dark:text-slate-400 shrink-0">
-              <Clock size={24} />
-            </div>
-            <div>
-              <p className="text-slate-500 dark:text-slate-400 text-xs font-bold uppercase tracking-wider mb-1">Live Clock</p>
-              <p className="text-xl font-black text-slate-900 dark:text-slate-50 whitespace-nowrap">
-                {currentTime.toLocaleTimeString('en-US', {
-                  timeZone: localStorage.getItem('shaheen_timezone') || Intl.DateTimeFormat().resolvedOptions().timeZone,
-                  hour12: true
-                })}
-              </p>
-            </div>
-          </div>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-8 shrink-0">
           <div className="bg-white dark:bg-zinc-900/60 border border-slate-200 dark:border-zinc-800/50 p-5 rounded-2xl flex items-center gap-4 hover:border-slate-300 transition-colors">
             <div className="hidden sm:flex w-12 h-12 rounded-full bg-blue-50 dark:bg-blue-900/20 items-center justify-center text-blue-600 dark:text-blue-400 shrink-0">
               <DollarSign size={24} />
