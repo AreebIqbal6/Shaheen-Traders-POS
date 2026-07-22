@@ -32,8 +32,8 @@ export default function SellView() {
 
   return (
     <div className="flex w-full h-full text-white bg-[#151515]">
-      {/* 70% Product Grid Area */}
-      <div className="w-[70%] h-full flex flex-col p-6 overflow-y-auto">
+      {/* 75% Product Grid Area */}
+      <div className="w-[75%] h-full flex flex-col p-6 overflow-y-auto">
         <h2 className="text-2xl font-bold mb-6">Quick Keys</h2>
         <div className="grid grid-cols-3 gap-4">
           {products.map(product => (
@@ -49,8 +49,8 @@ export default function SellView() {
         </div>
       </div>
 
-      {/* 30% Cart Area */}
-      <div className="w-[30%] h-full bg-[#1c1c1c] border-l border-[#2d2d2d] flex flex-col">
+      {/* 25% Cart Area */}
+      <div className="w-[25%] h-full bg-[#1c1c1c] border-l border-[#2d2d2d] flex flex-col">
         {/* Customer Search */}
         <div className="p-4 border-b border-[#2d2d2d]">
           <input 

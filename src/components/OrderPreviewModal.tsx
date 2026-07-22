@@ -1,4 +1,4 @@
-import type { Product, Order, CartItem } from '../types/index';
+import type { Order, CartItem } from '../types/index';
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import type { Product } from '../views/ProductsView';

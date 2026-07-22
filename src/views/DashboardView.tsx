@@ -2,8 +2,6 @@ import type { Product, Order, CartItem, Booker } from '../types/index';
 import React, { useState, useMemo, useEffect } from 'react';
 import { PieChart as RePieChart, Pie, Cell, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as ReTooltip, ResponsiveContainer } from 'recharts';
 import { PieChart, TrendingUp, Package, DollarSign, FileText, X, AlertTriangle, RotateCcw, Clock } from 'lucide-react';
-import type { Product } from './ProductsView';
-import type { Order } from './AdminPOSView';
 import OrderPreviewModal from '../components/OrderPreviewModal';
 
 interface DashboardViewProps {
