@@ -92,7 +92,7 @@ export default function Receipt({ data, className = '', isPrintable = true }: Re
             {pageIndex === 0 && (
               <>
                 {/* 1. Top Bar */}
-                <div className="flex justify-between items-start mb-2 border-b-2 border-slate-900 pb-2 print:border-b-2 shrink-0">
+                <div className="flex justify-between items-center mb-1 border-b-2 border-slate-900 pb-1 print:border-b-2 shrink-0">
                   <div className="flex flex-col items-start w-1/3 pt-1">
                     <Barcode 
                       value={barcodeValue} 
@@ -104,11 +104,11 @@ export default function Receipt({ data, className = '', isPrintable = true }: Re
                     />
                     <span className="text-[10px] text-slate-500 font-mono mt-0.5 font-bold tracking-widest">{displayId}</span>
                   </div>
-                  <div className="flex flex-col items-center justify-center w-1/3 overflow-hidden">
+                  <div className="flex flex-col items-center justify-center w-1/3">
                     {logo ? (
-                      <img src={logo} alt="Store Logo" className="w-[60px] h-[60px] object-cover mix-blend-multiply" />
+                      <img src={logo} alt="Store Logo" className="w-[120px] h-[85px] object-contain mix-blend-multiply" />
                     ) : (
-                      <img src="/logo_transparent.png" alt="Shaheen Logo" className="w-[60px] h-[60px] object-contain mix-blend-multiply" />
+                      <img src="/logo_transparent.png" alt="Shaheen Logo" className="w-[140px] h-[85px] object-contain mix-blend-multiply" />
                     )}
                   </div>
                   <div className="flex flex-col items-end w-1/3 pt-1">
