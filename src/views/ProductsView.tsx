@@ -10,6 +10,7 @@ import { supabase } from '../lib/supabase';
 export const generateSKU = (name: string, barcode: string) => {
   const safeName = name || 'Product';
   const words = safeName.split(' ').filter(w => w.length > 0);
+  let prefix = '';
   
   if (words.length >= 2) {
     prefix = (words[0].substring(0, 3) + words[1].substring(0, 3)).toUpperCase().replace(/[^A-Z]/g, 'X');

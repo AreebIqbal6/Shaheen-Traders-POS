@@ -6,6 +6,7 @@ import { ChevronLeft, Printer, FolderDown } from 'lucide-react';
 import { createPortal } from 'react-dom';
 import { saveOrderBackup } from '../utils/exportManager';
 import toast from 'react-hot-toast';
+import { generateSKU } from './ProductsView';
 
 export default function ReceiptView() {
   const { orderId } = useParams<{ orderId: string }>();
@@ -30,7 +31,7 @@ export default function ReceiptView() {
                contactNumber: found.contactNumber || found.contact_number || '-',
                bookerName: found.bookerName || found.booker_name,
                createdAt: found.createdAt || found.date || found.timestamp || new Date().toISOString(),
-               items: found.items,
+               items: (found.items || []).map((i: any) => ({ ...i, sku: i.sku && i.sku !== i.barcode && i.sku.trim() !== '' ? i.sku : generateSKU(i.name || 'Product', i.barcode || '') })),
                total: found.total
             };
             document.title = receiptData.id;
@@ -63,7 +64,7 @@ export default function ReceiptView() {
              contactNumber: data.client_phone || data.contact_number || '-',
              bookerName: data.booker_name,
              createdAt: data.created_at,
-             items: data.items,
+             items: (data.items || []).map((i: any) => ({ ...i, sku: i.sku && i.sku !== i.barcode && i.sku.trim() !== '' ? i.sku : generateSKU(i.name || 'Product', i.barcode || '') })),
              total: data.total || data.total_amount || 0
           };
           document.title = receiptData.id;
@@ -99,7 +100,7 @@ export default function ReceiptView() {
                  contactNumber: foundOffline.client_phone || foundOffline.contact_number || '-',
                  bookerName: foundOffline.booker_name,
                  createdAt: foundOffline.created_at,
-                 items: foundOffline.items,
+                 items: (foundOffline.items || []).map((i: any) => ({ ...i, sku: i.sku && i.sku !== i.barcode && i.sku.trim() !== '' ? i.sku : generateSKU(i.name || 'Product', i.barcode || '') })),
                  total: foundOffline.total
               };
               document.title = receiptData.id;
