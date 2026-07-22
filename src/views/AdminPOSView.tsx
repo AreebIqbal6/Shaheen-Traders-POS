@@ -47,17 +47,21 @@ const GlobalLiveClock = ({ mobile }: { mobile?: boolean }) => {
   
   if (mobile) {
     return (
-      <div className="flex items-center gap-1 text-[11px] font-bold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-zinc-800/50 px-2 py-0.5 rounded-full shadow-inner">
-        <Clock size={10} className="text-blue-500" />
-        <span>{currentTime.toLocaleTimeString('en-US', { timeZone: localStorage.getItem('shaheen_timezone') || Intl.DateTimeFormat().resolvedOptions().timeZone, hour12: true, hour: 'numeric', minute: '2-digit' })}</span>
+      <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-zinc-800/50 px-2.5 py-0.5 rounded-full shadow-inner">
+        <Clock size={10} className="text-blue-500 shrink-0" />
+        <span className="whitespace-nowrap">{currentTime.toLocaleDateString('en-GB', { timeZone: localStorage.getItem('shaheen_timezone') || Intl.DateTimeFormat().resolvedOptions().timeZone }).replace(/\//g, '-')}</span>
+        <span className="text-slate-300 dark:text-slate-600 px-0.5">•</span>
+        <span className="whitespace-nowrap">{currentTime.toLocaleTimeString('en-US', { timeZone: localStorage.getItem('shaheen_timezone') || Intl.DateTimeFormat().resolvedOptions().timeZone, hour12: true, hour: 'numeric', minute: '2-digit' })}</span>
       </div>
     );
   }
   
   return (
-    <div className="flex items-center justify-center gap-1.5 text-xs font-semibold text-slate-600 dark:text-slate-300 bg-white dark:bg-zinc-900/60 border border-slate-200 dark:border-zinc-800/50 px-2 py-1.5 rounded-lg mb-2 mx-1.5 shadow-sm">
-      <Clock size={14} className="text-blue-500" />
-      <span className="tracking-wide">{currentTime.toLocaleTimeString('en-US', { timeZone: localStorage.getItem('shaheen_timezone') || Intl.DateTimeFormat().resolvedOptions().timeZone, hour12: true })}</span>
+    <div className="flex items-center justify-center gap-1.5 text-xs font-semibold text-slate-600 dark:text-slate-300 bg-white dark:bg-zinc-900/60 border border-slate-200 dark:border-zinc-800/50 px-3 py-1.5 rounded-lg mb-2 mx-1.5 shadow-sm">
+      <Clock size={14} className="text-blue-500 shrink-0" />
+      <span className="tracking-wide whitespace-nowrap">{currentTime.toLocaleDateString('en-GB', { timeZone: localStorage.getItem('shaheen_timezone') || Intl.DateTimeFormat().resolvedOptions().timeZone }).replace(/\//g, '-')}</span>
+      <span className="text-slate-300 dark:text-slate-600 px-0.5">•</span>
+      <span className="tracking-wide whitespace-nowrap">{currentTime.toLocaleTimeString('en-US', { timeZone: localStorage.getItem('shaheen_timezone') || Intl.DateTimeFormat().resolvedOptions().timeZone, hour12: true })}</span>
     </div>
   );
 };
