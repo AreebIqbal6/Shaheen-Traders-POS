@@ -1,7 +1,8 @@
 import React, { useEffect } from 'react';
-import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import AdminPOSView from './views/AdminPOSView';
 import B2BShopView from './views/B2BShopView';
+import RoleSelectionView from './views/RoleSelectionView';
 import B2BAuthWrapper from './components/B2BAuthWrapper';
 import ReceiptView from './views/ReceiptView';
 import OfflineIndicator from './components/OfflineIndicator';
@@ -18,20 +19,23 @@ const RootRedirect = () => {
   React.useEffect(() => {
     async function determineRoute() {
       const isDesktop = '__TAURI_INTERNALS__' in window || '__TAURI__' in window;
+      
+      // If mobile browser, always go to booker (PWA mode)
       if (!isDesktop) {
         setTarget(`/booker${location.search}${location.hash}`);
         return;
       }
-      try {
-        const { getName } = await import('@tauri-apps/api/app');
-        const appName = await getName();
-        if (appName.toLowerCase().includes('booker')) {
-          setTarget(`/booker${location.search}${location.hash}`);
-        } else {
-          setTarget(`/admin${location.search}${location.hash}`);
-        }
-      } catch (err) {
+      
+      // If desktop, check if the device role is already configured
+      const configuredMode = localStorage.getItem('shaheen_app_mode');
+      
+      if (configuredMode === 'admin') {
         setTarget(`/admin${location.search}${location.hash}`);
+      } else if (configuredMode === 'booker') {
+        setTarget(`/booker${location.search}${location.hash}`);
+      } else {
+        // If not configured, show the selection screen
+        setTarget(`/select-role`);
       }
     }
     
@@ -321,6 +325,7 @@ export default function App() {
       <OfflineIndicator />
       <Routes>
         <Route path="/" element={<RootRedirect />} />
+        <Route path="/select-role" element={<RoleSelectionView />} />
         <Route path="/admin/*" element={<AdminPOSView key={`admin-${remountKey}`} />} />
         <Route path="/booker" element={<B2BAuthWrapper><B2BShopView /></B2BAuthWrapper>} />
         <Route path="/receipt/:orderId" element={<B2BAuthWrapper><ReceiptView /></B2BAuthWrapper>} />
