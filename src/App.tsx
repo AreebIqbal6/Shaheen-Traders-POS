@@ -50,6 +50,7 @@ const RootRedirect = () => {
 };
 
 async function checkForUpdates() {
+  if (!(window as any).__TAURI_INTERNALS__) return; // Only run inside Tauri wrapper
   try {
     const { check } = await import('@tauri-apps/plugin-updater');
     const { ask } = await import('@tauri-apps/plugin-dialog');
