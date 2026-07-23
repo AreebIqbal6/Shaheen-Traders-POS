@@ -47,10 +47,8 @@ const GlobalLiveClock = ({ mobile }: { mobile?: boolean }) => {
   
   if (mobile) {
     return (
-      <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-zinc-800/50 px-2.5 py-0.5 rounded-full shadow-inner">
+      <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-zinc-800/50 px-2 py-0.5 rounded-full shadow-inner">
         <Clock size={10} className="text-blue-500 shrink-0" />
-        <span className="whitespace-nowrap">{currentTime.toLocaleDateString('en-GB', { timeZone: localStorage.getItem('shaheen_timezone') || Intl.DateTimeFormat().resolvedOptions().timeZone }).replace(/\//g, '-')}</span>
-        <span className="text-slate-300 dark:text-slate-600 px-0.5">•</span>
         <span className="whitespace-nowrap">{currentTime.toLocaleTimeString('en-US', { timeZone: localStorage.getItem('shaheen_timezone') || Intl.DateTimeFormat().resolvedOptions().timeZone, hour12: true, hour: 'numeric', minute: '2-digit' })}</span>
       </div>
     );
@@ -1846,7 +1844,7 @@ export default function AdminPOSView() {
       
       {/* Mobile Top Header */}
       <div className="md:hidden bg-white dark:bg-[#0a0a0c] text-slate-900 dark:text-white border-b border-slate-200 dark:border-zinc-900 p-3 flex justify-between items-center shrink-0 z-30 shadow-sm relative">
-         <div className="font-bold tracking-wider text-sm truncate cursor-pointer flex items-center gap-2" onClick={() => setActiveMenu('Register')}>
+         <div className="font-bold tracking-wider text-sm truncate cursor-pointer flex items-center gap-1.5" onClick={() => setActiveMenu('Register')}>
             <div className="w-8 h-8 bg-slate-100 dark:bg-white rounded-lg flex items-center justify-center shrink-0 overflow-hidden shadow-sm border border-slate-200/50">
                {logo ? (
                  <img src={logo} alt="Logo" className="w-full h-full object-contain mix-blend-multiply" />
@@ -1854,7 +1852,7 @@ export default function AdminPOSView() {
                  <img src="/logo_transparent.png" alt="S" className="w-full h-full object-contain mix-blend-multiply" />
                )}
             </div>
-            <span className="truncate text-[14px] font-semibold">{storeName}</span>
+            <span className="truncate text-[13px] font-semibold">{storeName}</span>
          </div>
          <div className="flex items-center gap-2">
             {deferredPrompt && (
@@ -1863,10 +1861,10 @@ export default function AdminPOSView() {
                      deferredPrompt.prompt();
                      deferredPrompt.userChoice.then(() => setDeferredPrompt(null));
                   }}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-sm shadow-blue-500/20 active:scale-95 transition-all text-xs font-semibold"
+                  className="flex items-center gap-1 px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-sm shadow-blue-500/20 active:scale-95 transition-all text-[10px] font-bold tracking-wide"
                >
-                  <Download size={12} strokeWidth={2.5} />
-                  <span>Install App</span>
+                  <Download size={10} strokeWidth={3} />
+                  <span>Install</span>
                </button>
             )}
             <GlobalLiveClock mobile={true} />
