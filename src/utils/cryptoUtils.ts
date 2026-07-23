@@ -18,8 +18,10 @@ export const hashPassword = async (password: string): Promise<string> => {
   return hashHex;
 };
 
-// Compare a plain password against a hash
 export const verifyPassword = async (plainPassword: string, hashToCompare: string): Promise<boolean> => {
+  // Backwards compatibility for existing users who still have btoa() hashed passwords
+  if (btoa(plainPassword) === hashToCompare) return true;
+  
   const generatedHash = await hashPassword(plainPassword);
   return generatedHash === hashToCompare;
 };
