@@ -5,6 +5,7 @@ import { saveSilentBackup } from '../utils/silentBackup';
 import { LayoutDashboard, ShoppingBag, Package, Settings, Search, Trash2, Printer, ScanBarcode, BarChart3, Bell, X, AlertTriangle, FileText, User, Building, Moon, Sun, Grid, ShoppingCart, CreditCard, MapPin, LogOut, ClipboardList, Menu, Users, ChevronDown, Phone, Map as MapIcon, PieChart, BookOpen, Clock, Download } from 'lucide-react';
 import ProductsView from './ProductsView';
 import type { Product } from './ProductsView';
+import UpdaterButton from '../components/UpdaterButton';
 import SettingsView from "./SettingsView";
 import AuthView from './AuthView';
 import BookersView from './BookersView';
@@ -2163,6 +2164,7 @@ export default function AdminPOSView() {
 
       {/* Main Content Area */}
       <main className="flex-1 flex flex-col overflow-hidden bg-white dark:bg-[#0a0a0c] relative z-10 md:pt-0 pt-[53px]">
+        <UpdaterButton />
         {renderContent()}
       </main>
 
