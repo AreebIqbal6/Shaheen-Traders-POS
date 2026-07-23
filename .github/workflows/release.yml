@@ -35,16 +35,57 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Build and release Tauri app
-        uses: tauri-apps/tauri-action@v0
+      - name: Decode Tauri Private Key
+        shell: bash
+        env:
+          B64_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
+        run: echo "$B64_KEY" | base64 --decode > private.key
+
+      - name: Build Tauri app
+        shell: pwsh
+        run: |
+          $env:TAURI_SIGNING_PRIVATE_KEY = [IO.File]::ReadAllText('private.key')
+          $env:TAURI_SIGNING_PRIVATE_KEY_PASSWORD = ""
+          npm run tauri build
+
+      - name: List Output Files
+        run: dir src-tauri\target\release\bundle\nsis\
+
+      - name: Generate latest.json
+        shell: pwsh
+        run: |
+          $version = "${{ github.ref_name }}".TrimStart('v')
+          $nsisDir = "src-tauri\target\release\bundle\nsis"
+          $sigFile = Get-ChildItem -Path $nsisDir -Filter *.zip.sig | Select-Object -First 1
+          if (-not $sigFile) { throw "Signature file not found!" }
+          $signature = [IO.File]::ReadAllText($sigFile.FullName)
+          $zipName = $sigFile.Name.Replace('.sig', '')
+          
+          $latestJson = @{
+            version = $version
+            notes = "Update with OTA Auto-Updater"
+            pub_date = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
+            platforms = @{
+              "windows-x86_64" = @{
+                signature = $signature
+                url = "https://github.com/AreebIqbal6/Shaheen-Traders-POS/releases/download/${{ github.ref_name }}/$zipName"
+              }
+            }
+          }
+          New-Item -ItemType Directory -Force -Path src-tauri\target\release\bundle\updater
+          $latestJson | ConvertTo-Json -Depth 5 > src-tauri\target\release\bundle\updater\latest.json
+
+      - name: Create Release and Upload Assets
+        uses: softprops/action-gh-release@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
-          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_KEY_PASSWORD }}
         with:
-          tagName: v__VERSION__
-          releaseName: 'Shaheen POS v__VERSION__'
-          releaseBody: 'See the assets to download this version and install.'
-          releaseDraft: false
+          tag_name: ${{ github.ref_name }}
+          name: 'Shaheen POS ${{ github.ref_name }}'
+          draft: false
           prerelease: false
-          args: ${{ matrix.platform == 'windows-latest' && '--target x86_64-pc-windows-msvc' || '' }}
+          files: |
+            src-tauri/target/release/bundle/nsis/*.exe
+            src-tauri/target/release/bundle/nsis/*.zip
+            src-tauri/target/release/bundle/nsis/*.zip.sig
+            src-tauri/target/release/bundle/updater/latest.json
