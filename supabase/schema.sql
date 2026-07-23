@@ -89,6 +89,30 @@ CREATE POLICY "Bookers can insert order items" ON public.order_items
         EXISTS (SELECT 1 FROM public.orders WHERE id = order_id AND booker_id = auth.uid()) 
     );
 
+-- Bookers can view items from their own orders
+CREATE POLICY "Bookers can view own order items" ON public.order_items
+    FOR SELECT USING (
+        EXISTS (SELECT 1 FROM public.orders WHERE id = order_id AND booker_id = auth.uid())
+    );
+
+-- Admins have full access to order items
+CREATE POLICY "Admins full access to order items" ON public.order_items
+    FOR ALL USING ( (SELECT role FROM public.users WHERE id = auth.uid()) = 'admin' );
+
+-- Product Barcodes: Readable by authenticated, writable by admins
+CREATE POLICY "Authenticated can read barcodes" ON public.product_barcodes
+    FOR SELECT USING (auth.role() = 'authenticated');
+
+CREATE POLICY "Admins can manage barcodes" ON public.product_barcodes
+    FOR ALL USING ( (SELECT role FROM public.users WHERE id = auth.uid()) = 'admin' );
+
+-- Users: Read own profile only
+CREATE POLICY "Users can read own profile" ON public.users
+    FOR SELECT USING (id = auth.uid());
+
+CREATE POLICY "Admins can read all users" ON public.users
+    FOR SELECT USING ( (SELECT role FROM public.users WHERE id = auth.uid()) = 'admin' );
+
 
 -- 3. REMOTE PROCEDURE CALL (RPC) for Transaction Integrity
 -- ==============================================================================
@@ -99,13 +123,20 @@ DECLARE
     v_order_id UUID;
     v_item RECORD;
     v_total_deduction NUMERIC;
+    v_caller_role TEXT;
 BEGIN
+    -- SECURITY: Verify caller is an authenticated booker or admin
+    SELECT role INTO v_caller_role FROM public.users WHERE id = auth.uid();
+    IF v_caller_role IS NULL OR v_caller_role NOT IN ('booker', 'admin') THEN
+        RETURN json_build_object('success', false, 'error', 'ERR_UNAUTHORIZED: Caller is not authorized.');
+    END IF;
+
     -- 1. Idempotency Check: Did we already process this offline sync?
     IF EXISTS (SELECT 1 FROM public.orders WHERE idempotency_key = (payload->>'idempotency_key')::UUID) THEN
         RETURN json_build_object('success', false, 'error', 'Idempotency key already exists. Duplicate ignored.');
     END IF;
 
-    -- 2. Insert Order
+    -- 2. Insert Order (SECURITY: force booker_id to auth.uid(), never trust client payload)
     INSERT INTO public.orders (receipt_number, idempotency_key, booker_id, client_name, total_amount)
     VALUES (
         payload->>'receipt_number',
@@ -120,9 +151,14 @@ BEGIN
         product_id UUID, quantity NUMERIC, uom TEXT, multiplier NUMERIC, price NUMERIC
     )
     LOOP
+        -- SECURITY: Validate quantity and multiplier are strictly positive
+        IF v_item.quantity <= 0 OR v_item.multiplier <= 0 THEN
+            RAISE EXCEPTION 'Invalid quantity or multiplier: must be positive';
+        END IF;
+
         v_total_deduction := v_item.quantity * v_item.multiplier;
 
-        -- Attempt to decrement stock. If total_base_pieces drops below 0, the table CHECK constraint will abort the transaction
+        -- Attempt to decrement stock. If total_base_pieces drops below 0, the CHECK constraint aborts
         UPDATE public.products 
         SET total_base_pieces = total_base_pieces - v_total_deduction
         WHERE id = v_item.product_id;

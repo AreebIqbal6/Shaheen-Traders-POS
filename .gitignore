@@ -1,3 +1,9 @@
+# Environment variables
+.env
+.env.local
+.env.production
+.env.*.local
+
 # Logs
 logs
 *.log
@@ -22,3 +28,8 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Tauri signing keys (NEVER commit private keys)
+*.key
+shaheen.key
+shaheen.key.pub

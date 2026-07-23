@@ -59,15 +59,16 @@ export default function B2BLoginView({ onLoginSuccess }: { onLoginSuccess: () =>
           throw new Error('Invalid username or password.');
         }
 
-        // Success! Cache it for future offline use
+        // Success! Cache it for future offline use (SECURITY: strip auth_token to prevent XSS credential theft)
+        const { auth_token: _stripped, ...safeBookerData } = data;
         const cachedBookers = localStorage.getItem('shaheen_bookers');
         const bookersList = cachedBookers ? JSON.parse(cachedBookers) : [];
         if (!bookersList.find((b: Booker) => b.username === data.username)) {
-          bookersList.push(data);
+          bookersList.push(safeBookerData);
           localStorage.setItem('shaheen_bookers', JSON.stringify(bookersList));
         }
 
-        localStorage.setItem('shaheen_active_booker', JSON.stringify(data));
+        localStorage.setItem('shaheen_active_booker', JSON.stringify(safeBookerData));
         localStorage.setItem('shaheen_bookerName', data.name);
         onLoginSuccess();
       }
