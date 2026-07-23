@@ -46,7 +46,7 @@ jobs:
         run: |
           $env:TAURI_SIGNING_PRIVATE_KEY = [IO.File]::ReadAllText('private.key')
           $env:TAURI_SIGNING_PRIVATE_KEY_PASSWORD = ""
-          npm run tauri build
+          npx tauri build
 
       - name: List Output Files
         run: dir src-tauri\target\release\bundle\nsis\
