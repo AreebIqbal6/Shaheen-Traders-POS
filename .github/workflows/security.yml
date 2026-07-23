@@ -1,0 +1,60 @@
+name: Automated Security Gate
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  security-audit:
+    name: Security & Vulnerability Scan
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 🛡️ Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: 📦 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: 🔧 Install Dependencies
+        run: npm ci
+
+      # ---------------------------------------------------------
+      # 1. FRONTEND / CLIENT-SIDE SECURITY CHECKS
+      # ---------------------------------------------------------
+      - name: 🚨 Run ESLint Security Rules
+        # Ensure you have eslint-plugin-security installed in package.json
+        # npm install --save-dev eslint-plugin-security
+        run: npx eslint . --ext .ts,.tsx --rule 'no-eval: 2' --rule 'react/no-danger: 2'
+
+      # ---------------------------------------------------------
+      # 2. SUPABASE DATABASE HARDENING & LINTING
+      # ---------------------------------------------------------
+      - name: 🗄️ Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: 🔎 Supabase DB Lint (Splinter)
+        # Analyzes database schema for missing indexes, open RLS policies, etc.
+        run: |
+          supabase start
+          supabase db lint
+
+      - name: 🧪 Run pgTAP RLS Security Tests
+        # Executes the pgTAP unit tests located in supabase/tests/
+        run: supabase test db
+
+      # ---------------------------------------------------------
+      # 3. END-TO-END VULNERABILITY TESTING
+      # ---------------------------------------------------------
+      - name: 🎭 Install Playwright Browsers
+        run: npx playwright install --with-deps
+
+      - name: 💥 Run Playwright Security Scripts
+        run: npx playwright test tests/e2e/security.spec.ts
