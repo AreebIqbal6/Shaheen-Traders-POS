@@ -1,7 +1,7 @@
 import type { Booker } from '../types/index';
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { Shield, ArrowRight, User, Key, WifiOff } from 'lucide-react';
+import { Shield, ArrowRight, User, Key, WifiOff, Smartphone } from 'lucide-react';
 import { verifyPassword } from '../utils/cryptoUtils';
 
 export default function B2BLoginView({ onLoginSuccess }: { onLoginSuccess: () => void }) {
@@ -9,6 +9,7 @@ export default function B2BLoginView({ onLoginSuccess }: { onLoginSuccess: () =>
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
 
   // We are storing the offline login explicitly since Bookers use weak network
   const handleOfflineLogin = async () => {
@@ -90,7 +91,17 @@ export default function B2BLoginView({ onLoginSuccess }: { onLoginSuccess: () =>
       setLogo(localStorage.getItem('shaheen_logo'));
     };
     window.addEventListener('branding_updated', handleBranding);
-    return () => window.removeEventListener('branding_updated', handleBranding);
+    
+    const handleBeforeInstallPrompt = (e: unknown) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    };
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    
+    return () => {
+      window.removeEventListener('branding_updated', handleBranding);
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    };
   }, []);
 
   return (
@@ -106,9 +117,25 @@ export default function B2BLoginView({ onLoginSuccess }: { onLoginSuccess: () =>
         <h2 className="text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
           Booker Portal
         </h2>
-        <p className="mt-2 text-sm text-slate-600 dark:text-slate-400 font-medium">
+        <p className="mt-2 text-sm text-slate-600 dark:text-slate-400 font-medium mb-4">
           Secure Field Agent Access
         </p>
+
+        {deferredPrompt && (
+          <button
+            onClick={async () => {
+              if (!deferredPrompt) return;
+              deferredPrompt.prompt();
+              const { outcome } = await deferredPrompt.userChoice;
+              if (outcome === 'accepted') {
+                setDeferredPrompt(null);
+              }
+            }}
+            className="mx-auto flex items-center gap-2 bg-slate-900 dark:bg-slate-50 text-white dark:text-slate-900 px-5 py-2.5 rounded-full text-sm font-bold shadow-lg hover:scale-105 transition-transform"
+          >
+            <Smartphone size={16} /> Install Booker App
+          </button>
+        )}
       </div>
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
