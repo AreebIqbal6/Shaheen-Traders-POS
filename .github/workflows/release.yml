@@ -32,7 +32,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
-          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ""
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: "ShaheenSecureKey2026!"
         with:
           tagName: ${{ github.ref_name }}
           releaseName: 'Shaheen POS ${{ github.ref_name }}'
