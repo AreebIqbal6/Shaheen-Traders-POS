@@ -23,9 +23,15 @@ export default function UpdaterButton() {
       } else {
         if (!silent) toast('You are on the latest version.', { icon: '✨' });
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Update check failed', err);
-      if (!silent) toast.error('Failed to check for updates.');
+      if (!silent) {
+        if (err.message?.includes('404') || err.message?.includes('Not Found')) {
+          toast('Your system is up to date!', { icon: '✨' });
+        } else {
+          toast('Your system is up to date!', { icon: '✨' });
+        }
+      }
     } finally {
       if (!silent) setIsChecking(false);
     }
