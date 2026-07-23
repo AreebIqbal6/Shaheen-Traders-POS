@@ -96,11 +96,11 @@ export default function B2BLoginView({ onLoginSuccess }: { onLoginSuccess: () =>
   return (
     <div className="fixed inset-0 bg-slate-50 dark:bg-[#0a0a0c] flex flex-col items-center justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md text-center">
-        <div className="mx-auto h-24 w-24 mb-6 transform hover:scale-105 transition-transform duration-300 rounded-xl overflow-hidden">
+        <div className="mx-auto h-32 w-auto max-w-[240px] mb-6 transform hover:scale-105 transition-transform duration-300 flex justify-center">
           {logo ? (
-            <img src={logo} alt="Logo" className="w-full h-full object-contain mix-blend-multiply" />
+            <img src={logo} alt="Logo" className="h-full w-auto object-contain mix-blend-multiply" />
           ) : (
-            <img src="/logo_transparent.png" alt="Shaheen Traders Booker Portal" className="w-full h-full object-contain mix-blend-multiply" />
+            <img src="/logo_transparent.png" alt="Shaheen Traders Booker Portal" className="h-full w-auto object-contain mix-blend-multiply" />
           )}
         </div>
         <h2 className="text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
