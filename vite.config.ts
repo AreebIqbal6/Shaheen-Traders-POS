@@ -126,9 +126,6 @@ export default defineConfig({
   build: {
     sourcemap: false, // Prevents generating original source code maps
     rollupOptions: {
-      external: [
-        /^@tauri-apps\/.*/
-      ]
     },
     minify: 'terser',
     chunkSizeWarningLimit: 3000,
