@@ -2,7 +2,7 @@ import type { Order, CartItem, Booker } from '../types/index';
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { playNotificationSound } from '../utils/audio';
 import { saveSilentBackup } from '../utils/silentBackup';
-import { LayoutDashboard, ShoppingBag, Package, Settings, Search, Trash2, Printer, ScanBarcode, BarChart3, Bell, X, AlertTriangle, FileText, User, Building, Moon, Sun, Grid, ShoppingCart, CreditCard, MapPin, LogOut, ClipboardList, Menu, Users, ChevronDown, Phone, Map as MapIcon, PieChart, BookOpen, Clock } from 'lucide-react';
+import { LayoutDashboard, ShoppingBag, Package, Settings, Search, Trash2, Printer, ScanBarcode, BarChart3, Bell, X, AlertTriangle, FileText, User, Building, Moon, Sun, Grid, ShoppingCart, CreditCard, MapPin, LogOut, ClipboardList, Menu, Users, ChevronDown, Phone, Map as MapIcon, PieChart, BookOpen, Clock, Download } from 'lucide-react';
 import ProductsView from './ProductsView';
 import type { Product } from './ProductsView';
 import SettingsView from "./SettingsView";
@@ -121,6 +121,7 @@ export default function AdminPOSView() {
 
   const [mobileActiveTab, setMobileActiveTab] = useState<'catalog' | 'cart' | 'checkout'>('catalog');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [isCameraOpen, setIsCameraOpen] = useState(false);
   const [isReceiptOpen, setIsReceiptOpen] = useState(false);
   const [isCheckoutSuccess, setIsCheckoutSuccess] = useState(false);
@@ -186,9 +187,19 @@ export default function AdminPOSView() {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setIsAuthenticated(!!session);
+      setIsAuthChecking(false);
     });
 
     return () => subscription.unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    const handleBeforeInstallPrompt = (e: unknown) => {
+      (e as any).preventDefault();
+      setDeferredPrompt(e);
+    };
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
   }, []);
 
   useEffect(() => {
@@ -1836,9 +1847,30 @@ export default function AdminPOSView() {
       {/* Mobile Top Header */}
       <div className="md:hidden bg-white dark:bg-[#0a0a0c] text-slate-900 dark:text-white border-b border-slate-200 dark:border-zinc-900 p-3 flex justify-between items-center shrink-0 z-30 shadow-sm relative">
          <div className="font-bold tracking-wider text-sm truncate cursor-pointer flex items-center gap-2" onClick={() => setActiveMenu('Register')}>
-            <span className="truncate">SHAHEEN POS</span>
+            <div className="w-8 h-8 bg-slate-100 dark:bg-white rounded-lg flex items-center justify-center shrink-0 overflow-hidden shadow-sm border border-slate-200/50">
+               {logo ? (
+                 <img src={logo} alt="Logo" className="w-full h-full object-contain mix-blend-multiply" />
+               ) : (
+                 <img src="/logo_transparent.png" alt="S" className="w-full h-full object-contain mix-blend-multiply" />
+               )}
+            </div>
+            <span className="truncate text-[14px] font-semibold">{storeName}</span>
          </div>
-         <GlobalLiveClock mobile={true} />
+         <div className="flex items-center gap-2">
+            {deferredPrompt && (
+               <button
+                  onClick={() => {
+                     deferredPrompt.prompt();
+                     deferredPrompt.userChoice.then(() => setDeferredPrompt(null));
+                  }}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-sm shadow-blue-500/20 active:scale-95 transition-all text-xs font-semibold"
+               >
+                  <Download size={12} strokeWidth={2.5} />
+                  <span>Install App</span>
+               </button>
+            )}
+            <GlobalLiveClock mobile={true} />
+         </div>
       </div>
 
       {/* Mobile Main Navigation Drawer */}

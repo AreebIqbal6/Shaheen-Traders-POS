@@ -1,8 +1,8 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
-  "productName": "Shaheen Traders Booker",
-  "version": "0.1.1",
-  "identifier": "com.shaheen.pos.booker",
+  "productName": "Shaheen Global Traders POS",
+  "version": "0.1.2",
+  "identifier": "com.shaheen.pos.global",
   "build": {
     "frontendDist": "../dist",
     "devUrl": "http://localhost:5173",
@@ -44,6 +44,18 @@
         "https://github.com/AreebIqbal6/Shaheen-Traders-POS/releases/latest/download/latest.json"
       ],
       "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDFCRkNDQkREQ0U4MDhGN0MKUldSOGo0RE8zY3Y4RzFVT2lzK3N1UUdNR1IveEV3TlNVM1AxSEZpK3VUd3BUNlVpWldVQTRFcUQK"
+    },
+    "cli": {
+      "description": "Shaheen Traders POS CLI",
+      "longDescription": "Launch Shaheen POS in Admin or Booker mode directly.",
+      "args": [
+        {
+          "name": "mode",
+          "short": "m",
+          "description": "The mode to run the POS in (admin or booker)",
+          "takesValue": true
+        }
+      ]
     }
   }
 }

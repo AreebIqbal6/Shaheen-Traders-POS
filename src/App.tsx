@@ -18,15 +18,39 @@ const RootRedirect = () => {
 
   React.useEffect(() => {
     async function determineRoute() {
-      const isDesktop = '__TAURI_INTERNALS__' in window || '__TAURI__' in window;
+      if (location.pathname !== '/') {
+        setTarget(location.pathname + location.search + location.hash);
+        return;
+      }
       
-      // If mobile browser, always go to booker (PWA mode)
+      const isDesktop = '__TAURI_INTERNALS__' in window || '__TAURI__' in window;
       if (!isDesktop) {
+        // Mobile browsers always default to Booker (or whatever you prefer)
         setTarget(`/booker${location.search}${location.hash}`);
         return;
       }
       
-      // If desktop, check if the device role is already configured
+      // If desktop, first check if a command-line argument was passed
+      try {
+        const { getMatches } = await import('@tauri-apps/plugin-cli');
+        const matches = await getMatches();
+        if (matches.args.mode && matches.args.mode.value) {
+           const cliMode = matches.args.mode.value as string;
+           if (cliMode === 'admin') {
+             localStorage.setItem('shaheen_app_mode', 'admin');
+             setTarget(`/admin${location.search}${location.hash}`);
+             return;
+           } else if (cliMode === 'booker') {
+             localStorage.setItem('shaheen_app_mode', 'booker');
+             setTarget(`/booker${location.search}${location.hash}`);
+             return;
+           }
+        }
+      } catch (e) {
+        console.warn("CLI plugin not available or failed to read args");
+      }
+
+      // Fallback to configured mode
       const configuredMode = localStorage.getItem('shaheen_app_mode');
       
       if (configuredMode === 'admin') {
@@ -38,10 +62,7 @@ const RootRedirect = () => {
         setTarget(`/select-role`);
       }
     }
-    
-    if (location.pathname === '/') {
-      determineRoute();
-    }
+    determineRoute();
   }, [location]);
 
   if (location.pathname === '/') {
