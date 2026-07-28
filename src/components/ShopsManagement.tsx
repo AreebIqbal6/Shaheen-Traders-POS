@@ -33,7 +33,7 @@ export default function ShopsManagement() {
   const [shops, setShops] = useState<Shop[]>(() => {
     try {
       const saved = localStorage.getItem('shaheen_shops');
-      return saved ? JSON.parse(saved).map(mapRowToShop) : [];
+      return saved ? JSON.parse(saved) : [];
     } catch {
       return [];
     }
@@ -55,7 +55,7 @@ export default function ShopsManagement() {
       try {
         const cached = localStorage.getItem('shaheen_shops');
         if (cached) {
-          setShops(JSON.parse(cached).map(mapRowToShop));
+          setShops(JSON.parse(cached));
         }
       } catch {}
     }, 5000);
@@ -78,7 +78,7 @@ export default function ShopsManagement() {
       try {
         const cached = localStorage.getItem('shaheen_shops');
         if (cached) {
-          fetchedData = JSON.parse(cached).map(mapRowToShop);
+          fetchedData = JSON.parse(cached);
         }
       } catch {}
     } else {

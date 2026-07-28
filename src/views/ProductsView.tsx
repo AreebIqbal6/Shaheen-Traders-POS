@@ -84,17 +84,23 @@ export default function ProductsView({ products = [], setProducts }: ProductsVie
     return Number.isFinite(num) ? num : undefined;
   };
 
-  const mapRowToProduct = (row: any): Product => ({
-    id: String(row.id),
-    barcode: row.barcode != null ? String(row.barcode) : '',
-    name: row.name != null ? String(row.name) : '',
-    price: Number(row.price) || 0,
-    stock: Number(row.stock) || 0,
-    sku: row.sku != null ? String(row.sku) : undefined,
-    category: row.category != null ? String(row.category) : undefined,
-    pcsPerBox: toOptionalNumber(row.pcs_per_box ?? row.pcsPerBox),
-    boxPerCtn: toOptionalNumber(row.box_per_ctn ?? row.boxPerCtn),
-  });
+  const mapRowToProduct = (row: any): Product => {
+    if (!row) {
+      // Return a safe fallback if row is null to prevent immediate crashes, though caller should handle
+      return { id: '', barcode: '', name: '', price: 0, stock: 0 };
+    }
+    return {
+      id: String(row.id),
+      barcode: row.barcode != null ? String(row.barcode) : '',
+      name: row.name != null ? String(row.name) : '',
+      price: Number(row.price) || 0,
+      stock: Number(row.stock) || 0,
+      sku: row.sku != null ? String(row.sku) : undefined,
+      category: row.category != null ? String(row.category) : undefined,
+      pcsPerBox: toOptionalNumber(row.pcs_per_box ?? row.pcsPerBox),
+      boxPerCtn: toOptionalNumber(row.box_per_ctn ?? row.boxPerCtn),
+    };
+  };
 
   const mapProductToRow = (product: Omit<Product, 'id'>) => ({
     barcode: product.barcode,
@@ -226,7 +232,7 @@ export default function ProductsView({ products = [], setProducts }: ProductsVie
       markPending(editingProduct.id);
 
       if (typeof setProducts === 'function') {
-         setProducts(prev => prev.map(p => p.id === editingProduct.id ? updatedProduct : p));
+         setProducts((prev = []) => prev.map(p => p.id === editingProduct.id ? updatedProduct : p));
       }
       saveMinStock(editingProduct.id, mStock);
       setIsModalOpen(false);
@@ -246,20 +252,21 @@ export default function ProductsView({ products = [], setProducts }: ProductsVie
       const tempProduct = { ...finalFormData, id: tempId } as Product;
 
       if (typeof setProducts === 'function') {
-         setProducts(prev => [tempProduct, ...prev]);
+         setProducts((prev = []) => [tempProduct, ...prev]);
       }
       setIsModalOpen(false);
 
       try {
         const { data, error } = await supabase.from('products').insert(mapProductToRow(finalFormData as Omit<Product, 'id'>)).select().single();
         if (error) throw error;
+        if (!data) throw new Error("No data returned from insertion (RLS block or offline)");
 
         const savedProduct = mapRowToProduct(data);
         markPending(savedProduct.id);
         saveMinStock(savedProduct.id, mStock);
 
         if (typeof setProducts === 'function') {
-           setProducts(prev => prev.map(p => p.id === tempId ? savedProduct : p));
+           setProducts((prev = []) => prev.map(p => p.id === tempId ? savedProduct : p));
         }
       } catch (err: any) {
         toast.error('Offline mode: Saved locally. Will sync when online.');
@@ -282,7 +289,7 @@ export default function ProductsView({ products = [], setProducts }: ProductsVie
     markPending(id);
 
     if (typeof setProducts === 'function') {
-       setProducts(prev => prev.filter(p => p.id !== id));
+       setProducts((prev = []) => prev.filter(p => p.id !== id));
     }
 
     try {

@@ -387,9 +387,12 @@ export default function AdminPOSView() {
         const localById = new Map(prev.map(p => [p.id, p]));
         const merged = [];
         
-        // Keep offline creations that haven't been synced yet
+        // Keep offline creations ONLY if they are still pending in the offline queue
+        const offlineQueue = JSON.parse(localStorage.getItem('shaheen_offline_products') || '[]');
+        const pendingTempIds = new Set(offlineQueue.map((oq: any) => String(oq.id)));
+        
         for (const p of prev) {
-           if (p.id.startsWith('temp-') && !cloudIds.has(p.id)) {
+           if (String(p.id).startsWith('temp-') && pendingTempIds.has(String(p.id))) {
               merged.push(p);
            }
         }
