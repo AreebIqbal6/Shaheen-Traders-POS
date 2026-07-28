@@ -4,6 +4,7 @@ import { Search, Plus, Edit2, Trash2, X, AlertTriangle, Upload, Loader2, ScanLin
 import CameraScanner from '../components/CameraScanner';
 import toast from 'react-hot-toast';
 import { supabase } from '../lib/supabase';
+import { TableVirtuoso, Virtuoso } from 'react-virtuoso';
 
 
 
@@ -534,25 +535,27 @@ export default function ProductsView({ products = [], setProducts }: ProductsVie
       <div className="flex-1 bg-white dark:bg-zinc-900/60 backdrop-blur-md border border-slate-200 dark:border-zinc-800/50 shadow-sm rounded-xl overflow-hidden flex flex-col">
         <div className="overflow-y-auto overflow-x-hidden custom-scrollbar flex-1">
           <table className="hidden md:table w-full text-left text-[13px] whitespace-nowrap">
-            <thead className="bg-slate-50/90 dark:bg-[#0a0a0c]/90 backdrop-blur-md border-b border-slate-200 dark:border-zinc-800/50 text-slate-600 dark:text-slate-400 uppercase tracking-wider text-[11px] sticky top-0 z-10">
-              <tr>
-                <th className="px-5 py-3.5 font-semibold">Barcode</th>
-                <th className="px-5 py-3.5 font-semibold">SKU</th>
-                <th className="px-5 py-3.5 font-semibold">Product Name</th>
-                <th className="px-5 py-3.5 font-semibold">Price</th>
-                <th className="px-5 py-3.5 font-semibold">Stock</th>
-                <th className="px-5 py-3.5 font-semibold text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
-              {filteredProducts.map(product => {
+            <TableVirtuoso
+              style={{ height: 'calc(100vh - 250px)', width: '100%' }}
+              data={filteredProducts}
+              fixedHeaderContent={() => (
+                <tr>
+                  <th className="bg-slate-50/90 dark:bg-[#0a0a0c]/90 px-5 py-3.5 font-semibold">Barcode</th>
+                  <th className="bg-slate-50/90 dark:bg-[#0a0a0c]/90 px-5 py-3.5 font-semibold">SKU</th>
+                  <th className="bg-slate-50/90 dark:bg-[#0a0a0c]/90 px-5 py-3.5 font-semibold">Product Name</th>
+                  <th className="bg-slate-50/90 dark:bg-[#0a0a0c]/90 px-5 py-3.5 font-semibold">Price</th>
+                  <th className="bg-slate-50/90 dark:bg-[#0a0a0c]/90 px-5 py-3.5 font-semibold">Stock</th>
+                  <th className="bg-slate-50/90 dark:bg-[#0a0a0c]/90 px-5 py-3.5 font-semibold text-right">Actions</th>
+                </tr>
+              )}
+              itemContent={(index, product) => {
                 const mStock = minStockDict[product.id] ?? 5;
                 const isCrit = product.stock <= mStock;
                 const isWarn = product.stock > mStock && product.stock <= mStock + 5;
                 
                 return (
-                  <tr key={product.id} className="hover:bg-[rgba(255,255,255,0.03)] transition-colors group">
-                    <td className="px-5 py-3 font-mono text-slate-600 dark:text-slate-400 group-hover:text-slate-900 dark:text-slate-50 transition-colors">{product.barcode}</td>
+                  <>
+                    <td className="px-5 py-3 font-mono text-slate-600 dark:text-slate-400">{product.barcode}</td>
                     <td className="px-5 py-3 font-mono font-bold text-slate-900 dark:text-slate-50">{product.sku || '-'}</td>
                     <td className="px-5 py-3 font-medium text-slate-900 dark:text-slate-50 flex items-center gap-2 whitespace-normal break-words min-w-[200px]">
                        {product.name}
@@ -569,55 +572,53 @@ export default function ProductsView({ products = [], setProducts }: ProductsVie
                       </span>
                     </td>
                     <td className="px-5 py-3 text-right">
-                      <button onClick={() => handleOpenModal(product)} className="text-slate-600 dark:text-slate-400 hover:text-white p-1.5 transition-colors"><Edit2 size={14} /></button>
+                      <button onClick={() => handleOpenModal(product)} className="text-slate-600 dark:text-slate-400 hover:text-black dark:hover:text-white p-1.5 transition-colors"><Edit2 size={14} /></button>
                       <button onClick={() => handleDelete(product.id)} className="text-slate-600 dark:text-slate-400 hover:text-red-600 dark:text-red-400 p-1.5 ml-1 transition-colors"><Trash2 size={14} /></button>
                     </td>
-                  </tr>
+                  </>
                 );
-              })}
-              {filteredProducts.length === 0 && (
-                <tr>
-                  <td colSpan={6} className="px-5 py-10 text-center text-slate-500 dark:text-slate-500 font-medium">
-                    No products found. Import a CSV or add manually.
-                  </td>
-                </tr>
-              )}
-            </tbody>
+              }}
+            />
           </table>
 
           <div className="md:hidden flex flex-col divide-y divide-slate-200 dark:divide-slate-700">
-             {filteredProducts.map(product => {
+            <Virtuoso
+              style={{ height: 'calc(100vh - 250px)', width: '100%' }}
+              data={filteredProducts}
+              itemContent={(index, product) => {
                 const mStock = minStockDict[product.id] ?? 5;
                 const isCrit = product.stock <= mStock;
                 const isWarn = product.stock > mStock && product.stock <= mStock + 5;
                 
                 return (
-                <div key={product.id} className="p-4 flex flex-col gap-2 hover:bg-[rgba(255,255,255,0.03)] transition-colors">
-                   <div className="flex justify-between items-start gap-2">
-                       <div className="flex flex-col min-w-0 flex-1">
-                         <h3 className="font-semibold text-white text-sm leading-tight break-words">{product.name}</h3>
-                         <div className="flex items-center gap-2 mt-1 truncate">
-                           <span className="font-mono text-slate-600 dark:text-slate-400 text-xs truncate">{product.barcode}</span>
-                           <span className="font-mono font-bold text-slate-900 dark:text-slate-50 text-[10px] bg-white dark:bg-zinc-900/60 backdrop-blur-md border border-slate-200 dark:border-zinc-800/50 px-1.5 py-0.5 rounded-sm shrink-0">{product.sku || '-'}</span>
-                         </div>
-                      </div>
-                      <div className="flex gap-1 shrink-0">
-                        <button onClick={() => handleOpenModal(product)} className="text-slate-600 dark:text-slate-400 bg-white dark:bg-zinc-900/60 backdrop-blur-md border border-slate-200 dark:border-zinc-800/50 w-8 h-8 flex items-center justify-center rounded-md"><Edit2 size={16} /></button>
-                        <button onClick={() => handleDelete(product.id)} className="text-red-600 dark:text-red-400 bg-red-50 border border-red-200 dark:bg-red-900/20 dark:border-red-800 w-8 h-8 flex items-center justify-center rounded-md"><Trash2 size={16} /></button>
-                      </div>
-                   </div>
-                   <div className="flex justify-between items-center mt-2">
-                      <span className="text-blue-600 dark:text-blue-400 font-bold text-sm">Rs {product.price.toFixed(2)}</span>
-                      <span className={`px-2 py-0.5 rounded-sm text-[11px] font-bold flex items-center gap-1.5 ${
-                        isCrit ? 'bg-[var(--color-crit-dim)] text-red-600 dark:text-red-400 border border-[var(--color-crit)]/30' : 
-                        isWarn ? 'bg-[var(--color-warn-dim)] text-amber-600 dark:text-amber-400 border border-[var(--color-warn)]/30' : 
-                        'text-slate-600 dark:text-slate-400'
-                      }`}>
-                        Stock: {product.stock}
-                      </span>
-                   </div>
-                </div>
-             )})}
+                  <div className="p-4 flex flex-col gap-2 hover:bg-[rgba(255,255,255,0.03)] transition-colors border-b border-slate-200 dark:border-slate-700">
+                     <div className="flex justify-between items-start gap-2">
+                         <div className="flex flex-col min-w-0 flex-1">
+                           <h3 className="font-semibold text-white text-sm leading-tight break-words">{product.name}</h3>
+                           <div className="flex items-center gap-2 mt-1 truncate">
+                             <span className="font-mono text-slate-600 dark:text-slate-400 text-xs truncate">{product.barcode}</span>
+                             <span className="font-mono font-bold text-slate-900 dark:text-slate-50 text-[10px] bg-white dark:bg-zinc-900/60 backdrop-blur-md border border-slate-200 dark:border-zinc-800/50 px-1.5 py-0.5 rounded-sm shrink-0">{product.sku || '-'}</span>
+                           </div>
+                        </div>
+                        <div className="flex gap-1 shrink-0">
+                          <button onClick={() => handleOpenModal(product)} className="text-slate-600 dark:text-slate-400 bg-white dark:bg-zinc-900/60 backdrop-blur-md border border-slate-200 dark:border-zinc-800/50 w-8 h-8 flex items-center justify-center rounded-md"><Edit2 size={16} /></button>
+                          <button onClick={() => handleDelete(product.id)} className="text-red-600 dark:text-red-400 bg-red-50 border border-red-200 dark:bg-red-900/20 dark:border-red-800 w-8 h-8 flex items-center justify-center rounded-md"><Trash2 size={16} /></button>
+                        </div>
+                     </div>
+                     <div className="flex justify-between items-center mt-2">
+                        <span className="text-blue-600 dark:text-blue-400 font-bold text-sm">Rs {product.price.toFixed(2)}</span>
+                        <span className={`px-2 py-0.5 rounded-sm text-[11px] font-bold flex items-center gap-1.5 ${
+                          isCrit ? 'bg-[var(--color-crit-dim)] text-red-600 dark:text-red-400 border border-[var(--color-crit)]/30' : 
+                          isWarn ? 'bg-[var(--color-warn-dim)] text-amber-600 dark:text-amber-400 border border-[var(--color-warn)]/30' : 
+                          'text-slate-600 dark:text-slate-400'
+                        }`}>
+                          Stock: {product.stock}
+                        </span>
+                     </div>
+                  </div>
+                );
+              }}
+            />
              {filteredProducts.length === 0 && (
                 <div className="p-10 text-center text-slate-500 dark:text-slate-500 font-medium">
                   No products found. Import a CSV or add manually.

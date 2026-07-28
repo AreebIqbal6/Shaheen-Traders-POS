@@ -1,5 +1,6 @@
 import type { Product, Order, CartItem } from '../types/index';
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import { VirtuosoGrid } from 'react-virtuoso';
 import { playNotificationSound } from '../utils/audio';
 import { supabase } from '../lib/supabase';
 import { ShoppingCart, Store, CreditCard, Search, ArrowRight, Package, User, LogOut, History, WifiOff, RefreshCw, CheckCircle2, FileText, Smartphone, Trash2, X } from 'lucide-react';
@@ -508,12 +509,7 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
     setActiveTab('shop'); 
   }, [setActiveTab]);
 
-  const renderedProducts = useMemo(() => {
-    if (filteredProducts.length === 0) return <div className="col-span-full text-center py-10 text-slate-400 font-medium">No products found.</div>;
-    return filteredProducts.map(product => (
-      <ProductCard key={product.id} product={product} onAdd={addToCart} />
-    ));
-  }, [filteredProducts, addToCart]);
+  // Virtualized list handles mapping now
 
 
   if (isCheckoutSuccess) {
@@ -613,8 +609,20 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
                  ))}
                </div>
              ) : (
-                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 w-full">
-                   {renderedProducts}
+                 <div className="flex-1 w-full h-[calc(100vh-200px)]">
+                   {filteredProducts.length === 0 ? (
+                     <div className="col-span-full text-center py-10 text-slate-400 font-medium">No products found.</div>
+                   ) : (
+                     <VirtuosoGrid
+                       style={{ height: '100%', width: '100%' }}
+                       data={filteredProducts}
+                       overscan={200}
+                       listClassName="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 w-full"
+                       itemContent={(index, product) => (
+                         <ProductCard product={product} onAdd={addToCart} />
+                       )}
+                     />
+                   )}
                  </div>
                )}
           </div>

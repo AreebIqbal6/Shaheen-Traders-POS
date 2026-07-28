@@ -1,10 +1,10 @@
 import React, { useEffect } from 'react';
 import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
-import AdminPOSView from './views/AdminPOSView';
-import B2BShopView from './views/B2BShopView';
-import RoleSelectionView from './views/RoleSelectionView';
-import B2BAuthWrapper from './components/B2BAuthWrapper';
-import ReceiptView from './views/ReceiptView';
+const AdminPOSView = React.lazy(() => import('./views/AdminPOSView'));
+const B2BShopView = React.lazy(() => import('./views/B2BShopView'));
+const RoleSelectionView = React.lazy(() => import('./views/RoleSelectionView'));
+const B2BAuthWrapper = React.lazy(() => import('./components/B2BAuthWrapper'));
+const ReceiptView = React.lazy(() => import('./views/ReceiptView'));
 import OfflineIndicator from './components/OfflineIndicator';
 import { Toaster, ToastBar, toast } from 'react-hot-toast';
 import { X } from 'lucide-react';
@@ -344,13 +344,15 @@ export default function App() {
         )}
       </Toaster>
       <OfflineIndicator />
-      <Routes>
-        <Route path="/" element={<RootRedirect />} />
-        <Route path="/select-role" element={<RoleSelectionView />} />
-        <Route path="/admin/*" element={<AdminPOSView key={`admin-${remountKey}`} />} />
-        <Route path="/booker" element={<B2BAuthWrapper><B2BShopView /></B2BAuthWrapper>} />
-        <Route path="/receipt/:orderId" element={<B2BAuthWrapper><ReceiptView /></B2BAuthWrapper>} />
-      </Routes>
+      <React.Suspense fallback={<div className="flex h-screen items-center justify-center bg-slate-50 dark:bg-zinc-950"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div></div>}>
+        <Routes>
+          <Route path="/" element={<RootRedirect />} />
+          <Route path="/select-role" element={<RoleSelectionView />} />
+          <Route path="/admin/*" element={<AdminPOSView key={`admin-${remountKey}`} />} />
+          <Route path="/booker" element={<B2BAuthWrapper><B2BShopView /></B2BAuthWrapper>} />
+          <Route path="/receipt/:orderId" element={<B2BAuthWrapper><ReceiptView /></B2BAuthWrapper>} />
+        </Routes>
+      </React.Suspense>
     </>
   );
 }

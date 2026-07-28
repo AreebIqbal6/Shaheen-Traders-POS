@@ -1,5 +1,6 @@
 import type { Order, CartItem, Booker } from '../types/index';
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import { VirtuosoGrid } from 'react-virtuoso';
 import { playNotificationSound } from '../utils/audio';
 import { saveSilentBackup } from '../utils/silentBackup';
 import { LayoutDashboard, ShoppingBag, Package, Settings, Search, Trash2, Printer, ScanBarcode, BarChart3, Bell, X, AlertTriangle, FileText, User, Building, Moon, Sun, Grid, ShoppingCart, CreditCard, MapPin, LogOut, ClipboardList, Menu, Users, ChevronDown, Phone, Map as MapIcon, PieChart, BookOpen, Clock, Download } from 'lucide-react';
@@ -1391,20 +1392,22 @@ export default function AdminPOSView() {
                     </div>
                   </div>
 
-                  {/* Filtered Product Grid */}
+                  {/* Filtered Product Grid (Virtualized) */}
                   <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
-                    <div className="grid grid-cols-[repeat(auto-fill,minmax(180px,1fr))] gap-4">
-                      {filteredProducts.map(p => (
+                    <VirtuosoGrid
+                      style={{ height: '100%', width: '100%' }}
+                      data={filteredProducts}
+                      overscan={200}
+                      listClassName="grid grid-cols-[repeat(auto-fill,minmax(180px,1fr))] gap-4"
+                      itemContent={(index, p) => (
                         <button 
-                          key={p.id}
                           onClick={() => {
                             addToCart(p);
-                            // Only auto-focus scanner on PC to prevent mobile keyboard pop-ups
                             if (window.innerWidth > 768) {
                               hiddenScannerRef.current?.focus();
                             }
                           }}
-                          className="bg-white dark:bg-zinc-900/60 backdrop-blur-md border border-slate-200 dark:border-zinc-800/50 rounded-sm p-3 flex flex-col items-start hover:border-slate-400 transition-all text-left"
+                          className="bg-white dark:bg-zinc-900/60 backdrop-blur-md border border-slate-200 dark:border-zinc-800/50 rounded-sm p-3 flex flex-col items-start hover:border-slate-400 transition-all text-left h-full"
                         >
                           <h4 className="font-semibold text-slate-800 dark:text-slate-200 leading-tight mb-1 text-sm truncate w-full">{p.name}</h4>
                           <p className="text-xs text-slate-500 dark:text-slate-400 font-mono mb-3">{p.barcode}</p>
@@ -1413,8 +1416,8 @@ export default function AdminPOSView() {
                             <span className="text-[11px] font-semibold bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 px-2 py-0.5 rounded-sm truncate">Stock: {p.stock}</span>
                           </div>
                         </button>
-                      ))}
-                    </div>
+                      )}
+                    />
                   </div>
                 </div>
               </div>
