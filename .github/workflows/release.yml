@@ -12,10 +12,7 @@ jobs:
   release:
     runs-on: windows-latest
     env:
-      TAURI_SIGNING_PRIVATE_KEY: |-
-        untrusted comment: rsign encrypted secret key
-        RWRTY0IyWClnVcKPKPQfRAOhFoRibo1jPbRaNajNFaq5WPvNKpkAABAAAAAAAAAAAAIAAAAAAL0nVUQgcmT47PlYPFS5jpmUtGOLHxTSVsH5BPsP9ga/EqqbTMNSluBeiCU7ex4j1AkycYc1Fj9GMwoIUkChurHtngHsYMMYv/mz1DCPqzFiPwjWUrMiAHVETSXNgr60Wvfz8A2dUVPaa0=
-      TAURI_SIGNING_PRIVATE_KEY_PASSWORD: "ShaheenSecureKey2026!"
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     steps:
       - name: Checkout repository
@@ -36,6 +33,8 @@ jobs:
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: "ShaheenSecureKey2026!"
         with:
           tagName: ${{ github.ref_name }}
           releaseName: 'Shaheen POS ${{ github.ref_name }}'
