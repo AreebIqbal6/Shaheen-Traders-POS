@@ -1,24 +1,25 @@
 import type { Order, CartItem, Booker } from '../types/index';
-import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback, lazy, Suspense } from 'react';
 import { VirtuosoGrid } from 'react-virtuoso';
 import { playNotificationSound } from '../utils/audio';
 import { saveSilentBackup } from '../utils/silentBackup';
 import { LayoutDashboard, ShoppingBag, Package, Settings, Search, Trash2, Printer, ScanBarcode, BarChart3, Bell, X, AlertTriangle, FileText, User, Building, Moon, Sun, Grid, ShoppingCart, CreditCard, MapPin, LogOut, ClipboardList, Menu, Users, ChevronDown, Phone, Map as MapIcon, PieChart, BookOpen, Clock, Download } from 'lucide-react';
-import ProductsView from './ProductsView';
-import type { Product } from './ProductsView';
-import UpdaterButton from '../components/UpdaterButton';
-import SettingsView from "./SettingsView";
-import AuthView from './AuthView';
-import BookersView from './BookersView';
-import TrackersView from './TrackersView';
-import OrderPreviewModal from '../components/OrderPreviewModal';
-import SimpleOrderViewModal from '../components/SimpleOrderViewModal';
 
-import Receipt from '../components/Receipt';
-import CameraScanner from '../components/CameraScanner';
-import DashboardView from './DashboardView';
-import LedgerView from './LedgerView';
-import CashManagementView from './CashManagementView';
+const ProductsView = lazy(() => import('./ProductsView'));
+import type { Product } from './ProductsView';
+const UpdaterButton = lazy(() => import('../components/UpdaterButton'));
+const SettingsView = lazy(() => import('./SettingsView'));
+const AuthView = lazy(() => import('./AuthView'));
+const BookersView = lazy(() => import('./BookersView'));
+const TrackersView = lazy(() => import('./TrackersView'));
+const OrderPreviewModal = lazy(() => import('../components/OrderPreviewModal'));
+const SimpleOrderViewModal = lazy(() => import('../components/SimpleOrderViewModal'));
+const Receipt = lazy(() => import('../components/Receipt'));
+const CameraScanner = lazy(() => import('../components/CameraScanner'));
+const DashboardView = lazy(() => import('./DashboardView'));
+const LedgerView = lazy(() => import('./LedgerView'));
+const CashManagementView = lazy(() => import('./CashManagementView'));
+
 import { QRCodeSVG } from 'qrcode.react';
 import Barcode from 'react-barcode';
 import { generateOrderExcel } from '../utils/excel';
@@ -2171,7 +2172,9 @@ export default function AdminPOSView() {
       {/* Main Content Area */}
       <main className="flex-1 flex flex-col overflow-hidden bg-white dark:bg-[#0a0a0c] relative z-10 md:pt-0 pt-[53px]">
         <UpdaterButton />
-        {renderContent()}
+        <Suspense fallback={<div className="flex h-full items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div></div>}>
+          {renderContent()}
+        </Suspense>
       </main>
 
       {/* Mobile Bottom Nav */}
