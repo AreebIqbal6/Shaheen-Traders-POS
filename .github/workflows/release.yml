@@ -12,7 +12,7 @@ jobs:
   release:
     runs-on: windows-latest
     env:
-      TAURI_SIGNING_PRIVATE_KEY: |
+      TAURI_SIGNING_PRIVATE_KEY: |-
         untrusted comment: rsign encrypted secret key
         RWRTY0IyWClnVcKPKPQfRAOhFoRibo1jPbRaNajNFaq5WPvNKpkAABAAAAAAAAAAAAIAAAAAAL0nVUQgcmT47PlYPFS5jpmUtGOLHxTSVsH5BPsP9ga/EqqbTMNSluBeiCU7ex4j1AkycYc1Fj9GMwoIUkChurHtngHsYMMYv/mz1DCPqzFiPwjWUrMiAHVETSXNgr60Wvfz8A2dUVPaa0=
       TAURI_SIGNING_PRIVATE_KEY_PASSWORD: "ShaheenSecureKey2026!"
