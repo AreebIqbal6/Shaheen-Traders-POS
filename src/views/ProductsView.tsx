@@ -170,7 +170,9 @@ export default function ProductsView({ products = [], setProducts }: ProductsVie
   });
 
   const filteredProducts = products.filter(p => {
-    const matchSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase()) || p.barcode.includes(searchQuery);
+    const safeName = p.name || '';
+    const safeBarcode = p.barcode || '';
+    const matchSearch = safeName.toLowerCase().includes(searchQuery.toLowerCase()) || safeBarcode.toLowerCase().includes(searchQuery.toLowerCase());
     const matchFilter = currentFilter === 'all' || 
                         (currentFilter === 'critical' && p.stock <= 2) || 
                         (currentFilter === 'low' && p.stock <= 10);
@@ -445,7 +447,7 @@ export default function ProductsView({ products = [], setProducts }: ProductsVie
                         <button onClick={async () => {
                           const pwdInput = document.getElementById("wipe-inventory-" + t.id) as HTMLInputElement;
                           const { data: userData } = await supabase.auth.getUser();
-                          if (!userData.user?.email) {
+                          if (!userData?.user?.email) {
                             toast.error("Admin user not found.");
                             return;
                           }

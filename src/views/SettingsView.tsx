@@ -276,7 +276,7 @@ export default function SettingsView() {
             onClick={async () => {
               const pwdInput = document.getElementById("wipe-password-" + t.id) as HTMLInputElement;
               const { data: userData } = await supabase.auth.getUser();
-              if (!userData.user?.email) {
+              if (!userData?.user?.email) {
                 toast.error("Admin user not found. Cannot verify password.");
                 return;
               }
