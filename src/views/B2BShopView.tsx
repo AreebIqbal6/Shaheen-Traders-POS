@@ -9,6 +9,7 @@ import OrderPreviewModal from '../components/OrderPreviewModal';
 import SimpleOrderViewModal from '../components/SimpleOrderViewModal';
 import { Skeleton } from '../components/Skeleton';
 import { generateSKU } from './ProductsView';
+import packageJson from '../../package.json';
 
 
 
@@ -868,9 +869,9 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
               </div>
             </div>
 
-            <div className="mt-auto pt-4 text-center pb-4">
-               <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 tracking-wider">Powered by Areeb Iqbal</p>
-            </div>
+             <div className="mt-4 text-center">
+               <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 tracking-wider">Powered by Areeb Iqbal • v{packageJson.version}</p>
+             </div>
           </div>
         )}
       </div>

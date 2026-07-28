@@ -23,6 +23,7 @@ import Barcode from 'react-barcode';
 import { generateOrderExcel } from '../utils/excel';
 import { saveOrderBackup } from '../utils/exportManager';
 import toast from 'react-hot-toast';
+import packageJson from '../../package.json';
 import { toWords } from 'number-to-words';
 import { supabase } from '../lib/supabase';
 import { CloudUpload } from 'lucide-react';
@@ -1967,7 +1968,7 @@ export default function AdminPOSView() {
                 <span className="text-[12px] uppercase tracking-wider">Log Out</span>
               </button>
               <div className="mt-2 text-center">
-                <p className="text-[10px] font-medium text-slate-400 tracking-wider">Powered by Areeb Iqbal</p>
+                <p className="text-[10px] font-medium text-slate-400 tracking-wider">Powered by Areeb Iqbal • v{packageJson.version}</p>
               </div>
             </div>
 
@@ -2072,7 +2073,7 @@ export default function AdminPOSView() {
             <span className="whitespace-nowrap uppercase tracking-wider">Sign out</span>
           </button>
           
-          <p className="text-[9.5px] text-slate-500 dark:text-slate-500 text-center pt-1.5 tracking-wider">Powered by Areeb Iqbal</p>
+          <p className="text-[9.5px] text-slate-500 dark:text-slate-500 text-center pt-1.5 tracking-wider">Powered by Areeb Iqbal • v{packageJson.version}</p>
         </div>
       </aside>
 
