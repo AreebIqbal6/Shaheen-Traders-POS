@@ -373,12 +373,11 @@ export default function AdminPOSView() {
       const { data: cloudProducts, error } = await supabase.from('products').select('*');
       if (error) return;
       
-      // Handle cloud wipe: if cloud is empty, clear local products immediately
+      // If cloud returns empty, DON'T wipe local data.
+      // Cloud can be transiently empty due to RLS, replication lag, or network issues.
+      // Only an explicit user-initiated wipe (via Settings/ProductsView) should clear local data.
       if (!cloudProducts || cloudProducts.length === 0) {
-        setProducts([]);
-        localStorage.removeItem('shaheen_products');
-        localStorage.removeItem('shaheen_b2b_products_v2');
-        return;
+        return; // Preserve existing local products
       }
       
       setProducts(prev => {

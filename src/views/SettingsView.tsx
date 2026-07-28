@@ -101,7 +101,7 @@ export default function SettingsView() {
       toast.success('Admin credentials updated! You will need to use these to login and clear data.', { id: 'auth-update' });
       setAdminPassword(''); // Clear password field for safety
     } catch (err: any) {
-      toast.error(err.message || 'Failed to update credentials', { id: 'auth-update' });
+      toast.error((err instanceof Error ? err.message : String(err)) || 'Failed to update credentials', { id: 'auth-update' });
     } finally {
       setIsUpdatingAuth(false);
     }
@@ -126,7 +126,7 @@ export default function SettingsView() {
       }
     } catch (err: any) {
       console.error(err);
-      setUpdateStatus('Failed to check for updates: ' + err.message);
+      setUpdateStatus('Failed to check for updates: ' + (err instanceof Error ? err.message : String(err)));
       setTimeout(() => setUpdateStatus(''), 3000);
     } finally {
       setIsCheckingUpdate(false);
@@ -302,9 +302,15 @@ export default function SettingsView() {
                 (window as any).__wiping = true;
 
                 // 1. WIPE THE CLOUD (Deletes all rows safely)
-                await supabase.from('products').delete().not('id', 'is', null);
-                await supabase.from('bookers').delete().not('id', 'is', null); 
-                await supabase.from('orders').delete().not('id', 'is', null);  
+                const { error: prodErr } = await supabase.from('products').delete().not('id', 'is', null);
+                const { error: bookErr } = await supabase.from('bookers').delete().not('id', 'is', null); 
+                const { error: orderErr } = await supabase.from('orders').delete().not('id', 'is', null);  
+
+                // Check if ANY cloud deletion failed — abort before wiping local
+                if (prodErr || bookErr || orderErr) {
+                  const failedTables = [prodErr && 'Products', bookErr && 'Bookers', orderErr && 'Orders'].filter(Boolean).join(', ');
+                  throw new Error(`Cloud wipe failed for: ${failedTables}. Local data preserved.`);
+                }
 
                 // 2. WIPE LOCAL DATA CACHE
                 supabase.removeAllChannels();
@@ -328,7 +334,7 @@ export default function SettingsView() {
 
               } catch (err: any) {
                 console.error("Wipe failed:", err);
-                toast.error("Wipe failed: " + err.message, { id: "wipe-auth" });
+                toast.error("Wipe failed: " + (err instanceof Error ? err.message : String(err)), { id: "wipe-auth" });
                 (window as any).__wiping = false;
               }
             }}

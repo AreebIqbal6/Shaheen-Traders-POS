@@ -11,10 +11,32 @@ export interface Shop {
   address: string;
 }
 
+// Map snake_case DB row → camelCase Shop interface
+const mapRowToShop = (row: any): Shop => ({
+  id: String(row.id),
+  name: row.name || '',
+  ownerName: row.owner_name || row.ownerName || '',
+  contactNumber: row.contact_number || row.contactNumber || '',
+  address: row.address || '',
+});
+
+// Map camelCase Shop → snake_case DB payload
+const mapShopToRow = (shop: Omit<Shop, 'id'> & { id?: string }) => ({
+  ...(shop.id ? { id: shop.id } : {}),
+  name: shop.name,
+  owner_name: shop.ownerName,
+  contact_number: shop.contactNumber,
+  address: shop.address,
+});
+
 export default function ShopsManagement() {
   const [shops, setShops] = useState<Shop[]>(() => {
-    const saved = localStorage.getItem('shaheen_shops');
-    return saved ? JSON.parse(saved) : [];
+    try {
+      const saved = localStorage.getItem('shaheen_shops');
+      return saved ? JSON.parse(saved).map(mapRowToShop) : [];
+    } catch {
+      return [];
+    }
   });
   const [searchQuery, setSearchQuery] = useState('');
   const [isAdding, setIsAdding] = useState(false);
@@ -30,10 +52,12 @@ export default function ShopsManagement() {
   useEffect(() => {
     fetchShops();
     const interval = setInterval(() => {
-      const cached = localStorage.getItem('shaheen_shops');
-      if (cached) {
-        setShops(JSON.parse(cached));
-      }
+      try {
+        const cached = localStorage.getItem('shaheen_shops');
+        if (cached) {
+          setShops(JSON.parse(cached).map(mapRowToShop));
+        }
+      } catch {}
     }, 5000);
     return () => clearInterval(interval);
   }, []);
@@ -43,17 +67,22 @@ export default function ShopsManagement() {
     try {
       const { data, error } = await supabase.from('shops').select('*').order('created_at', { ascending: false });
       if (!error && data) {
-        // Map db columns to Shop interface if needed, or assume they match
-        fetchedData = data;
+        fetchedData = data.map(mapRowToShop);
       }
     } catch (err) {
       console.warn("Shops fetch from cloud failed, using local.");
     }
 
-    const cached = localStorage.getItem('shaheen_shops');
-    if (fetchedData.length === 0 && cached) {
-      fetchedData = JSON.parse(cached);
-    } else if (fetchedData.length > 0) {
+    if (fetchedData.length === 0) {
+      // Cloud is empty or failed — use cached local data
+      try {
+        const cached = localStorage.getItem('shaheen_shops');
+        if (cached) {
+          fetchedData = JSON.parse(cached).map(mapRowToShop);
+        }
+      } catch {}
+    } else {
+      // Cloud has data — update cache
       localStorage.setItem('shaheen_shops', JSON.stringify(fetchedData));
     }
     setShops(fetchedData);
@@ -92,58 +121,74 @@ export default function ShopsManagement() {
 
     try {
       if (editingShop) {
-        const payload = { ...editingShop, name, ownerName, contactNumber, address };
-        const updatedShops = shops.map(s => s.id === editingShop.id ? payload : s);
+        const updatedShop: Shop = { ...editingShop, name, ownerName, contactNumber, address };
+        const updatedShops = shops.map(s => s.id === editingShop.id ? updatedShop : s);
         setShops(updatedShops);
         localStorage.setItem('shaheen_shops', JSON.stringify(updatedShops));
         
-        try {
-          await supabase.from('shops').update(payload).eq('id', editingShop.id);
-        } catch (e) {}
-
-        toast.success('Shop updated successfully');
+        // Send snake_case payload to Supabase
+        const { error } = await supabase.from('shops').update(mapShopToRow(updatedShop)).eq('id', editingShop.id);
+        if (error) {
+          console.error('Failed to update shop in cloud:', error);
+          toast.error('Shop updated locally but cloud sync failed. Will retry.');
+        } else {
+          toast.success('Shop updated successfully');
+        }
       } else {
-        const payload: Shop = {
+        const newShop: Shop = {
           id: crypto.randomUUID(),
           name,
           ownerName,
           contactNumber,
           address
         };
-        const updatedShops = [payload, ...shops];
+        const updatedShops = [newShop, ...shops];
         setShops(updatedShops);
         localStorage.setItem('shaheen_shops', JSON.stringify(updatedShops));
         
-        try {
-          await supabase.from('shops').insert([payload]);
-        } catch (e) {}
-
-        toast.success('Shop added successfully');
+        // Send snake_case payload to Supabase
+        const { error } = await supabase.from('shops').insert([mapShopToRow(newShop)]);
+        if (error) {
+          console.error('Failed to insert shop in cloud:', error);
+          toast.error('Shop saved locally but cloud sync failed. Will retry.');
+        } else {
+          toast.success('Shop added successfully');
+        }
       }
       closeForm();
     } catch (err: unknown) {
-      toast.error(err.message || 'Failed to save shop');
+      toast.error(err instanceof Error ? err.message : 'Failed to save shop');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (!confirm('Are you sure you want to delete this shop?')) return;
     const updatedShops = shops.filter(s => s.id !== id);
     setShops(updatedShops);
     localStorage.setItem('shaheen_shops', JSON.stringify(updatedShops));
+    
     try {
-      supabase.from('shops').delete().eq('id', id);
-    } catch (e) {}
+      const { error } = await supabase.from('shops').delete().eq('id', id);
+      if (error) {
+        console.error('Failed to delete shop from cloud:', error);
+        toast.error('Shop removed locally but cloud sync failed.');
+        return;
+      }
+    } catch (err) {
+      console.error('Shop delete network error:', err);
+    }
     toast.success('Shop deleted successfully');
   };
 
-  const filteredShops = shops.filter(s => 
-    s.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-    s.address.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    s.contactNumber.includes(searchQuery)
-  );
+  const filteredShops = shops.filter(s => {
+    const safeName = (s.name || '').toLowerCase();
+    const safeAddress = (s.address || '').toLowerCase();
+    const safeContact = (s.contactNumber || '').toLowerCase();
+    const query = searchQuery.toLowerCase();
+    return safeName.includes(query) || safeAddress.includes(query) || safeContact.includes(query);
+  });
 
   return (
     <div className="flex flex-col gap-6 w-full animate-in fade-in duration-300">

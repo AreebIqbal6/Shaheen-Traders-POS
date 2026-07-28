@@ -301,7 +301,7 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
         if (existing) {
            await supabase
              .from('booker_locations')
-             .update({ lat: latitude, lng: longitude, updated_at: new Date().toISOString() })
+             .update({ lat: latitude, lng: longitude })
              .eq('id', existing.id);
         } else {
            await supabase

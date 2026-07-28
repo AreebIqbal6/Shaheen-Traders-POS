@@ -126,7 +126,18 @@ export default function ProductsView({ products = [], setProducts }: ProductsVie
       }
     } catch (err: unknown) {
       console.error('Failed to fetch products from Supabase:', err);
-      // Suppressed the error toast here to stop the UI from crashing if offline
+      // Offline fallback: load from localStorage cache
+      try {
+        const cached = localStorage.getItem('shaheen_products');
+        if (cached) {
+          const cachedProducts = JSON.parse(cached);
+          if (Array.isArray(cachedProducts) && cachedProducts.length > 0) {
+            if (typeof setProducts === 'function') {
+              setProducts(cachedProducts);
+            }
+          }
+        }
+      } catch {}
     }
   };
 
@@ -275,7 +286,11 @@ export default function ProductsView({ products = [], setProducts }: ProductsVie
 
     try {
       const { error } = await supabase.from('products').delete().eq('id', id);
-      if (error) console.error("Supabase delete failed:", error);
+      if (error) {
+        // If online and delete failed, abort and restore
+        if (navigator.onLine) throw error;
+        console.error("Supabase delete failed (offline):", error);
+      }
 
       const deletedQueue = JSON.parse(localStorage.getItem('shaheen_deleted_products') || '[]');
       if (!deletedQueue.includes(id)) {
@@ -290,7 +305,7 @@ export default function ProductsView({ products = [], setProducts }: ProductsVie
       toast.success('Product deleted.');
     } catch (err: unknown) {
       clearPending(id);
-      toast.error('Failed to delete product: ' + err.message);
+      toast.error('Failed to delete product: ' + (err instanceof Error ? err.message : String(err)));
       fetchProducts(); 
     }
   };
@@ -319,7 +334,11 @@ export default function ProductsView({ products = [], setProducts }: ProductsVie
     
     const reader = new FileReader();
     reader.onload = (evt) => {
-      const text = evt.target?.result as string;
+      const text = evt.target?.result;
+      if (!text || typeof text !== 'string') {
+        toast.error('Failed to read file.');
+        return;
+      }
       const lines = text.split('\n');
       const newProducts: Product[] = [];
       
@@ -340,8 +359,18 @@ export default function ProductsView({ products = [], setProducts }: ProductsVie
       
       if (newProducts.length > 0) {
         if (typeof setProducts === 'function') {
-           setProducts(prev => [...newProducts, ...prev]);
+           setProducts(prev => {
+             const merged = [...newProducts, ...prev];
+             // Persist to localStorage immediately so data survives refresh
+             localStorage.setItem('shaheen_products', JSON.stringify(merged));
+             return merged;
+           });
         }
+        // Also queue for cloud sync via offline queue
+        const offlineQ = JSON.parse(localStorage.getItem('shaheen_offline_products') || '[]');
+        offlineQ.push(...newProducts);
+        localStorage.setItem('shaheen_offline_products', JSON.stringify(offlineQ));
+        
         toast.success(`Successfully imported ${newProducts.length} products!`);
       }
       if (fileInputRef.current) fileInputRef.current.value = '';
@@ -485,7 +514,7 @@ export default function ProductsView({ products = [], setProducts }: ProductsVie
                             toast.success("Inventory cleared successfully!", { id: "clear-inv" });
                             toast.dismiss(t.id);
                           } catch (e: unknown) { 
-                            toast.error("Failed to clear cloud inventory: " + e.message, { id: "clear-inv" }); 
+                            toast.error("Failed to clear cloud inventory: " + (e instanceof Error ? e.message : String(e)), { id: "clear-inv" }); 
                           } finally {
                             setTimeout(() => { isWipingRef.current = false; }, 1500);
                           }
