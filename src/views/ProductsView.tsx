@@ -3,6 +3,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Search, Plus, Edit2, Trash2, X, AlertTriangle, Upload, Loader2, ScanLine } from 'lucide-react';
 import CameraScanner from '../components/CameraScanner';
 import toast from 'react-hot-toast';
+import * as XLSX from 'xlsx';
 import { supabase } from '../lib/supabase';
 import { TableVirtuoso, Virtuoso } from 'react-virtuoso';
 
@@ -336,54 +337,90 @@ export default function ProductsView({ products = [], setProducts }: ProductsVie
     setIsLoadingApi(false);
   }
 
-  const handleCSVUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     
     const reader = new FileReader();
     reader.onload = (evt) => {
-      const text = evt.target?.result;
-      if (!text || typeof text !== 'string') {
-        toast.error('Failed to read file.');
-        return;
-      }
-      const lines = text.split('\n');
-      const newProducts: Product[] = [];
-      
-      for (let i = 1; i < lines.length; i++) {
-        const line = lines[i].trim();
-        if (!line) continue;
-        const [barcode, name, priceStr, stockStr] = line.split(',');
-        const sku = generateSKU(name?.trim() || 'Product', barcode?.trim() || '');
-        newProducts.push({
-          id: 'temp-' + Date.now().toString() + Math.random() + i,
-          barcode: barcode?.trim() || '',
-          sku: sku,
-          name: name?.trim() || 'Unknown Product',
-          price: parseFloat(priceStr) || 0,
-          stock: parseInt(stockStr) || 0
-        });
-      }
-      
-      if (newProducts.length > 0) {
-        if (typeof setProducts === 'function') {
-           setProducts(prev => {
-             const merged = [...newProducts, ...prev];
-             // Persist to localStorage immediately so data survives refresh
-             localStorage.setItem('shaheen_products', JSON.stringify(merged));
-             return merged;
-           });
-        }
-        // Also queue for cloud sync via offline queue
-        const offlineQ = JSON.parse(localStorage.getItem('shaheen_offline_products') || '[]');
-        offlineQ.push(...newProducts);
-        localStorage.setItem('shaheen_offline_products', JSON.stringify(offlineQ));
+      try {
+        const data = evt.target?.result;
+        if (!data) return;
         
-        toast.success(`Successfully imported ${newProducts.length} products!`);
+        let newProducts: Product[] = [];
+        
+        if (file.name.toLowerCase().endsWith('.csv')) {
+          const text = typeof data === 'string' ? data : new TextDecoder().decode(data as ArrayBuffer);
+          const lines = text.split('\n');
+          for (let i = 1; i < lines.length; i++) {
+            const line = lines[i].trim();
+            if (!line) continue;
+            const [barcode, name, priceStr, stockStr] = line.split(',');
+            const sku = generateSKU(name?.trim() || 'Product', barcode?.trim() || '');
+            newProducts.push({
+              id: 'temp-' + Date.now().toString() + Math.random() + i,
+              barcode: barcode?.trim() || '',
+              sku: sku,
+              name: name?.trim() || 'Unknown Product',
+              price: parseFloat(priceStr) || 0,
+              stock: parseInt(stockStr) || 0
+            });
+          }
+        } else if (file.name.toLowerCase().match(/\.xlsx?$/)) {
+          const workbook = XLSX.read(data, { type: 'binary' });
+          const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+          const rows: any[] = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
+          
+          for (let i = 1; i < rows.length; i++) {
+            const row = rows[i];
+            if (!row || row.length === 0) continue;
+            const barcode = String(row[0] || '').trim();
+            const name = String(row[1] || 'Unknown Product').trim();
+            const price = parseFloat(row[2]) || 0;
+            const stock = parseInt(row[3]) || 0;
+            const sku = generateSKU(name, barcode);
+            
+            if (name !== 'Unknown Product' && name.length > 0) {
+              newProducts.push({
+                id: 'temp-' + Date.now().toString() + Math.random() + i,
+                barcode: barcode,
+                sku: sku,
+                name: name,
+                price: price,
+                stock: stock
+              });
+            }
+          }
+        }
+        
+        if (newProducts.length > 0) {
+          if (typeof setProducts === 'function') {
+             setProducts(prev => {
+               const merged = [...newProducts, ...prev];
+               localStorage.setItem('shaheen_products', JSON.stringify(merged));
+               return merged;
+             });
+          }
+          const offlineQ = JSON.parse(localStorage.getItem('shaheen_offline_products') || '[]');
+          offlineQ.push(...newProducts);
+          localStorage.setItem('shaheen_offline_products', JSON.stringify(offlineQ));
+          toast.success(`Successfully imported ${newProducts.length} products!`);
+        } else {
+          toast.error("No valid products found in file.");
+        }
+      } catch (err) {
+        console.error(err);
+        toast.error("Failed to parse file.");
       }
+      
       if (fileInputRef.current) fileInputRef.current.value = '';
     };
-    reader.readAsText(file);
+
+    if (file.name.toLowerCase().endsWith('.csv')) {
+      reader.readAsText(file);
+    } else {
+      reader.readAsBinaryString(file);
+    }
   };
 
   return (
@@ -447,17 +484,17 @@ export default function ProductsView({ products = [], setProducts }: ProductsVie
           
           <input 
             type="file" 
-            accept=".csv" 
+            accept=".csv, .xlsx, .xls" 
             className="hidden" 
             ref={fileInputRef}
-            onChange={handleCSVUpload}
+            onChange={handleFileUpload}
           />
           <div className="flex gap-2">
             <button 
               onClick={() => fileInputRef.current?.click()}
               className="flex-1 sm:flex-none bg-white dark:bg-zinc-900/60 backdrop-blur-md border border-slate-200 dark:border-zinc-800/50 shadow-sm text-slate-700 dark:text-slate-200 px-3 md:px-4 py-1.5 h-[36px] rounded-lg font-semibold hover:brightness-110 transition-all flex items-center justify-center gap-2 text-[13px] whitespace-nowrap"
             >
-              <Upload size={16} className="shrink-0" /> Import CSV
+              <Upload size={16} className="shrink-0" /> Import File
             </button>
 
             <button 
@@ -628,7 +665,7 @@ export default function ProductsView({ products = [], setProducts }: ProductsVie
             />
              {filteredProducts.length === 0 && (
                 <div className="p-10 text-center text-slate-500 dark:text-slate-500 font-medium">
-                  No products found. Import a CSV or add manually.
+                  No products found. Import a CSV/Excel or add manually.
                 </div>
              )}
           </div>
