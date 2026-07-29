@@ -129,6 +129,7 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
   const [isCheckoutSuccess, setIsCheckoutSuccess] = useState(false);
   
   const [pastOrders, setPastOrders] = useState<any[]>([]);
+  const [pastOrdersSearchQuery, setPastOrdersSearchQuery] = useState('');
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
 
@@ -796,21 +797,45 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
             </div>
 
             <div className="flex-1 flex flex-col">
-              <div className="flex justify-between items-center mb-3">
+              <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3 mb-3">
                 <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider">Order History</h3>
-                <button onClick={fetchPastOrders} disabled={isRefreshing} className="text-blue-500 text-xs font-bold uppercase hover:text-blue-600 flex items-center gap-1 disabled:opacity-50">
-                  {isRefreshing ? 'REFRESHING...' : 'REFRESH'} <History size={12} className={isRefreshing ? "animate-spin" : ""} />
-                </button>
+                <div className="flex items-center gap-2">
+                  <div className="relative flex-1 sm:w-48">
+                    <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
+                    <input 
+                      type="text" 
+                      placeholder="Search orders..." 
+                      value={pastOrdersSearchQuery}
+                      onChange={e => setPastOrdersSearchQuery(e.target.value)}
+                      className="w-full pl-8 pr-3 py-1.5 bg-white dark:bg-zinc-900/60 border border-slate-200 dark:border-zinc-700 rounded-md text-xs focus:outline-none focus:border-blue-500 text-slate-900 dark:text-slate-50"
+                    />
+                  </div>
+                  <button onClick={fetchPastOrders} disabled={isRefreshing} className="text-blue-500 text-xs font-bold uppercase hover:text-blue-600 flex items-center gap-1 disabled:opacity-50 shrink-0 bg-blue-50 dark:bg-blue-900/20 px-2 py-1.5 rounded-md border border-blue-100 dark:border-blue-800">
+                    {isRefreshing ? '...' : 'REFRESH'} <History size={12} className={isRefreshing ? "animate-spin" : ""} />
+                  </button>
+                </div>
               </div>
               
               <div className="flex-1 min-h-0 bg-white dark:bg-zinc-900/60 backdrop-blur-md border border-slate-200 dark:border-zinc-800/50 rounded-lg p-2 md:p-4 flex flex-col gap-3 overflow-y-auto custom-scrollbar shadow-sm pb-8">
-                {pastOrders.length === 0 ? (
+                {pastOrders.filter(order => {
+                  if (!pastOrdersSearchQuery.trim()) return true;
+                  const q = pastOrdersSearchQuery.toLowerCase();
+                  return (order.id || '').toString().toLowerCase().includes(q) || 
+                         (order.receipt_number || '').toString().toLowerCase().includes(q) || 
+                         (order.client_name || order.shop_name || '').toLowerCase().includes(q);
+                }).length === 0 ? (
                   <div className="h-full flex flex-col items-center justify-center text-center p-6">
                     <History size={32} className="text-slate-600 mb-3" />
-                    <p className="text-slate-400 font-medium text-sm">Past orders will appear here.</p>
+                    <p className="text-slate-400 font-medium text-sm">No orders found.</p>
                   </div>
                 ) : (
-                  pastOrders.map((order, idx) => (
+                  pastOrders.filter(order => {
+                    if (!pastOrdersSearchQuery.trim()) return true;
+                    const q = pastOrdersSearchQuery.toLowerCase();
+                    return (order.id || '').toString().toLowerCase().includes(q) || 
+                           (order.receipt_number || '').toString().toLowerCase().includes(q) || 
+                           (order.client_name || order.shop_name || '').toLowerCase().includes(q);
+                  }).map((order, idx) => (
                     <div key={idx} className="bg-gradient-to-br from-white to-slate-50 dark:from-slate-800 dark:to-slate-800/80 border border-slate-200 dark:border-zinc-800/50 rounded-xl p-4 flex flex-col shadow-sm hover:shadow-md transition-all relative overflow-hidden group">
                        <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 dark:bg-blue-400/5 rounded-bl-full -z-0 transition-transform group-hover:scale-110 pointer-events-none"></div>
                        

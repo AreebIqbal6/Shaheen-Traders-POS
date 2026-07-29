@@ -330,6 +330,7 @@ export default function AdminPOSView() {
       // 5. Pull latest state to UI securely
       await fetchOrders();
       await pullBookersFromCloud();
+      await pullShopsFromCloud();
       await pullProductsFromCloud();
       
       if (!silent) toast.success('Manual synchronization flawless and complete.');
@@ -428,10 +429,22 @@ export default function AdminPOSView() {
     }
   }, []);
 
+  const pullShopsFromCloud = useCallback(async () => {
+    try {
+      const { data, error } = await supabase.from('shops').select('*').order('created_at', { ascending: false });
+      if (error || !data) return;
+      setShops(data);
+      localStorage.setItem('shaheen_shops', JSON.stringify(data));
+    } catch (err) {
+      console.warn('Failed to pull shops from cloud:', err);
+    }
+  }, []);
+
   useEffect(() => {
     pullProductsFromCloud();
     pullBookersFromCloud();
-  }, [pullProductsFromCloud, pullBookersFromCloud]);
+    pullShopsFromCloud();
+  }, [pullProductsFromCloud, pullBookersFromCloud, pullShopsFromCloud]);
 
   useEffect(() => {
     localStorage.setItem('shaheen_our_order', JSON.stringify(ourOrderList));
@@ -655,6 +668,7 @@ export default function AdminPOSView() {
       syncOfflineStatusUpdates();
       pullProductsFromCloud();
       pullBookersFromCloud();
+      pullShopsFromCloud();
       fetchOrders();
     };
     window.addEventListener('online', handleOnline);
@@ -664,6 +678,7 @@ export default function AdminPOSView() {
       if (document.visibilityState === 'visible') {
         pullProductsFromCloud();
         pullBookersFromCloud();
+        pullShopsFromCloud();
         fetchOrders();
         syncOfflineStatusUpdates();
       }
@@ -703,12 +718,23 @@ export default function AdminPOSView() {
       )
       .subscribe();
 
+    const shopsChannel = supabase.channel('public:shops')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'shops' },
+        () => {
+          pullShopsFromCloud();
+        }
+      )
+      .subscribe();
+
     return () => {
       window.removeEventListener('online', handleOnline);
       document.removeEventListener('visibilitychange', handleVisibility);
       supabase.removeChannel(ordersChannel);
       supabase.removeChannel(productsChannel);
       supabase.removeChannel(bookersChannel);
+      supabase.removeChannel(shopsChannel);
     };
   }, []);
 
@@ -1489,24 +1515,23 @@ export default function AdminPOSView() {
                               >
                                 <Trash2 size={12} />
                               </button>
-                          </div>
-                          <div className="flex items-center justify-between border-t border-slate-100 dark:border-zinc-900 pt-2">
-                              <div className="flex items-center gap-2">
+                          </div>                          <div className="flex items-center justify-between flex-wrap gap-y-2 border-t border-slate-100 dark:border-zinc-900 pt-2">
+                              <div className="flex items-center gap-1.5">
                                 <select 
                                   value={item.uom || 'Pcs'}
                                   onChange={e => updateCartItem(item.cartId, { uom: e.target.value })}
-                                  className="bg-slate-50 dark:bg-[#0a0a0c] border border-slate-200 dark:border-zinc-800/50 rounded-sm text-[11px] font-semibold text-slate-600 dark:text-slate-400 focus:outline-none focus:border-slate-400 h-7 px-1 outline-none"
+                                  className="bg-slate-50 dark:bg-[#0a0a0c] border border-slate-200 dark:border-zinc-800/50 rounded-sm text-[11px] font-semibold text-slate-600 dark:text-slate-400 focus:outline-none focus:border-slate-400 h-6 px-1 outline-none"
                                 >
                                   <option value="Pcs">Pcs</option>
                                   {itemPcsPerBox && <option value="Box">Box</option>}
                                   {itemPcsPerBox && itemBoxPerCtn && <option value="Ctn">Ctn</option>}
                                 </select>
-                                <div className="flex items-center gap-0.5 shrink-0 bg-slate-50 dark:bg-[#0a0a0c] border border-slate-200 dark:border-zinc-800/50 rounded-sm p-0.5 h-7">
+                                <div className="flex items-center gap-0.5 shrink-0 bg-slate-50 dark:bg-[#0a0a0c] border border-slate-200 dark:border-zinc-800/50 rounded-sm p-0.5 h-6">
                                   <button 
                                     onClick={() => updateCartItem(item.cartId, { quantity: item.quantity - 1 })}
-                                    className="w-8 h-8 flex items-center justify-center text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:bg-slate-600 dark:hover:bg-slate-600 hover:text-slate-800 dark:text-slate-200 rounded-sm transition-colors text-sm leading-none"
+                                    className="w-6 h-5 flex items-center justify-center text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:bg-slate-600 dark:hover:bg-slate-600 hover:text-slate-800 dark:text-slate-200 rounded-sm transition-colors text-sm leading-none"
                                   >
-                                    −
+                                    -
                                   </button>
                                   <input 
                                     type="number" 
@@ -1518,17 +1543,17 @@ export default function AdminPOSView() {
                                       if (v === '0') updateCartItem(item.cartId, { quantity: 0 });
                                       else updateCartItem(item.cartId, { quantity: parseInt(v, 10) || 1 });
                                     }}
-                                    className="w-8 bg-transparent text-center font-semibold text-slate-700 dark:text-slate-300 focus:outline-none text-[13px] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                    className="w-6 bg-transparent text-center font-semibold text-slate-700 dark:text-slate-300 focus:outline-none text-[12px] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                                   />
                                   <button 
                                     onClick={() => updateCartItem(item.cartId, { quantity: item.quantity + 1 })}
-                                    className="w-8 h-8 flex items-center justify-center text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:bg-slate-600 dark:hover:bg-slate-600 hover:text-slate-800 dark:text-slate-200 rounded-sm transition-colors text-sm leading-none"
+                                    className="w-6 h-5 flex items-center justify-center text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:bg-slate-600 dark:hover:bg-slate-600 hover:text-slate-800 dark:text-slate-200 rounded-sm transition-colors text-sm leading-none"
                                   >
                                     +
                                   </button>
                                 </div>
                               </div>
-                              <span className="font-semibold text-slate-900 dark:text-slate-50 text-[13px]">Rs {calculateItemPrice(item).toFixed(2)}</span>
+                              <span className="font-semibold text-slate-900 dark:text-slate-50 text-[13px] ml-auto">Rs {calculateItemPrice(item).toFixed(2)}</span>
                           </div>
                           
                           {isOutOfStock && (
@@ -1604,37 +1629,28 @@ export default function AdminPOSView() {
                           <div className="relative">
                             <input 
                               type="text" 
-                              value={showShopDropdown ? shopSearch : clientName}
+                              value={clientName}
                               onChange={e => {
-                                if (showShopDropdown) {
-                                  setShopSearch(e.target.value);
-                                } else {
-                                  setClientName(e.target.value);
-                                }
-                              }}
-                              onFocus={() => {
+                                setClientName(e.target.value);
                                 setShowShopDropdown(true);
-                                setShopSearch('');
                               }}
+                              onFocus={() => setShowShopDropdown(true)}
                               className="w-full bg-slate-50 dark:bg-[#0a0a0c] border border-slate-200 dark:border-zinc-800/50 rounded-sm py-1.5 px-2 pr-8 font-medium focus:outline-none focus:border-blue-500 transition-all text-xs"
                               placeholder="e.g. Metro Wholesale"
                             />
                             <ChevronDown 
                               size={14} 
                               className={`absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 transition-transform cursor-pointer ${showShopDropdown ? 'rotate-180' : ''}`}
-                              onClick={() => {
-                                setShowShopDropdown(!showShopDropdown);
-                                if (!showShopDropdown) setShopSearch('');
-                              }}
+                              onClick={() => setShowShopDropdown(!showShopDropdown)}
                             />
                           </div>
 
                           {showShopDropdown && (
                             <div className="absolute top-full left-0 w-full mt-1 bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-md shadow-xl overflow-hidden max-h-60 overflow-y-auto">
                               {shops.filter(s => 
-                                (s.name || '').toLowerCase().includes(shopSearch.toLowerCase()) ||
-                                (s.contactNumber || s.contact_number || '').includes(shopSearch) ||
-                                (s.address || '').toLowerCase().includes(shopSearch.toLowerCase())
+                                (s.name || '').toLowerCase().includes(clientName.toLowerCase()) ||
+                                (s.contactNumber || s.contact_number || '').includes(clientName) ||
+                                (s.address || '').toLowerCase().includes(clientName.toLowerCase())
                               ).length === 0 ? (
                                 <div className="p-3 text-center text-xs text-slate-500 dark:text-slate-400">
                                   No shops found. Type to enter a new one.
@@ -1643,9 +1659,9 @@ export default function AdminPOSView() {
                                 <div className="py-1">
                                   {shops
                                     .filter(s => 
-                                      (s.name || '').toLowerCase().includes(shopSearch.toLowerCase()) ||
-                                      (s.contactNumber || s.contact_number || '').includes(shopSearch) ||
-                                      (s.address || '').toLowerCase().includes(shopSearch.toLowerCase())
+                                      (s.name || '').toLowerCase().includes(clientName.toLowerCase()) ||
+                                      (s.contactNumber || s.contact_number || '').includes(clientName) ||
+                                      (s.address || '').toLowerCase().includes(clientName.toLowerCase())
                                     )
                                     .map((shop, i) => (
                                       <div 
@@ -1737,41 +1753,32 @@ export default function AdminPOSView() {
                           <div className="relative">
                             <input 
                               type="text" 
-                              value={showBookerDropdown ? bookerSearch : bookerName}
+                              value={bookerName}
                               onChange={(e) => {
-                                if (showBookerDropdown) {
-                                  setBookerSearch(e.target.value);
-                                } else {
-                                  setBookerName(e.target.value);
-                                }
-                              }}
-                              onFocus={() => {
+                                setBookerName(e.target.value);
                                 setShowBookerDropdown(true);
-                                setBookerSearch('');
                               }}
+                              onFocus={() => setShowBookerDropdown(true)}
                               className="w-full bg-slate-100 dark:bg-[#0a0a0c] border border-slate-200 dark:border-zinc-800/50 rounded-sm py-1.5 px-2 pr-8 font-medium focus:outline-none focus:border-blue-500 transition-all text-xs"
                               placeholder="e.g. Admin or Salesman"
                             />
                             <ChevronDown 
                               size={14} 
                               className={`absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 transition-transform cursor-pointer ${showBookerDropdown ? 'rotate-180' : ''}`}
-                              onClick={() => {
-                                setShowBookerDropdown(!showBookerDropdown);
-                                if (!showBookerDropdown) setBookerSearch('');
-                              }}
+                              onClick={() => setShowBookerDropdown(!showBookerDropdown)}
                             />
                           </div>
 
                           {showBookerDropdown && (
                             <div className="absolute top-full left-0 w-full mt-1 bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-md shadow-xl overflow-hidden max-h-60 overflow-y-auto">
-                              {bookersList.filter(b => (b.name || '').toLowerCase().includes(bookerSearch.toLowerCase())).length === 0 ? (
+                              {bookersList.filter(b => (b.name || '').toLowerCase().includes(bookerName.toLowerCase())).length === 0 ? (
                                 <div className="p-3 text-center text-xs text-slate-500 dark:text-slate-400">
                                   No bookers found. Type to enter a new one.
                                 </div>
                               ) : (
                                 <div className="py-1">
                                   {bookersList
-                                    .filter(b => (b.name || '').toLowerCase().includes(bookerSearch.toLowerCase()))
+                                    .filter(b => (b.name || '').toLowerCase().includes(bookerName.toLowerCase()))
                                     .map((booker, i) => (
                                       <div 
                                         key={i}

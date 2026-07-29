@@ -1,7 +1,7 @@
 import type { Product, Order, CartItem, Booker } from '../types/index';
 import React, { useState, useMemo, useEffect } from 'react';
 import { PieChart as RePieChart, Pie, Cell, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as ReTooltip, ResponsiveContainer } from 'recharts';
-import { PieChart, TrendingUp, Package, DollarSign, FileText, X, AlertTriangle, RotateCcw, Clock } from 'lucide-react';
+import { PieChart, TrendingUp, Package, DollarSign, FileText, X, AlertTriangle, RotateCcw, Clock, Search } from 'lucide-react';
 import OrderPreviewModal from '../components/OrderPreviewModal';
 
 interface DashboardViewProps {
@@ -17,6 +17,8 @@ export default function DashboardView({ pastOrders, products, onRestoreOrder }: 
   const [filterPeriod, setFilterPeriod] = useState<FilterPeriod>('Today');
   const [customStartDate, setCustomStartDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [customEndDate, setCustomEndDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  
+  const [searchQuery, setSearchQuery] = useState('');
   
   const [showCancelled, setShowCancelled] = useState(false);
   const [cancelledOrders, setCancelledOrders] = useState<any[]>([]);
@@ -82,6 +84,15 @@ export default function DashboardView({ pastOrders, products, onRestoreOrder }: 
     }
 
     return sourceOrders.filter(order => {
+      // Apply Search Query
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase();
+        const matchesId = (order.receiptNumber || order.receipt_number || order.id || '').toString().toLowerCase().includes(q);
+        const matchesClient = (order.clientName || order.client_name || order.shop_name || '').toLowerCase().includes(q);
+        const matchesPhone = (order.contactNumber || order.client_phone || order.contact_number || '').toLowerCase().includes(q);
+        if (!matchesId && !matchesClient && !matchesPhone) return false;
+      }
+
       const orderDate = new Date(order.date || order.created_at || order.cancelledAt || now);
       if (filterPeriod === 'Today') {
         return orderDate.toDateString() === now.toDateString();
@@ -106,7 +117,7 @@ export default function DashboardView({ pastOrders, products, onRestoreOrder }: 
       }
       return true;
     });
-  }, [pastOrders, showCancelled, cancelledOrders, filterPeriod, customStartDate, customEndDate]);
+  }, [pastOrders, showCancelled, cancelledOrders, filterPeriod, customStartDate, customEndDate, searchQuery]);
 
   const stats = useMemo(() => {
     let totalRevenue = 0;
@@ -374,12 +385,27 @@ export default function DashboardView({ pastOrders, products, onRestoreOrder }: 
 
         {/* Order History Log */}
         <div className="bg-white dark:bg-zinc-900/60 border border-slate-200 dark:border-zinc-800/50 rounded-2xl overflow-hidden shadow-sm shrink-0 mb-12">
-          <div className="border-b border-slate-200 dark:border-zinc-800/50 bg-slate-50 dark:bg-zinc-800/50 px-5 py-4 flex items-center gap-2">
-            <FileText className="text-slate-500" size={18} />
-            <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-50">{showCancelled ? 'Cancelled Orders' : 'Transactions'}</h2>
-            <span className="ml-auto bg-white dark:bg-zinc-900/60 border border-slate-200 dark:border-zinc-700 text-slate-700 dark:text-slate-300 px-2 py-0.5 rounded-md text-[11px] font-semibold">
-              {filteredOrders.length} {showCancelled ? 'Cancelled' : 'Completed'}
-            </span>
+          <div className="border-b border-slate-200 dark:border-zinc-800/50 bg-slate-50 dark:bg-zinc-800/50 px-5 py-4 flex flex-col md:flex-row md:items-center gap-4">
+            <div className="flex items-center gap-2">
+              <FileText className="text-slate-500" size={18} />
+              <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-50">{showCancelled ? 'Cancelled Orders' : 'Transactions'}</h2>
+              <span className="ml-2 bg-white dark:bg-zinc-900/60 border border-slate-200 dark:border-zinc-700 text-slate-700 dark:text-slate-300 px-2 py-0.5 rounded-md text-[11px] font-semibold">
+                {filteredOrders.length} {showCancelled ? 'Cancelled' : 'Completed'}
+              </span>
+            </div>
+            
+            <div className="flex-1"></div>
+            
+            <div className="relative w-full md:w-72">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+              <input 
+                type="text" 
+                placeholder="Search receipt, client or phone..." 
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                className="w-full pl-9 pr-4 py-1.5 bg-white dark:bg-zinc-900/60 border border-slate-200 dark:border-zinc-700 rounded-lg text-sm focus:outline-none focus:border-blue-500 text-slate-900 dark:text-slate-50"
+              />
+            </div>
           </div>
           
           <div className="overflow-x-auto">

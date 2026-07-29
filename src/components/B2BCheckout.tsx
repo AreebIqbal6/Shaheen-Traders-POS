@@ -38,10 +38,27 @@ export default function B2BCheckout({ cart, total, onSuccess, onBack }: B2BCheck
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
   const [shops, setShops] = useState<any[]>(() => {
     const saved = localStorage.getItem('shaheen_shops');
     return saved ? JSON.parse(saved) : [];
   });
+
+  useEffect(() => {
+    const fetchShops = async () => {
+      try {
+        const { data, error } = await supabase.from('shops').select('*');
+        if (error) throw error;
+        if (data) {
+          setShops(data);
+          localStorage.setItem('shaheen_shops', JSON.stringify(data));
+        }
+      } catch (err) {
+        console.error('Error fetching shops:', err);
+      }
+    };
+    fetchShops();
+  }, []);
 
   const activeBooker = JSON.parse(localStorage.getItem('shaheen_active_booker') || '{}');
   const [formData, setFormData] = useState({
