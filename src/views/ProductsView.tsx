@@ -121,7 +121,7 @@ export default function ProductsView({ products = [], setProducts }: ProductsVie
         
           .select('*')
           .limit(10000)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false }).order('id', { ascending: true });
 
       if (error) throw error;
 
