@@ -373,7 +373,7 @@ export default function AdminPOSView() {
   // Auto-pull products from Supabase on mount (cross-device sync)
   const pullProductsFromCloud = useCallback(async () => {
     try {
-      const { data: cloudProducts, error } = await supabase.from('products').select('*').limit(10000);
+      const { data: cloudProducts, error } = await supabase.from('products').select('*').limit(10000).order('id');
       if (error) return;
       
       // If cloud returns empty, DON'T wipe local data.
