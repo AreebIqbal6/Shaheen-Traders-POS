@@ -1631,14 +1631,22 @@ export default function AdminPOSView() {
 
                           {showShopDropdown && (
                             <div className="absolute top-full left-0 w-full mt-1 bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-md shadow-xl overflow-hidden max-h-60 overflow-y-auto">
-                              {shops.filter(s => s.name.toLowerCase().includes(shopSearch.toLowerCase())).length === 0 ? (
+                              {shops.filter(s => 
+                                (s.name || '').toLowerCase().includes(shopSearch.toLowerCase()) ||
+                                (s.contactNumber || s.contact_number || '').includes(shopSearch) ||
+                                (s.address || '').toLowerCase().includes(shopSearch.toLowerCase())
+                              ).length === 0 ? (
                                 <div className="p-3 text-center text-xs text-slate-500 dark:text-slate-400">
                                   No shops found. Type to enter a new one.
                                 </div>
                               ) : (
                                 <div className="py-1">
                                   {shops
-                                    .filter(s => s.name.toLowerCase().includes(shopSearch.toLowerCase()))
+                                    .filter(s => 
+                                      (s.name || '').toLowerCase().includes(shopSearch.toLowerCase()) ||
+                                      (s.contactNumber || s.contact_number || '').includes(shopSearch) ||
+                                      (s.address || '').toLowerCase().includes(shopSearch.toLowerCase())
+                                    )
                                     .map((shop, i) => (
                                       <div 
                                         key={i}

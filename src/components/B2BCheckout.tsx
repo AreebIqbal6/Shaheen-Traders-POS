@@ -177,7 +177,7 @@ export default function B2BCheckout({ cart, total, onSuccess, onBack }: B2BCheck
                         {shops
                           .filter(s => 
                             (s.name || '').toLowerCase().includes(shopSearch.toLowerCase()) || 
-                            (s.contactNumber || '').includes(shopSearch) || 
+                            (s.contactNumber || s.contact_number || '').includes(shopSearch) || 
                             (s.address || '').toLowerCase().includes(shopSearch.toLowerCase())
                           )
                           .map((shop, i) => (
