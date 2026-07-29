@@ -912,7 +912,7 @@ export default function AdminPOSView() {
   const filteredProducts = useMemo(() => {
     if (!registerSearchQuery.trim()) return products;
     const lowerQ = registerSearchQuery.toLowerCase();
-    return products.filter(p => p.name.toLowerCase().includes(lowerQ) || p.barcode.includes(lowerQ));
+    return products.filter(p => (p.name || '').toLowerCase().includes(lowerQ) || (p.barcode || '').includes(lowerQ));
   }, [products, registerSearchQuery]);
 
   const removeFromCart = useCallback((cartId: string) => {

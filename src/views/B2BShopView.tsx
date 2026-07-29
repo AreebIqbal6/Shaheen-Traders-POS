@@ -497,7 +497,7 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
 
   const filteredProducts = useMemo(() => {
     return products.filter(p => 
-      p.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+      (p.name || '').toLowerCase().includes(searchQuery.toLowerCase()) || 
       (p.category && p.category.toLowerCase().includes(searchQuery.toLowerCase()))
     );
   }, [products, searchQuery]);
