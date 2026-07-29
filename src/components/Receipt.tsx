@@ -137,7 +137,7 @@ export default function Receipt({ data, className = '', isPrintable = true }: Re
                          <span className="text-slate-700">{data.clientName || 'Walk-in'}</span>
                       </div>
                       <div className="flex gap-2">
-                         <span className="font-bold text-slate-900 uppercase">AREA:</span>
+                         <span className="font-bold text-slate-900 uppercase">ADDRESS:</span>
                          <span className="text-slate-700">{data.area || 'N/A'}</span>
                       </div>
                       <div className="flex gap-2">
@@ -206,7 +206,7 @@ export default function Receipt({ data, className = '', isPrintable = true }: Re
                          <span className="text-slate-700">{data.clientName || 'Walk-in'}</span>
                       </div>
                       <div className="flex gap-2">
-                         <span className="font-bold text-slate-900 uppercase">AREA:</span>
+                         <span className="font-bold text-slate-900 uppercase">ADDRESS:</span>
                          <span className="text-slate-700">{data.area || 'N/A'}</span>
                       </div>
                       <div className="flex gap-2">

@@ -1643,21 +1643,21 @@ export default function AdminPOSView() {
                                         className="px-3 py-2 hover:bg-slate-50 dark:hover:bg-zinc-700/50 cursor-pointer border-b border-slate-100 dark:border-zinc-700/50 last:border-0"
                                         onClick={() => {
                                           setClientName(shop.name);
-                                          if (shop.area) setArea(shop.area);
-                                          if (shop.contact_number) setContactNumber(shop.contact_number);
+                                          if (shop.address || shop.area) setArea(shop.address || shop.area);
+                                          if (shop.contact_number || shop.contactNumber) setContactNumber(shop.contact_number || shop.contactNumber);
                                           setShowShopDropdown(false);
                                         }}
                                       >
                                         <div className="font-semibold text-slate-800 dark:text-slate-200 text-[13px]">{shop.name}</div>
                                         <div className="flex items-center gap-3 mt-1">
-                                          {shop.area && (
+                                          {(shop.address || shop.area) && (
                                             <div className="flex items-center gap-1 text-[10px] text-slate-500">
-                                              <MapPin size={10} /> {shop.area}
+                                              <MapPin size={10} /> {shop.address || shop.area}
                                             </div>
                                           )}
-                                          {shop.contact_number && (
+                                          {(shop.contact_number || shop.contactNumber) && (
                                             <div className="flex items-center gap-1 text-[10px] text-slate-500">
-                                              <Phone size={10} /> {shop.contact_number}
+                                              <Phone size={10} /> {shop.contact_number || shop.contactNumber}
                                             </div>
                                           )}
                                         </div>
