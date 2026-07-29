@@ -434,7 +434,7 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
   async function fetchProducts() {
     setIsLoading(true);
     try {
-      const { data, error } = await supabase.from('products').select('*');
+      const { data, error } = await supabase.from('products').select('*').limit(10000);
       if (error) throw error;
 
       if (!data || data.length === 0) {

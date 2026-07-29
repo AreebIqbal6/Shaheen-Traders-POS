@@ -118,7 +118,9 @@ export default function ProductsView({ products = [], setProducts }: ProductsVie
     try {
       const { data, error } = await supabase
         .from('products')
-        .select('*')
+        
+          .select('*')
+          .limit(10000)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
