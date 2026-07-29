@@ -4,6 +4,7 @@ import { Search, Plus, Edit2, Trash2, X, AlertTriangle, Upload, Loader2, ScanLin
 import CameraScanner from '../components/CameraScanner';
 import toast from 'react-hot-toast';
 import * as XLSX from 'xlsx';
+import { fetchAllProducts } from '../utils/fetchAllProducts';
 import { supabase } from '../lib/supabase';
 import { TableVirtuoso, Virtuoso } from 'react-virtuoso';
 
@@ -116,15 +117,8 @@ export default function ProductsView({ products = [], setProducts }: ProductsVie
 
   const fetchProducts = async () => {
     try {
-      const { data, error } = await supabase
-        .from('products')
-        
-          .select('*')
-          .limit(10000)
-        .order('created_at', { ascending: false }).order('id', { ascending: true });
-
-      if (error) throw error;
-
+      const data = await fetchAllProducts();
+      
       const mappedData = (data || []).map(mapRowToProduct);
       
       // Update local storage directly so mobile/offline modes get the latest truth

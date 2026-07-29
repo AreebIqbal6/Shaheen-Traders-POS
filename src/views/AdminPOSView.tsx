@@ -4,6 +4,7 @@ import { VirtuosoGrid } from 'react-virtuoso';
 import { playNotificationSound } from '../utils/audio';
 import { saveSilentBackup } from '../utils/silentBackup';
 import { LayoutDashboard, ShoppingBag, Package, Settings, Search, Trash2, Printer, ScanBarcode, BarChart3, Bell, X, AlertTriangle, FileText, User, Building, Moon, Sun, Grid, ShoppingCart, CreditCard, MapPin, LogOut, ClipboardList, Menu, Users, ChevronDown, Phone, Map as MapIcon, PieChart, BookOpen, Clock, Download } from 'lucide-react';
+import { fetchAllProducts } from '../utils/fetchAllProducts';
 
 const ProductsView = lazy(() => import('./ProductsView'));
 import type { Product } from './ProductsView';
@@ -373,8 +374,8 @@ export default function AdminPOSView() {
   // Auto-pull products from Supabase on mount (cross-device sync)
   const pullProductsFromCloud = useCallback(async () => {
     try {
-      const { data: cloudProducts, error } = await supabase.from('products').select('*').limit(10000).order('id');
-      if (error) return;
+      const cloudProducts = await fetchAllProducts().catch(() => null);
+      if (!cloudProducts) return;
       
       // If cloud returns empty, DON'T wipe local data.
       // Cloud can be transiently empty due to RLS, replication lag, or network issues.
@@ -1403,6 +1404,7 @@ export default function AdminPOSView() {
                       data={filteredProducts}
                       overscan={200}
                       listClassName="grid grid-cols-[repeat(auto-fill,minmax(180px,1fr))] gap-4"
+                      itemClassName="flex flex-col"
                       itemContent={(index, p) => (
                         <button 
                           onClick={() => {
@@ -1411,7 +1413,7 @@ export default function AdminPOSView() {
                               hiddenScannerRef.current?.focus();
                             }
                           }}
-                          className="bg-white dark:bg-zinc-900/60 backdrop-blur-md border border-slate-200 dark:border-zinc-800/50 rounded-sm p-3 flex flex-col items-start hover:border-slate-400 transition-all text-left h-full"
+                          className="bg-white dark:bg-zinc-900/60 backdrop-blur-md border border-slate-200 dark:border-zinc-800/50 rounded-sm p-3 flex flex-col items-start hover:border-slate-400 transition-all text-left flex-1 w-full"
                         >
                           <h4 className="font-semibold text-slate-800 dark:text-slate-200 leading-tight mb-1 text-sm truncate w-full">{p.name}</h4>
                           <p className="text-xs text-slate-500 dark:text-slate-400 font-mono mb-3">{p.barcode}</p>

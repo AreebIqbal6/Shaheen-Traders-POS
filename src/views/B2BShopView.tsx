@@ -4,6 +4,7 @@ import { VirtuosoGrid } from 'react-virtuoso';
 import { playNotificationSound } from '../utils/audio';
 import { supabase } from '../lib/supabase';
 import { ShoppingCart, Store, CreditCard, Search, ArrowRight, Package, User, LogOut, History, WifiOff, RefreshCw, CheckCircle2, FileText, Smartphone, Trash2, X } from 'lucide-react';
+import { fetchAllProducts } from '../utils/fetchAllProducts';
 import toast from 'react-hot-toast';
 import B2BCheckout from '../components/B2BCheckout';
 import OrderPreviewModal from '../components/OrderPreviewModal';
@@ -31,7 +32,7 @@ const ProductCard = React.memo(({ product, onAdd }: { product: Product, onAdd: (
         <span className="font-bold text-slate-900 dark:text-slate-50 text-[14px]">Rs {product.price.toLocaleString()}</span> 
         <button 
           onClick={(e) => { e.stopPropagation(); onAdd(product); }} 
-          className="bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-600 px-2 py-0.5 rounded-sm font-semibold hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors shrink-0 text-[11px] active:scale-95" 
+          className="bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-zinc-600 px-2 py-0.5 rounded-sm font-semibold hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors shrink-0 text-[11px] active:scale-95" 
         > 
           + Add 
         </button> 
@@ -434,8 +435,7 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
   async function fetchProducts() {
     setIsLoading(true);
     try {
-      const { data, error } = await supabase.from('products').select('*').limit(10000).order('id');
-      if (error) throw error;
+      const data = await fetchAllProducts();
 
       if (!data || data.length === 0) {
         setProducts([]);
