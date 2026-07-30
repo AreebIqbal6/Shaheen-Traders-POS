@@ -80,7 +80,7 @@ export default function AuthView({ onLogin }: AuthViewProps) {
               onPaste={e => {
                 // Prevent clipboard attacks on sensitive fields
                 e.preventDefault();
-                alert("Pasting disabled for security reasons.");
+                toast.error("Pasting disabled for security reasons.");
               }}
               className="w-full bg-white dark:bg-[#0a0a0c] border border-slate-200 dark:border-zinc-800/50 rounded-md px-3 py-2 text-sm text-slate-900 dark:text-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-transparent transition-all placeholder:text-slate-400"
               autoFocus

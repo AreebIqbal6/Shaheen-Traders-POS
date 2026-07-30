@@ -263,10 +263,8 @@ export default function SettingsView() {
         return;
       }
 
-      const pathName = prompt('Browser does not support folder picking. Please manually enter the full system path (e.g., C:\\Backups):');
-      if (pathName) {
-        savePath(pathName);
-      }
+      toast.error('Your browser does not support folder picking. Please use the desktop app for backup path selection.');
+      return;
     } catch (err: any) {
       if (err?.name !== 'AbortError' && err !== 'User cancelled') {
         console.error("Folder picker error:", err);
@@ -600,32 +598,52 @@ export default function SettingsView() {
                         const { open } = await import('@tauri-apps/plugin-dialog');
                         const selectedPath = await open({ multiple: false, filters: [{ name: 'JSON', extensions: ['json'] }] });
                         if (selectedPath && typeof selectedPath === 'string') {
-                          if (!confirm('Are you sure? This will override all current offline data.')) return;
                           const { readTextFile } = await import('@tauri-apps/plugin-fs');
-                      const fileContents = await readTextFile(selectedPath);
+                          const fileContents = await readTextFile(selectedPath);
                           const data = JSON.parse(fileContents);
-                          if (data.products) localStorage.setItem('shaheen_products', data.products);
-                          if (data.pos_history) localStorage.setItem('shaheen_orders', data.pos_history);
-                          if (data.our_order) localStorage.setItem('shaheen_our_order', data.our_order);
-                          if (data.cart) localStorage.setItem('shaheen_cart', data.cart);
-                          toast.success('Backup restored successfully! Please reload the application.');
-                          window.location.reload();
+                          toast((t) => (
+                            <span className="flex flex-col gap-2">
+                              <span className="font-semibold text-slate-900">Override all current offline data with this backup?</span>
+                              <div className="flex gap-2 justify-end mt-2">
+                                <button className="px-3 py-1 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded text-xs font-bold transition-colors" onClick={() => toast.dismiss(t.id)}>Cancel</button>
+                                <button className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-xs font-bold transition-colors" onClick={() => {
+                                  toast.dismiss(t.id);
+                                  if (data.products) localStorage.setItem('shaheen_products', data.products);
+                                  if (data.pos_history) localStorage.setItem('shaheen_orders', data.pos_history);
+                                  if (data.our_order) localStorage.setItem('shaheen_our_order', data.our_order);
+                                  if (data.cart) localStorage.setItem('shaheen_cart', data.cart);
+                                  toast.success('Backup restored successfully! Reloading...');
+                                  setTimeout(() => window.location.reload(), 1000);
+                                }}>Restore</button>
+                              </div>
+                            </span>
+                          ), { duration: 15000 });
                         }
                       } else {
                         const input = document.createElement('input'); input.type = 'file'; input.accept = '.json';
                         input.onchange = (e: any) => {
                           const file = e.target.files[0]; if (!file) return;
-                          if (!confirm('Are you sure? This will override all current offline data.')) return;
                           const reader = new FileReader();
                           reader.onload = (event) => {
                             try {
                               const fileContents = event.target?.result as string; const data = JSON.parse(fileContents);
-                              if (data.products) localStorage.setItem('shaheen_products', data.products);
-                              if (data.pos_history) localStorage.setItem('shaheen_orders', data.pos_history);
-                              if (data.our_order) localStorage.setItem('shaheen_our_order', data.our_order);
-                              if (data.cart) localStorage.setItem('shaheen_cart', data.cart);
-                              toast.success('Backup restored successfully! Please reload the application.');
-                              window.location.reload();
+                              toast((t) => (
+                                <span className="flex flex-col gap-2">
+                                  <span className="font-semibold text-slate-900">Override all current offline data with this backup?</span>
+                                  <div className="flex gap-2 justify-end mt-2">
+                                    <button className="px-3 py-1 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded text-xs font-bold transition-colors" onClick={() => toast.dismiss(t.id)}>Cancel</button>
+                                    <button className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-xs font-bold transition-colors" onClick={() => {
+                                      toast.dismiss(t.id);
+                                      if (data.products) localStorage.setItem('shaheen_products', data.products);
+                                      if (data.pos_history) localStorage.setItem('shaheen_orders', data.pos_history);
+                                      if (data.our_order) localStorage.setItem('shaheen_our_order', data.our_order);
+                                      if (data.cart) localStorage.setItem('shaheen_cart', data.cart);
+                                      toast.success('Backup restored successfully! Reloading...');
+                                      setTimeout(() => window.location.reload(), 1000);
+                                    }}>Restore</button>
+                                  </div>
+                                </span>
+                              ), { duration: 15000 });
                             } catch (err) { toast.error('Invalid JSON file.'); }
                           };
                           reader.readAsText(file);

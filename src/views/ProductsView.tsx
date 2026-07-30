@@ -280,38 +280,53 @@ export default function ProductsView({ products = [], setProducts }: ProductsVie
     setFormData(prev => ({ ...prev, barcode: `${prefix}-${year}-${randomNum}` }));
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this product?')) return;
-    markPending(id);
+  const handleDelete = (id: string) => {
+    toast((t) => (
+      <span className="flex flex-col gap-2">
+        <span className="font-semibold text-slate-900">Delete this product?</span>
+        <div className="flex gap-2 justify-end mt-2">
+          <button 
+            className="px-3 py-1 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded text-xs font-bold transition-colors" 
+            onClick={() => toast.dismiss(t.id)}
+          >Cancel</button>
+          <button 
+            className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-xs font-bold transition-colors"
+            onClick={async () => {
+              toast.dismiss(t.id);
+              markPending(id);
 
-    if (typeof setProducts === 'function') {
-       setProducts((prev = []) => prev.filter(p => p.id !== id));
-    }
+              if (typeof setProducts === 'function') {
+                 setProducts((prev = []) => prev.filter(p => p.id !== id));
+              }
 
-    try {
-      const { error } = await supabase.from('products').delete().eq('id', id);
-      if (error) {
-        // If online and delete failed, abort and restore
-        if (navigator.onLine) throw error;
-        console.error("Supabase delete failed (offline):", error);
-      }
+              try {
+                const { error } = await supabase.from('products').delete().eq('id', id);
+                if (error) {
+                  if (navigator.onLine) throw error;
+                  console.error("Supabase delete failed (offline):", error);
+                }
 
-      const deletedQueue = JSON.parse(localStorage.getItem('shaheen_deleted_products') || '[]');
-      if (!deletedQueue.includes(id)) {
-        deletedQueue.push(id);
-        localStorage.setItem('shaheen_deleted_products', JSON.stringify(deletedQueue));
-      }
+                const deletedQueue = JSON.parse(localStorage.getItem('shaheen_deleted_products') || '[]');
+                if (!deletedQueue.includes(id)) {
+                  deletedQueue.push(id);
+                  localStorage.setItem('shaheen_deleted_products', JSON.stringify(deletedQueue));
+                }
 
-      const newMinStockDict = { ...minStockDict };
-      delete newMinStockDict[id];
-      setMinStockDict(newMinStockDict);
-      localStorage.setItem('shaheen_min_stock', JSON.stringify(newMinStockDict));
-      toast.success('Product deleted.');
-    } catch (err: unknown) {
-      clearPending(id);
-      toast.error('Failed to delete product: ' + (err instanceof Error ? err.message : String(err)));
-      fetchProducts(); 
-    }
+                const newMinStockDict = { ...minStockDict };
+                delete newMinStockDict[id];
+                setMinStockDict(newMinStockDict);
+                localStorage.setItem('shaheen_min_stock', JSON.stringify(newMinStockDict));
+                toast.success('Product deleted.');
+              } catch (err: unknown) {
+                clearPending(id);
+                toast.error('Failed to delete product: ' + (err instanceof Error ? err.message : String(err)));
+                fetchProducts(); 
+              }
+            }}
+          >Delete</button>
+        </div>
+      </span>
+    ), { duration: 10000 });
   };
 
   async function fetchProductDetails(barcode: string) {

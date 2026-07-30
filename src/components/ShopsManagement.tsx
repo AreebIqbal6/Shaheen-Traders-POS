@@ -163,23 +163,39 @@ export default function ShopsManagement() {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this shop?')) return;
-    const updatedShops = shops.filter(s => s.id !== id);
-    setShops(updatedShops);
-    localStorage.setItem('shaheen_shops', JSON.stringify(updatedShops));
-    
-    try {
-      const { error } = await supabase.from('shops').delete().eq('id', id);
-      if (error) {
-        console.error('Failed to delete shop from cloud:', error);
-        toast.error('Shop removed locally but cloud sync failed.');
-        return;
-      }
-    } catch (err) {
-      console.error('Shop delete network error:', err);
-    }
-    toast.success('Shop deleted successfully');
+  const handleDelete = (id: string) => {
+    toast((t) => (
+      <span className="flex flex-col gap-2">
+        <span className="font-semibold text-slate-900">Delete this shop?</span>
+        <div className="flex gap-2 justify-end mt-2">
+          <button 
+            className="px-3 py-1 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded text-xs font-bold transition-colors" 
+            onClick={() => toast.dismiss(t.id)}
+          >Cancel</button>
+          <button 
+            className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-xs font-bold transition-colors"
+            onClick={async () => {
+              toast.dismiss(t.id);
+              const updatedShops = shops.filter(s => s.id !== id);
+              setShops(updatedShops);
+              localStorage.setItem('shaheen_shops', JSON.stringify(updatedShops));
+              
+              try {
+                const { error } = await supabase.from('shops').delete().eq('id', id);
+                if (error) {
+                  console.error('Failed to delete shop from cloud:', error);
+                  toast.error('Shop removed locally but cloud sync failed.');
+                  return;
+                }
+              } catch (err) {
+                console.error('Shop delete network error:', err);
+              }
+              toast.success('Shop deleted successfully');
+            }}
+          >Delete</button>
+        </div>
+      </span>
+    ), { duration: 10000 });
   };
 
   const filteredShops = shops.filter(s => {

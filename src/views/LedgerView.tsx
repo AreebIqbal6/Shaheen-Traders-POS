@@ -40,11 +40,27 @@ export default function LedgerView({ pastOrders }: LedgerViewProps) {
   };
 
   const handleDelete = (id: string) => {
-    if (!confirm('Are you sure you want to delete this payment record?')) return;
-    const updated = payments.filter(p => p.id !== id);
-    setPayments(updated);
-    localStorage.setItem('shaheen_ledger_payments', JSON.stringify(updated));
-    toast.success('Payment deleted');
+    toast((t) => (
+      <span className="flex flex-col gap-2">
+        <span className="font-semibold text-slate-900">Delete this payment record?</span>
+        <div className="flex gap-2 justify-end mt-2">
+          <button 
+            className="px-3 py-1 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded text-xs font-bold transition-colors" 
+            onClick={() => toast.dismiss(t.id)}
+          >Cancel</button>
+          <button 
+            className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-xs font-bold transition-colors"
+            onClick={() => {
+              toast.dismiss(t.id);
+              const updated = payments.filter(p => p.id !== id);
+              setPayments(updated);
+              localStorage.setItem('shaheen_ledger_payments', JSON.stringify(updated));
+              toast.success('Payment deleted');
+            }}
+          >Delete</button>
+        </div>
+      </span>
+    ), { duration: 10000 });
   };
 
   // Group by client
