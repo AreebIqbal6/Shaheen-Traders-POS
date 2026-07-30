@@ -22,7 +22,9 @@ export const exportReceiptToExcel = async (data: ReceiptData) => {
   ];
 
   // 1. Generate Base64 Images Locally
-  const receiptUrl = `${window.location.origin}/receipt/${data.id}`;
+  const isDesktop = typeof window !== 'undefined' && ('__TAURI_INTERNALS__' in window || '__TAURI__' in window);
+  const baseUrl = isDesktop ? 'https://shaheen-traders-pos.vercel.app' : window.location.origin;
+  const receiptUrl = `${baseUrl}/receipt/${data.id}`;
   const qrBase64 = await QRCode.toDataURL(receiptUrl, { margin: 1, width: 150 });
   
   const canvas = document.createElement('canvas');

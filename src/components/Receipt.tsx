@@ -34,7 +34,9 @@ const ITEMS_FIRST_PAGE = 35;
 const ITEMS_CONTINUATION_PAGE = 45; // Continuation pages have no header/details grid, so more room
 
 export default function Receipt({ data, className = '', isPrintable = true }: ReceiptProps) {
-  const receiptUrl = `${window.location.origin}/receipt/${data.id}`;
+  const isDesktop = typeof window !== 'undefined' && ('__TAURI_INTERNALS__' in window || '__TAURI__' in window);
+  const baseUrl = isDesktop ? 'https://shaheen-traders-pos.vercel.app' : window.location.origin;
+  const receiptUrl = `${baseUrl}/receipt/${data.id}`;
   // Use the order ID directly — it's already formatted as ORD-XXXXXX or B2B-XXXX
   const displayId = data.id;
   // For barcode, ensure the value isn't too long (UUIDs crash the barcode renderer)
