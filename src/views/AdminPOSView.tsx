@@ -1627,7 +1627,7 @@ export default function AdminPOSView() {
                     </div>
 
                     <div className="bg-white dark:bg-zinc-900/60 backdrop-blur-md border border-slate-200 dark:border-zinc-800/50 rounded-sm p-3 flex flex-col gap-2.5 mb-4 shrink-0 shadow-sm">
-                        <div ref={dropdownRef} className="relative z-10">
+                        <div ref={dropdownRef} className={`relative ${showShopDropdown ? 'z-30' : 'z-10'}`}>
                           <label className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide flex items-center gap-1.5 mb-1">
                             <User size={10} className="text-slate-400" /> Client / Business Name
                           </label>
@@ -1639,7 +1639,7 @@ export default function AdminPOSView() {
                                 setClientName(e.target.value);
                                 setShowShopDropdown(true);
                               }}
-                              onFocus={() => setShowShopDropdown(true)}
+                              onFocus={() => { setShowShopDropdown(true); setShowBookerDropdown(false); }}
                               className="w-full bg-slate-50 dark:bg-[#0a0a0c] border border-slate-200 dark:border-zinc-800/50 rounded-sm py-1.5 px-2 pr-8 font-medium focus:outline-none focus:border-blue-500 transition-all text-xs"
                               placeholder="e.g. Metro Wholesale"
                             />
@@ -1651,7 +1651,7 @@ export default function AdminPOSView() {
                           </div>
 
                           {showShopDropdown && (
-                            <div className="absolute top-full left-0 w-full mt-1 bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-md shadow-xl overflow-hidden max-h-60 overflow-y-auto">
+                            <div className="absolute top-full left-0 w-full mt-1 bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-md shadow-xl overflow-hidden max-h-60 overflow-y-auto z-50">
                               {shops.filter(s => 
                                 (s.name || '').toLowerCase().includes(clientName.toLowerCase()) ||
                                 (s.contactNumber || s.contact_number || '').includes(clientName) ||
@@ -1751,7 +1751,7 @@ export default function AdminPOSView() {
                         </div>
                       </div>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                        <div ref={bookerDropdownRef} className="relative z-10">
+                        <div ref={bookerDropdownRef} className={`relative ${showBookerDropdown ? 'z-30' : 'z-10'}`}>
                           <label className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide flex items-center gap-1.5 mb-1">
                             Booker Name
                           </label>
@@ -1763,7 +1763,7 @@ export default function AdminPOSView() {
                                 setBookerName(e.target.value);
                                 setShowBookerDropdown(true);
                               }}
-                              onFocus={() => setShowBookerDropdown(true)}
+                              onFocus={() => { setShowBookerDropdown(true); setShowShopDropdown(false); }}
                               className="w-full bg-slate-100 dark:bg-[#0a0a0c] border border-slate-200 dark:border-zinc-800/50 rounded-sm py-1.5 px-2 pr-8 font-medium focus:outline-none focus:border-blue-500 transition-all text-xs"
                               placeholder="e.g. Admin or Salesman"
                             />
@@ -1775,7 +1775,7 @@ export default function AdminPOSView() {
                           </div>
 
                           {showBookerDropdown && (
-                            <div className="absolute top-full left-0 w-full mt-1 bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-md shadow-xl overflow-hidden max-h-60 overflow-y-auto">
+                            <div className="absolute top-full left-0 w-full mt-1 bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-md shadow-xl overflow-hidden max-h-60 overflow-y-auto z-50">
                               {bookersList.filter(b => (b.name || '').toLowerCase().includes(bookerName.toLowerCase())).length === 0 ? (
                                 <div className="p-3 text-center text-xs text-slate-500 dark:text-slate-400">
                                   No bookers found. Type to enter a new one.

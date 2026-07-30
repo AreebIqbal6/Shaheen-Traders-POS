@@ -41,9 +41,13 @@
       ]
     },
     "dialog:default",
-    "os:default",
     "dialog:allow-confirm",
     "dialog:allow-ask",
-    "dialog:allow-message"
+    "dialog:allow-message",
+    "os:default",
+    "updater:default",
+    "process:default",
+    "process:allow-restart",
+    "process:allow-exit"
   ]
 }

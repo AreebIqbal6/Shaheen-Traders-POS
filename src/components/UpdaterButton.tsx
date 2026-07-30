@@ -1,14 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { DownloadCloud, CheckCircle2, RefreshCw } from 'lucide-react';
+import { DownloadCloud, RefreshCw } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export default function UpdaterButton() {
   const [updateAvailable, setUpdateAvailable] = useState<any>(null);
   const [isChecking, setIsChecking] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
+  const [downloadProgress, setDownloadProgress] = useState<number>(0);
 
   // Only run on desktop Tauri
-  const isDesktop = '__TAURI_INTERNALS__' in window || '__TAURI__' in window;
+  const isDesktop = typeof window !== 'undefined' && ('__TAURI_INTERNALS__' in window || '__TAURI__' in window);
 
   const performCheck = async (silent = true) => {
     if (!isDesktop) return;
@@ -19,17 +20,19 @@ export default function UpdaterButton() {
       
       if (update) {
         setUpdateAvailable(update);
-        if (!silent) toast.success(`Update ${update.version} is available!`);
+        if (!silent) toast.success(`Update v${update.version} is available!`);
       } else {
+        setUpdateAvailable(null);
         if (!silent) toast('You are on the latest version.', { icon: '✨' });
       }
     } catch (err: any) {
-      console.error('Update check failed', err);
+      console.error('Update check failed:', err);
       if (!silent) {
+        // Don't scare users with error toasts for 404s (no update published yet)
         if (err.message?.includes('404') || err.message?.includes('Not Found')) {
-          toast('Your system is up to date!', { icon: '✨' });
+          toast('You are on the latest version.', { icon: '✨' });
         } else {
-          toast('Your system is up to date!', { icon: '✨' });
+          toast.error(`Update check failed: ${err.message || 'Network error'}`);
         }
       }
     } finally {
@@ -40,7 +43,7 @@ export default function UpdaterButton() {
   useEffect(() => {
     if (!isDesktop) return;
     
-    // Initial check
+    // Initial check on mount
     performCheck(true);
 
     // Check every 24 hours
@@ -54,48 +57,71 @@ export default function UpdaterButton() {
   const handleUpdateClick = async () => {
     if (!isDesktop) return;
     
-    // If no update available, checking manually
+    // If no update available, check manually
     if (!updateAvailable) {
-      performCheck(false);
+      await performCheck(false);
       return;
     }
 
-    // If update IS available, prompt to install
     try {
       const { ask } = await import('@tauri-apps/plugin-dialog');
       const { relaunch } = await import('@tauri-apps/plugin-process');
 
-      const yes = await ask(`Update to ${updateAvailable.version} is available!\n\nRelease notes: ${updateAvailable.body || 'Bug fixes and improvements.'}\n\nDo you want to install it now?`, { 
-        title: 'Update Available', 
-        kind: 'info',
-        okLabel: 'Install Update',
-        cancelLabel: 'Cancel'
+      const confirmed = await ask(
+        `Update to v${updateAvailable.version} is available!\n\n` +
+        `Release Notes:\n${updateAvailable.body || 'Bug fixes and performance improvements.'}\n\n` +
+        `Do you want to download and install it now?`,
+        { 
+          title: 'App Update Available', 
+          kind: 'info',
+          okLabel: 'Install & Restart',
+          cancelLabel: 'Later'
+        }
+      );
+
+      if (!confirmed) return;
+
+      setIsDownloading(true);
+      const toastId = toast.loading('Downloading update (0%)...');
+
+      let downloadedBytes = 0;
+      let totalBytes = 0;
+
+      // Download AND install with progress tracking
+      await updateAvailable.downloadAndInstall((event: any) => {
+        switch (event.event) {
+          case 'Started':
+            totalBytes = event.data.contentLength || 0;
+            break;
+          case 'Progress':
+            downloadedBytes += event.data.chunkLength || 0;
+            if (totalBytes > 0) {
+              const pct = Math.round((downloadedBytes / totalBytes) * 100);
+              setDownloadProgress(pct);
+              toast.loading(`Downloading update (${pct}%)...`, { id: toastId });
+            } else {
+              toast.loading('Downloading update...', { id: toastId });
+            }
+            break;
+          case 'Finished':
+            toast.loading('Applying update & preparing restart...', { id: toastId });
+            break;
+        }
       });
 
-      if (yes) {
-        setIsDownloading(true);
-        const toastId = toast.loading('Downloading update...');
-        await updateAvailable.downloadAndInstall((event: any) => {
-          // Could track progress here if needed
-        });
-        
-        const { type } = await import('@tauri-apps/plugin-os');
-        const osType = await type();
-        
-        if (osType === 'windows') {
-          toast.success('Update downloaded! Closing app to install...', { id: toastId });
-          const { exit } = await import('@tauri-apps/plugin-process');
-          await exit(0);
-        } else {
-          toast.success('Update installed! Relaunching...', { id: toastId });
-          const { relaunch } = await import('@tauri-apps/plugin-process');
-          await relaunch();
-        }
-      }
-    } catch (e) {
-      console.error(e);
-      toast.error('Failed to install update.');
+      toast.success('Update installed! Restarting...', { id: toastId });
+
+      // CRITICAL: Use relaunch() on ALL platforms (including Windows).
+      // DO NOT use exit(0) — it kills the process before the NSIS installer
+      // finishes and the new binary never gets swapped in.
+      await relaunch();
+
+    } catch (e: any) {
+      console.error('Failed to download/install update:', e);
+      toast.error(`Update failed: ${e?.message || 'Unknown error'}`);
+    } finally {
       setIsDownloading(false);
+      setDownloadProgress(0);
     }
   };
 
@@ -110,12 +136,18 @@ export default function UpdaterButton() {
           ? 'bg-blue-600 hover:bg-blue-700 text-white border-blue-500 shadow-blue-500/30' 
           : 'bg-slate-50 dark:bg-zinc-800/80 text-slate-400 dark:text-slate-500 border-slate-200 dark:border-zinc-800 hover:bg-slate-100 dark:hover:bg-zinc-800'
       }`}
-      title={updateAvailable ? `Update ${updateAvailable.version} available!` : 'Check for updates'}
+      title={updateAvailable ? `Update v${updateAvailable.version} available!` : 'Check for updates'}
     >
       {updateAvailable ? (
         <>
           <DownloadCloud size={14} className={isDownloading ? 'animate-bounce' : 'animate-pulse'} />
-          <span>{isDownloading ? 'Updating...' : 'Update Available'}</span>
+          <span>
+            {isDownloading
+              ? downloadProgress > 0
+                ? `Updating ${downloadProgress}%`
+                : 'Updating...'
+              : 'Update Available'}
+          </span>
         </>
       ) : (
         <>
