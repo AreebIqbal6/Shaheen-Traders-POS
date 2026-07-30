@@ -131,7 +131,7 @@ export const saveOrderBackup = async (orderId: string, cart: any[], details: any
     return true;
   } catch (error: any) {
     console.error('Failed to save order backup', error);
-    toast.error(`Backup Failed: ${error.message || 'Unknown error'}`);
+    toast.error(`Backup Failed: ${error.message || (typeof error === 'string' ? error : 'Unknown error')}`);
     return false;
   }
 };

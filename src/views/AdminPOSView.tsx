@@ -530,7 +530,12 @@ export default function AdminPOSView() {
         };
         
         try {
-          await saveOrderBackup(orderId.toString(), order.items || [], details);
+          const success = await saveOrderBackup(orderId.toString(), order.items || [], details);
+          if (!success) {
+            autoBackedUp = autoBackedUp.filter(id => id !== orderId.toString());
+            return;
+          }
+          
           toast.success(`Auto-backed up ${orderId} to PC.`);
           
           supabase.from('orders').update({ status: 'COMPLETED' }).eq('id', order.id || orderId).then(({ error }) => {

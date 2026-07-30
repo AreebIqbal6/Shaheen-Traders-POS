@@ -878,14 +878,13 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
                            >
                              <FileText size={14} /> View
                            </button>
-                           {order.status === 'COMPLETED' && (
-                             <button 
-                               onClick={() => setPreviewOrder(order)}
-                               className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 dark:bg-zinc-900/60 backdrop-blur-md border border-slate-700 rounded-lg text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-800 hover:text-slate-900 dark:text-slate-50 transition-all shadow-sm"
-                             >
-                               <FileText size={14} /> Receipt
-                             </button>
-                           )}
+                           <button 
+                             onClick={() => order.status === 'COMPLETED' ? setPreviewOrder(order) : toast.error("Receipt will be available once the order is completed.")}
+                             disabled={order.status !== 'COMPLETED'}
+                             className={`flex items-center gap-1.5 px-3 py-1.5 backdrop-blur-md border rounded-lg text-xs font-bold transition-all shadow-sm ${order.status === 'COMPLETED' ? 'bg-slate-100 dark:bg-zinc-900/60 border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-800 hover:text-slate-900 dark:text-slate-50' : 'bg-slate-100/50 dark:bg-zinc-900/30 border-slate-300 dark:border-zinc-800 text-slate-400 dark:text-slate-600 cursor-not-allowed opacity-60'}`}
+                           >
+                             <FileText size={14} /> Receipt
+                           </button>
                            {(order.status === 'PENDING' || order.status === 'PENDING_APPROVAL') && (
                              <button 
                                onClick={() => handleCancelOrder(order.id || order.receipt_number || '')}

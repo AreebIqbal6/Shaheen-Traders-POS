@@ -69,7 +69,7 @@ export default function Receipt({ data, className = '', isPrintable = true }: Re
   };
 
   return (
-    <div className={`receipt-container bg-slate-400 print:bg-white flex flex-col items-center ${isPrintable ? '' : 'py-8'} min-h-screen ${className}`}>
+    <div className={`receipt-container bg-transparent print:bg-white flex flex-col items-center ${isPrintable ? '' : 'py-8'} h-auto ${className}`}>
       {chunks.map((chunk, pageIndex) => {
         const isLastPage = pageIndex === chunks.length - 1;
         const pageNumber = pageIndex + 1;
