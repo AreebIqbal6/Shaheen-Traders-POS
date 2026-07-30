@@ -65,7 +65,7 @@ export default function UpdaterButton() {
 
     try {
       const { ask } = await import('@tauri-apps/plugin-dialog');
-      const { relaunch } = await import('@tauri-apps/plugin-process');
+      const { exit } = await import('@tauri-apps/plugin-process');
 
       const confirmed = await ask(
         `Update to v${updateAvailable.version} is available!\n\n` +
@@ -111,10 +111,9 @@ export default function UpdaterButton() {
 
       toast.success('Update installed! Restarting...', { id: toastId });
 
-      // CRITICAL: Use relaunch() on ALL platforms (including Windows).
-      // DO NOT use exit(0) — it kills the process before the NSIS installer
-      // finishes and the new binary never gets swapped in.
-      await relaunch();
+      // CRITICAL: Use exit(0) on Windows so the NSIS installer can overwrite the executable.
+      // Do NOT use relaunch(), as it spawns a new instance immediately and locks the file.
+      await exit(0);
 
     } catch (e: any) {
       console.error('Failed to download/install update:', e);

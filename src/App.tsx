@@ -79,7 +79,7 @@ async function checkForUpdates() {
   try {
     const { check } = await import('@tauri-apps/plugin-updater');
     const { ask } = await import('@tauri-apps/plugin-dialog');
-    const { relaunch } = await import('@tauri-apps/plugin-process');
+    const { exit } = await import('@tauri-apps/plugin-process');
     
     const update = await check({ headers: { "Cache-Control": "no-cache", "Pragma": "no-cache" } });
     if (update) {
@@ -104,7 +104,7 @@ async function checkForUpdates() {
               break;
           }
         });
-        await relaunch();
+        await exit(0);
       }
     }
   } catch (error) {

@@ -118,8 +118,8 @@ export default function SettingsView() {
         setUpdateStatus(`Found update v${update.version}. Downloading...`);
         await update.downloadAndInstall();
         setUpdateStatus('Update installed. Restarting...');
-        const { relaunch } = await import('@tauri-apps/plugin-process');
-        await relaunch();
+        const { exit } = await import('@tauri-apps/plugin-process');
+        await exit(0);
       } else {
         setUpdateStatus('You are on the latest version.');
         setTimeout(() => setUpdateStatus(''), 3000);
