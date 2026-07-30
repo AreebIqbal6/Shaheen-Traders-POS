@@ -1,7 +1,7 @@
 {
   "name": "shaheen-pos",
   "private": true,
-  "version": "0.4.19",
+  "version": "0.4.20",
   "type": "module",
   "main": "main.cjs",
   "scripts": {
@@ -88,4 +88,3 @@
     "wait-on": "^9.0.10"
   }
 }
-
