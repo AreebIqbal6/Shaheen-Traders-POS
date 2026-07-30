@@ -388,7 +388,7 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
     // Real-time: Products (inventory wipe, price changes, new products)
     const productsChannel = supabase.channel('b2b-products-realtime')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'products' }, () => {
-        fetchProducts();
+        fetchProducts(false);
       })
       .subscribe();
 
@@ -402,8 +402,8 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
     // Visibility change: re-sync when phone wakes from sleep
     const handleVisibility = () => {
       if (document.visibilityState === 'visible') {
-        fetchProducts();
-        syncOfflineOrders();
+        fetchProducts(false);
+        syncOfflineOrders(false);
         if (activeTab === 'dashboard') fetchPastOrders();
       }
     };
@@ -411,8 +411,8 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
 
     // Online handler: sync queued data immediately
     const handleOnline = () => {
-      syncOfflineOrders();
-      fetchProducts();
+      syncOfflineOrders(false);
+      fetchProducts(false);
     };
     window.addEventListener('online', handleOnline);
 
@@ -450,8 +450,12 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
           boxPerCtn: p.box_per_ctn || p.boxPerCtn || 6
         }));
         
-        localStorage.setItem('shaheen_b2b_products_v2', JSON.stringify(mappedData));
-        setProducts(mappedData);
+        const newStr = JSON.stringify(mappedData);
+        const oldStr = localStorage.getItem('shaheen_b2b_products_v2');
+        if (newStr !== oldStr) {
+          localStorage.setItem('shaheen_b2b_products_v2', newStr);
+          setProducts(mappedData);
+        }
       }
     } catch (err) {
       console.error("Connection failed:", err);
