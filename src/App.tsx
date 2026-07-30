@@ -81,7 +81,7 @@ async function checkForUpdates() {
     const { ask } = await import('@tauri-apps/plugin-dialog');
     const { relaunch } = await import('@tauri-apps/plugin-process');
     
-    const update = await check();
+    const update = await check({ headers: { "Cache-Control": "no-cache", "Pragma": "no-cache" } });
     if (update) {
       const yes = await ask(`Update to ${update.version} is available!\n\nRelease notes: ${update.body || 'Bug fixes and improvements.'}\n\nDo you want to install it now?`, { 
         title: 'Update Available', 

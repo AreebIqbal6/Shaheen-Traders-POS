@@ -16,7 +16,7 @@ export default function UpdaterButton() {
     try {
       if (!silent) setIsChecking(true);
       const { check } = await import('@tauri-apps/plugin-updater');
-      const update = await check();
+      const update = await check({ headers: { "Cache-Control": "no-cache", "Pragma": "no-cache" } });
       
       if (update) {
         setUpdateAvailable(update);
