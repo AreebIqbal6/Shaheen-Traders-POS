@@ -332,6 +332,7 @@ export default function AdminPOSView() {
       await pullBookersFromCloud();
       await pullShopsFromCloud();
       await pullProductsFromCloud();
+      await pullPastOrdersFromCloud();
       
       if (!silent) toast.success('Manual synchronization flawless and complete.');
     } catch (err: unknown) {
@@ -440,11 +441,52 @@ export default function AdminPOSView() {
     }
   }, []);
 
+  const pullPastOrdersFromCloud = useCallback(async () => {
+    try {
+      const { data, error } = await supabase
+        .from('orders')
+        .select('*')
+        .in('status', ['COMPLETED', 'ACCEPTED'])
+        .order('created_at', { ascending: false })
+        .limit(200);
+
+      if (error || !data || data.length === 0) return;
+
+      setPastOrders(prev => {
+        const existingIds = new Set(prev.map(p => p.receiptNumber || p.id));
+        const newOrders: Order[] = [];
+        data.forEach(remote => {
+          const id = remote.receipt_number || remote.id;
+          if (!existingIds.has(id)) {
+            newOrders.push({
+              receiptNumber: id,
+              date: new Date(remote.created_at || remote.date || new Date()),
+              items: remote.items || [],
+              clientName: remote.client_name || remote.clientName || 'Unknown',
+              area: remote.area,
+              contactNumber: remote.contact_number,
+              bookerName: remote.booker_name,
+              total: remote.total || remote.total_amount,
+              status: remote.status
+            });
+          }
+        });
+        if (newOrders.length > 0) {
+          return [...newOrders, ...prev].sort((a, b) => b.date.getTime() - a.date.getTime());
+        }
+        return prev;
+      });
+    } catch (err) {
+      console.warn('Failed to pull past orders from cloud:', err);
+    }
+  }, []);
+
   useEffect(() => {
     pullProductsFromCloud();
     pullBookersFromCloud();
     pullShopsFromCloud();
-  }, [pullProductsFromCloud, pullBookersFromCloud, pullShopsFromCloud]);
+    pullPastOrdersFromCloud();
+  }, [pullProductsFromCloud, pullBookersFromCloud, pullShopsFromCloud, pullPastOrdersFromCloud]);
 
   useEffect(() => {
     localStorage.setItem('shaheen_our_order', JSON.stringify(ourOrderList));
