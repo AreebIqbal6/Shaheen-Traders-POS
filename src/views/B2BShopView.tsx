@@ -186,13 +186,13 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
     }
   };
 
-  const syncOfflineOrders = async () => {
+  const syncOfflineOrders = async (showLoading: boolean = true) => {
     const offlineOrders = JSON.parse(localStorage.getItem('shaheen_offline_orders') || '[]');
     const statusQueue = JSON.parse(localStorage.getItem('shaheen_offline_status_updates') || '[]');
     
     if ((offlineOrders.length === 0 && statusQueue.length === 0) || !navigator.onLine) return;
     
-    setIsLoading(true);
+    if (showLoading) setIsLoading(true);
     const failedOrders: any[] = [];
     
     // Sync Statuses First (Cancellations)
@@ -246,7 +246,7 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
     } catch (err) {
       console.error("Sync error", err);
     } finally {
-      setIsLoading(false);
+      if (showLoading) setIsLoading(false);
     }
   };
 
@@ -419,8 +419,8 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
     // 10-second background auto-sync
     const autoSyncTimer = setInterval(() => {
       if (navigator.onLine) {
-        fetchProducts();
-        syncOfflineOrders();
+        fetchProducts(false);
+        syncOfflineOrders(false);
       }
     }, 10000);
 
@@ -433,8 +433,8 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
     };
   }, [activeTab]);
 
-  async function fetchProducts() {
-    setIsLoading(true);
+  async function fetchProducts(showLoading: boolean = true) {
+    if (showLoading) setIsLoading(true);
     try {
       const data = await fetchAllProducts();
 
@@ -457,7 +457,7 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
       console.error("Connection failed:", err);
       setProducts(JSON.parse(localStorage.getItem('shaheen_b2b_products_v2') || '[]')); 
     } finally {
-      setIsLoading(false);
+      if (showLoading) setIsLoading(false);
     }
   };
 
