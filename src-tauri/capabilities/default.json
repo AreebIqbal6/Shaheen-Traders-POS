@@ -41,6 +41,9 @@
       ]
     },
     "dialog:default",
-    "os:default"
+    "os:default",
+    "dialog:allow-confirm",
+    "dialog:allow-ask",
+    "dialog:allow-message"
   ]
 }

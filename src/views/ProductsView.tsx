@@ -111,8 +111,7 @@ export default function ProductsView({ products = [], setProducts }: ProductsVie
     stock: product.stock,
     sku: product.sku ?? null,
     category: product.category ?? null,
-    pcs_per_box: product.pcsPerBox ?? null,
-    box_per_ctn: product.boxPerCtn ?? null,
+    
   });
 
   const fetchProducts = async () => {
