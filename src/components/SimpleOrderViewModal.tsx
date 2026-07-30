@@ -1,6 +1,7 @@
 import type { Order } from '../types/index';
 import React from 'react';
 import { X } from 'lucide-react';
+import { createPortal } from 'react-dom';
 
 interface SimpleOrderViewModalProps {
   isOpen: boolean;
@@ -16,8 +17,8 @@ export default function SimpleOrderViewModal({ isOpen, onClose, order }: SimpleO
   const clientName = order.client_name || order.clientName || order.shop_name || 'Walk-in';
   const orderId = order.receipt_number || order.id || 'Unknown';
 
-  return (
-    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={onClose}>
+  return createPortal(
+    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4" onClick={onClose}>
       <div className="bg-white dark:bg-slate-800 w-full max-w-2xl rounded-lg shadow-xl flex flex-col max-h-[90vh] border border-zinc-200 dark:border-zinc-700" onClick={(e) => e.stopPropagation()}>
         
         <div className="flex justify-between items-center p-5 border-b border-zinc-200 dark:border-zinc-700 shrink-0 bg-slate-50 dark:bg-zinc-900/50 rounded-t-lg">
@@ -78,6 +79,7 @@ export default function SimpleOrderViewModal({ isOpen, onClose, order }: SimpleO
         </div>
 
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

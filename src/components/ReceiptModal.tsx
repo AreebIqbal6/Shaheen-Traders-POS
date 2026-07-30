@@ -40,7 +40,7 @@ export default function ReceiptModal({ isOpen, onClose, cart, total, clientName,
     }
   };
 
-  return (
+  return createPortal(
     <>
       <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 print:block print:p-0 print:bg-white dark:bg-slate-800 print:backdrop-blur-none print:static" onClick={onClose}>
       
@@ -173,6 +173,6 @@ export default function ReceiptModal({ isOpen, onClose, cart, total, clientName,
 
       </div>
     </div>
-    </>
+    </>, document.body
   );
 }

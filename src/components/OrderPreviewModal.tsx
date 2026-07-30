@@ -61,8 +61,8 @@ export default function OrderPreviewModal({
   if (!isOpen) return null;
 
   const isAdmin = window.location.pathname.startsWith('/admin');
-  return (
-    <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex flex-col items-center justify-center z-50 p-4" onClick={onClose}>
+  return createPortal(
+    <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex flex-col items-center justify-center z-[100] p-4" onClick={onClose}>
       <div className="bg-white dark:bg-slate-800 w-[900px] max-w-full rounded-sm shadow-2xl flex flex-col max-h-[85vh] border border-zinc-200 dark:border-zinc-700 relative" onClick={(e) => e.stopPropagation()}>
         <button 
           onClick={onClose}
@@ -261,12 +261,15 @@ export default function OrderPreviewModal({
               bookerName: bookerName || 'Irfan',
               createdAt: new Date().toISOString(),
               items: cart,
-              total: total
+              subTotal,
+              total,
+              paymentTerms
             }} 
           />
         </div>,
         document.body
       )}
-    </div>
+    </div>,
+    document.body
   );
 }
