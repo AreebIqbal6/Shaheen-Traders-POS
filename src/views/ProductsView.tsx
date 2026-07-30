@@ -538,7 +538,7 @@ export default function ProductsView({ products = [], setProducts }: ProductsVie
                           try {
                             localStorage.setItem('shaheen_wipe_products_pending', 'true');
                             if (navigator.onLine) {
-                               const { error } = await supabase.from('products').delete().gte('price', 0);
+                               const { error } = await supabase.from('products').delete().not('id', 'is', null);
                                if (error) throw error;
                                localStorage.removeItem('shaheen_wipe_products_pending');
                             }
