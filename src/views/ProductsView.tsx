@@ -599,6 +599,7 @@ export default function ProductsView({ products = [], setProducts }: ProductsVie
                   <th className="bg-slate-50/90 dark:bg-[#0a0a0c]/90 px-5 py-3.5 font-semibold">Product Name</th>
                   <th className="bg-slate-50/90 dark:bg-[#0a0a0c]/90 px-5 py-3.5 font-semibold">Price</th>
                   <th className="bg-slate-50/90 dark:bg-[#0a0a0c]/90 px-5 py-3.5 font-semibold">Stock</th>
+                  <th className="bg-slate-50/90 dark:bg-[#0a0a0c]/90 px-5 py-3.5 font-semibold text-right">Total</th>
                   <th className="bg-slate-50/90 dark:bg-[#0a0a0c]/90 px-5 py-3.5 font-semibold text-right">Actions</th>
                 </tr>
               )}
@@ -625,6 +626,7 @@ export default function ProductsView({ products = [], setProducts }: ProductsVie
                         {product.stock}
                       </span>
                     </td>
+                    <td className="px-5 py-3 text-slate-900 dark:text-slate-50 font-bold text-right">Rs {(product.price * product.stock).toFixed(2)}</td>
                     <td className="px-5 py-3 text-right">
                       <button onClick={() => handleOpenModal(product)} className="text-slate-600 dark:text-slate-400 hover:text-black dark:hover:text-white p-1.5 transition-colors"><Edit2 size={14} /></button>
                       <button onClick={() => handleDelete(product.id)} className="text-slate-600 dark:text-slate-400 hover:text-red-600 dark:text-red-400 p-1.5 ml-1 transition-colors"><Trash2 size={14} /></button>
