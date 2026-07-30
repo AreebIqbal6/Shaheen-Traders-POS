@@ -78,8 +78,19 @@ export default function UpdaterButton() {
         await updateAvailable.downloadAndInstall((event: any) => {
           // Could track progress here if needed
         });
-        toast.success('Update installed! Relaunching...', { id: toastId });
-        await relaunch();
+        
+        const { type } = await import('@tauri-apps/plugin-os');
+        const osType = await type();
+        
+        if (osType === 'windows') {
+          toast.success('Update downloaded! Closing app to install...', { id: toastId });
+          const { exit } = await import('@tauri-apps/plugin-process');
+          await exit(0);
+        } else {
+          toast.success('Update installed! Relaunching...', { id: toastId });
+          const { relaunch } = await import('@tauri-apps/plugin-process');
+          await relaunch();
+        }
       }
     } catch (e) {
       console.error(e);
