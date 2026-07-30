@@ -270,19 +270,26 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
       return;
     }
 
-    let wakeLock: any = null;
-    const requestWakeLock = async () => {
-      try {
-        if ('wakeLock' in navigator) {
-          wakeLock = await (navigator as any).wakeLock.request('screen');
+      let wakeLock: any = null;
+      const requestWakeLock = async () => {
+        try {
+          if ('wakeLock' in navigator && document.visibilityState === 'visible') {
+            wakeLock = await (navigator as any).wakeLock.request('screen');
+          }
+        } catch (err) {
+          console.warn('Wake Lock error:', err);
         }
-      } catch (err) {
-        console.warn('Wake Lock error:', err);
-      }
-    };
-    requestWakeLock();
+      };
+      requestWakeLock();
 
-    let isUpdating = false;
+      const handleVisibilityChange = () => {
+        if (document.visibilityState === 'visible') {
+          requestWakeLock();
+        }
+      };
+      document.addEventListener('visibilitychange', handleVisibilityChange);
+
+      let isUpdating = false;
     let latestPosition: GeolocationPosition | null = null;
 
     const watchId = navigator.geolocation.watchPosition(
@@ -319,14 +326,15 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
       }
     };
 
-    const intervalId = setInterval(pushLocation, 10000);
-    
-    return () => {
-      navigator.geolocation.clearWatch(watchId);
-      clearInterval(intervalId);
-      if (wakeLock) wakeLock.release().catch(() => {});
-    };
-  }, []); 
+      const intervalId = setInterval(pushLocation, 10000);
+      
+      return () => {
+        navigator.geolocation.clearWatch(watchId);
+        clearInterval(intervalId);
+        document.removeEventListener('visibilitychange', handleVisibilityChange);
+        if (wakeLock) wakeLock.release().catch(() => {});
+      };
+    }, []); 
 
   const handleCancelOrder = useCallback(async (orderId: string) => {
     toast((t) => (
