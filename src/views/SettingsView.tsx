@@ -107,31 +107,7 @@ export default function SettingsView() {
     }
   };
 
-  const handleCheckUpdate = async () => {
-    try {
-      setIsCheckingUpdate(true);
-      setUpdateStatus('Checking for updates...');
-      const { check } = await import('@tauri-apps/plugin-updater');
-      const update = await check();
-      
-      if (update) {
-        setUpdateStatus(`Found update v${update.version}. Downloading...`);
-        await update.downloadAndInstall();
-        setUpdateStatus('Update installed. Restarting...');
-        const { exit } = await import('@tauri-apps/plugin-process');
-        await exit(0);
-      } else {
-        setUpdateStatus('You are on the latest version.');
-        setTimeout(() => setUpdateStatus(''), 3000);
-      }
-    } catch (err: any) {
-      console.error(err);
-      setUpdateStatus('Failed to check for updates: ' + (err instanceof Error ? err.message : String(err)));
-      setTimeout(() => setUpdateStatus(''), 3000);
-    } finally {
-      setIsCheckingUpdate(false);
-    }
-  };
+  // Updater disabled as per user request
 
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];

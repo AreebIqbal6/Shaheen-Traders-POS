@@ -74,52 +74,10 @@ const RootRedirect = () => {
   return null;
 };
 
-async function checkForUpdates() {
-  if (!(window as any).__TAURI_INTERNALS__) return; // Only run inside Tauri wrapper
-  try {
-    const { check } = await import('@tauri-apps/plugin-updater');
-    const { ask } = await import('@tauri-apps/plugin-dialog');
-    const { exit } = await import('@tauri-apps/plugin-process');
-    
-    const update = await check({ headers: { "Cache-Control": "no-cache", "Pragma": "no-cache" } });
-    if (update) {
-      const yes = await ask(`Update to ${update.version} is available!\n\nRelease notes: ${update.body || 'Bug fixes and improvements.'}\n\nDo you want to install it now?`, { 
-        title: 'Update Available', 
-        kind: 'info',
-        okLabel: 'Update',
-        cancelLabel: 'Cancel'
-      });
-      if (yes) {
-        let downloaded = 0;
-        let contentLength = 0;
-        await update.downloadAndInstall((event) => {
-          switch (event.event) {
-            case 'Started':
-              contentLength = event.data.contentLength || 0;
-              break;
-            case 'Progress':
-              downloaded += event.data.chunkLength;
-              break;
-            case 'Finished':
-              break;
-          }
-        });
-        await exit(0);
-      }
-    }
-  } catch (error) {
-    console.error('Failed to check for updates:', error);
-  }
-}
-
 export default function App() {
   const [remountKey, setRemountKey] = React.useState(0);
   
   React.useEffect(() => {
-    // Check for OTA updates on startup and every hour
-    checkForUpdates();
-    const updateInterval = setInterval(checkForUpdates, 1000 * 60 * 60); // 1 hour
-
     const handler = () => setRemountKey(k => k + 1);
     window.addEventListener('force_remount', handler);
     
