@@ -118,7 +118,10 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
   
-  const [products, setProducts] = useState<Product[]>([]);
+  const [products, setProducts] = useState<Product[]>(() => {
+    const saved = localStorage.getItem('shaheen_b2b_products_v2');
+    return saved ? JSON.parse(saved) : [];
+  });
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   
@@ -466,8 +469,8 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
         const oldStr = localStorage.getItem('shaheen_b2b_products_v2');
         if (newStr !== oldStr) {
           localStorage.setItem('shaheen_b2b_products_v2', newStr);
-          setProducts(mappedData);
         }
+        setProducts(mappedData);
       }
     } catch (err) {
       console.error("Connection failed:", err);
