@@ -9,7 +9,7 @@ export default function B2BLoginView({ onLoginSuccess }: { onLoginSuccess: () =>
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [deferredPrompt, setDeferredPrompt] = useState<any>((window as any).deferredPrompt || null);
 
   // We are storing the offline login explicitly since Bookers use weak network
   const handleOfflineLogin = async () => {
@@ -93,10 +93,15 @@ export default function B2BLoginView({ onLoginSuccess }: { onLoginSuccess: () =>
     window.addEventListener('branding_updated', handleBranding);
     
     const handleBeforeInstallPrompt = (e: unknown) => {
-      e.preventDefault();
+      (e as any).preventDefault();
       setDeferredPrompt(e);
+      (window as any).deferredPrompt = e;
     };
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    
+    if ((window as any).deferredPrompt) {
+      setDeferredPrompt((window as any).deferredPrompt);
+    }
     
     return () => {
       window.removeEventListener('branding_updated', handleBranding);
