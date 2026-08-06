@@ -442,7 +442,7 @@ export default function ProductsView({ products = [], setProducts }: ProductsVie
           <span className="text-lg lg:text-2xl font-bold text-slate-900 dark:text-slate-50 mt-1">{totalProducts}</span>
         </div>
         <div className="col-span-1 bg-white dark:bg-zinc-900/60 backdrop-blur-md border border-slate-200 dark:border-zinc-800/50 shadow-sm rounded-xl p-3 md:p-4 flex flex-col justify-between h-full min-h-[90px] relative overflow-hidden group">
-          <div className="absolute right-3 top-3 w-2 h-2 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.8)] animate-pulse"></div>
+          <div className="absolute right-3 top-3 w-2 h-2 rounded-full bg-red-500"></div>
           <span className="text-[11px] md:text-[12px] font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Critical</span>
           <span className="text-lg lg:text-2xl font-bold text-red-600 dark:text-red-400 mt-1">{criticalStock}</span>
         </div>
@@ -622,7 +622,7 @@ export default function ProductsView({ products = [], setProducts }: ProductsVie
                         isWarn ? 'bg-[var(--color-warn-dim)] text-amber-600 dark:text-amber-400 border border-[var(--color-warn)]/30' : 
                         'text-slate-600 dark:text-slate-400'
                       }`}>
-                        {isCrit && <div className="w-1 h-1 rounded-full bg-red-500 animate-pulse"></div>}
+                        {isCrit && <div className="w-1 h-1 rounded-full bg-red-500"></div>}
                         {product.stock}
                       </span>
                     </td>
@@ -650,7 +650,7 @@ export default function ProductsView({ products = [], setProducts }: ProductsVie
                   <div className="p-4 flex flex-col gap-2 hover:bg-[rgba(255,255,255,0.03)] transition-colors border-b border-slate-200 dark:border-slate-700">
                      <div className="flex justify-between items-start gap-2">
                          <div className="flex flex-col min-w-0 flex-1">
-                           <h3 className="font-semibold text-white text-sm leading-tight break-words">{product.name}</h3>
+                           <h3 className="font-semibold text-slate-900 dark:text-white text-sm leading-tight break-words">{product.name}</h3>
                            <div className="flex items-center gap-2 mt-1 truncate">
                              <span className="font-mono text-slate-600 dark:text-slate-400 text-xs truncate">{product.barcode}</span>
                              <span className="font-mono font-bold text-slate-900 dark:text-slate-50 text-[10px] bg-white dark:bg-zinc-900/60 backdrop-blur-md border border-slate-200 dark:border-zinc-800/50 px-1.5 py-0.5 rounded-sm shrink-0">{product.sku || '-'}</span>

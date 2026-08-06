@@ -121,21 +121,30 @@ export default function B2BLoginView({ onLoginSuccess }: { onLoginSuccess: () =>
           Secure Field Agent Access
         </p>
 
-        {deferredPrompt && (
-          <button
-            onClick={async () => {
-              if (!deferredPrompt) return;
+        <button
+          onClick={async () => {
+            if (deferredPrompt) {
               deferredPrompt.prompt();
               const { outcome } = await deferredPrompt.userChoice;
               if (outcome === 'accepted') {
                 setDeferredPrompt(null);
               }
-            }}
-            className="mx-auto flex items-center gap-2 bg-slate-900 dark:bg-slate-50 text-white dark:text-slate-900 px-5 py-2.5 rounded-full text-sm font-bold shadow-lg hover:scale-105 transition-transform"
-          >
-            <Smartphone size={16} /> Install Booker App
-          </button>
-        )}
+            } else {
+              const isIos = () => {
+                const userAgent = window.navigator.userAgent.toLowerCase();
+                return /iphone|ipad|ipod/.test(userAgent);
+              };
+              if (isIos()) {
+                toast.success("To install on iPhone: Tap the Share button at the bottom, then 'Add to Home Screen'.", { duration: 5000, icon: '📱' });
+              } else {
+                toast("App might already be installed, or your browser doesn't support automatic installation. Try opening browser menu and selecting 'Install App' or 'Add to Home Screen'.", { duration: 5000, icon: 'ℹ️' });
+              }
+            }
+          }}
+          className="mx-auto flex items-center gap-2 bg-slate-900 dark:bg-slate-50 text-white dark:text-slate-900 px-5 py-2.5 rounded-full text-sm font-bold shadow-lg hover:scale-105 transition-transform"
+        >
+          <Smartphone size={16} /> Install Booker App
+        </button>
       </div>
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">

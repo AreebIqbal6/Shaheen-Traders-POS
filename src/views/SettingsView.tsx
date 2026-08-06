@@ -661,7 +661,9 @@ export default function SettingsView() {
           </div>
         </div>
 
-        {/* Auto-Save Export Location */}
+        {/* Auto-Save Export Location — Desktop Only */}
+        {('__TAURI_INTERNALS__' in window || '__TAURI__' in window) ? (
+          <>
         <div className="bg-blue-50/50 dark:bg-blue-900/10 border-2 border-blue-500/30 rounded-lg p-6 shadow-sm mb-6">
           <div className="flex items-center gap-3 mb-4 text-blue-700 dark:text-blue-400">
             <FolderDown size={28} />
@@ -716,6 +718,18 @@ export default function SettingsView() {
             </div>
           </div>
         </div>
+          </>
+        ) : (
+          <div className="bg-blue-50/50 dark:bg-blue-900/10 border-2 border-blue-500/30 rounded-lg p-6 shadow-sm mb-6">
+            <div className="flex items-center gap-3 mb-3 text-blue-700 dark:text-blue-400">
+              <FolderDown size={28} />
+              <h2 className="text-lg font-bold">Cloud Backup</h2>
+            </div>
+            <p className="text-[14px] text-blue-900/70 dark:text-blue-200/70 leading-relaxed">
+              Orders you place here are <span className="font-bold text-blue-700 dark:text-blue-400">automatically backed up to the cloud</span> in real-time. No manual setup is needed on this device.
+            </p>
+          </div>
+        )}
 
         <div className="flex justify-end mt-2">
           <button onClick={handleSave} className="bg-blue-600 text-white px-6 py-2.5 rounded-sm font-semibold shadow-sm hover:bg-blue-700 transition-colors text-[13px]">

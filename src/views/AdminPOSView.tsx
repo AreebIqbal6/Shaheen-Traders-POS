@@ -978,7 +978,9 @@ export default function AdminPOSView() {
 
   useEffect(() => {
     if (activeMenu === 'Register' && !isAlertDrawerOpen) {
-      hiddenScannerRef.current?.focus();
+      if ('__TAURI_INTERNALS__' in window || '__TAURI__' in window) {
+        hiddenScannerRef.current?.focus();
+      }
     }
   }, [activeMenu, isAlertDrawerOpen]);
 

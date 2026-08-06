@@ -447,9 +447,13 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
       const data = await fetchAllProducts();
 
       if (!data || data.length === 0) {
-        setProducts([]);
-        localStorage.removeItem('shaheen_b2b_products');
-        localStorage.removeItem('shaheen_b2b_products_v2');
+        // Protect against transient empty responses by falling back to cache
+        const localProducts = JSON.parse(localStorage.getItem('shaheen_b2b_products_v2') || '[]');
+        if (localProducts.length > 0) {
+           setProducts(localProducts);
+        } else {
+           setProducts([]);
+        }
       } else {
         const mappedData = data.map((p: Product) => ({
           ...p,
@@ -560,20 +564,31 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
           </div>
           <div className="flex items-center gap-4 md:gap-8">
             {/* Install App Button (Dynamic based on PWA support) */}
-            {deferredPrompt && (
-              <button 
-                onClick={async () => {
+            <button 
+              onClick={async () => {
+                if (deferredPrompt) {
                   deferredPrompt.prompt();
                   const { outcome } = await deferredPrompt.userChoice;
                   if (outcome === 'accepted') setDeferredPrompt(null);
-                }}
-                className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 md:px-4 md:py-2 rounded-lg text-xs md:text-sm font-bold transition-colors shadow-sm"
-              >
-                <Smartphone size={16} className="md:w-5 md:h-5" />
-                <span className="hidden sm:inline">Install App</span>
-                <span className="sm:hidden">Install</span>
-              </button>
-            )}
+                } else {
+                  // Fallback for iOS or already installed
+                  const isIos = () => {
+                    const userAgent = window.navigator.userAgent.toLowerCase();
+                    return /iphone|ipad|ipod/.test(userAgent);
+                  };
+                  if (isIos()) {
+                    toast.success("To install on iPhone: Tap the Share button at the bottom, then 'Add to Home Screen'.", { duration: 5000, icon: '📱' });
+                  } else {
+                    toast("App might already be installed, or your browser doesn't support automatic installation. Try opening browser menu and selecting 'Install App' or 'Add to Home Screen'.", { duration: 5000, icon: 'ℹ️' });
+                  }
+                }
+              }}
+              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 md:px-4 md:py-2 rounded-lg text-xs md:text-sm font-bold transition-colors shadow-sm"
+            >
+              <Smartphone size={16} className="md:w-5 md:h-5" />
+              <span className="hidden sm:inline">Install App</span>
+              <span className="sm:hidden">Install</span>
+            </button>
 
             {/* Desktop Nav - Visible only on PC */}
             <div className="hidden md:flex gap-8 items-center pr-4">

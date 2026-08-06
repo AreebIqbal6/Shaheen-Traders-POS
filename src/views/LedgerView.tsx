@@ -145,6 +145,7 @@ export default function LedgerView({ pastOrders }: LedgerViewProps) {
                   <th className="px-6 py-4 font-semibold text-right">Total Billed</th>
                   <th className="px-6 py-4 font-semibold text-right">Total Paid</th>
                   <th className="px-6 py-4 font-semibold text-right">Balance</th>
+                  <th className="px-6 py-4 font-semibold text-right">Action</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200 dark:divide-zinc-800/50">
@@ -158,10 +159,32 @@ export default function LedgerView({ pastOrders }: LedgerViewProps) {
                          Rs {c.balance.toLocaleString('en-PK')}
                        </span>
                     </td>
+                    <td className="px-6 py-4 text-right">
+                      {c.balance > 0 && (
+                        <button
+                          onClick={() => {
+                            const newPayment: LedgerPayment = {
+                              id: Date.now().toString(),
+                              clientName: c.name,
+                              amount: c.balance,
+                              date: new Date().toISOString(),
+                              notes: 'Full balance settled'
+                            };
+                            const updated = [newPayment, ...payments];
+                            setPayments(updated);
+                            localStorage.setItem('shaheen_ledger_payments', JSON.stringify(updated));
+                            toast.success(`Marked ${c.name} as fully paid (Rs ${c.balance.toLocaleString('en-PK')})`);
+                          }}
+                          className="px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-lg text-xs font-bold transition-colors whitespace-nowrap"
+                        >
+                          ✓ Mark Paid
+                        </button>
+                      )}
+                    </td>
                   </tr>
                 )) : (
                   <tr>
-                    <td colSpan={4} className="px-6 py-12 text-center text-slate-500">No clients found matching your search.</td>
+                    <td colSpan={5} className="px-6 py-12 text-center text-slate-500">No clients found matching your search.</td>
                   </tr>
                 )}
               </tbody>
