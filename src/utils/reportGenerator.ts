@@ -1,4 +1,4 @@
-import { supabase } from '../supabaseClient';
+import { supabase } from "../lib/supabase";
 import { exportHeadlessReportToPDF } from './exportReportPdf';
 import { exportReportToExcel } from './exportReportExcel';
 import { type ReportData } from '../components/ReportReceipt';

@@ -48,7 +48,7 @@ export const exportHeadlessReportToPDF = async (receiptData: ReportData): Promis
           
           const imgData = await toPng(pageEl, {
             cacheBust: true,
-            pixelRatio: 4, // Ultra high quality
+            pixelRatio: 2, // High quality, but not insanely slow
             backgroundColor: '#ffffff',
             width: pageEl.offsetWidth,
             height: pageEl.offsetHeight,
