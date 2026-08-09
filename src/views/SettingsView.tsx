@@ -191,6 +191,12 @@ export default function SettingsView() {
   };
 
   const handleFolderSelect = async (isSecondary: boolean) => {
+    const isDesktop = '__TAURI_INTERNALS__' in window || '__TAURI__' in window;
+    if (!isDesktop) {
+      toast.error("this feature is available on the desktop application", { duration: 6000, style: { minWidth: '400px' } });
+      return;
+    }
+
     const savePath = (pathName: string) => {
       if (isSecondary) {
         setSecondaryBackupPath(pathName);
@@ -200,11 +206,6 @@ export default function SettingsView() {
         localStorage.setItem('shaheen_backuppath', pathName);
       }
     };
-
-    if (!('__TAURI_INTERNALS__' in window) && !('__TAURI__' in window) && !('showDirectoryPicker' in window)) {
-      toast.error("Automated folder backups require the Desktop App. Web users must manually download files via the browser.", { duration: 6000, style: { minWidth: '400px' } });
-      return;
-    }
 
     try {
       if ('__TAURI_INTERNALS__' in window || '__TAURI__' in window) {

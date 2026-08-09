@@ -160,6 +160,12 @@ export default function ReceiptView() {
              </button>
              <button 
                onClick={async () => {
+                 const isDesktop = '__TAURI_INTERNALS__' in window || '__TAURI__' in window;
+                 if (!isDesktop) {
+                   toast.error("this feature is available on the desktop application", { duration: 6000, style: { minWidth: '400px' } });
+                   return;
+                 }
+
                  if (order) {
                    const details = {
                      clientName: order.clientName,

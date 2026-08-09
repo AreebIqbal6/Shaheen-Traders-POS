@@ -5,6 +5,8 @@ const B2BShopView = React.lazy(() => import('./views/B2BShopView'));
 const RoleSelectionView = React.lazy(() => import('./views/RoleSelectionView'));
 const B2BAuthWrapper = React.lazy(() => import('./components/B2BAuthWrapper'));
 const ReceiptView = React.lazy(() => import('./views/ReceiptView'));
+const ReportView = React.lazy(() => import('./views/ReportView'));
+const ReportAuthWrapper = React.lazy(() => import('./components/ReportAuthWrapper'));
 import OfflineIndicator from './components/OfflineIndicator';
 import { Toaster, ToastBar, toast } from 'react-hot-toast';
 import { X } from 'lucide-react';
@@ -313,10 +315,10 @@ export default function App() {
           <Route path="/select-role" element={<RoleSelectionView />} />
           <Route path="/admin/*" element={<AdminPOSView key={`admin-${remountKey}`} />} />
           <Route path="/booker" element={<B2BAuthWrapper><B2BShopView /></B2BAuthWrapper>} />
-          <Route path="/receipt/:orderId" element={<B2BAuthWrapper><ReceiptView /></B2BAuthWrapper>} />
+          <Route path="/receipt/:orderId" element={<ReceiptView />} />
+          <Route path="/report/:reportId" element={<ReportAuthWrapper><ReportView /></ReportAuthWrapper>} />
         </Routes>
       </React.Suspense>
     </>
   );
 }
-
