@@ -4,6 +4,7 @@ import toast from 'react-hot-toast';
 
 import { supabase } from '../lib/supabase';
 import { ensureBackupFolder } from '../utils/backupValidator';
+import { generateMockReports } from '../utils/generateMockReports';
 
 export default function SettingsView() {
   const [backupPath, setBackupPath] = useState('');
@@ -711,6 +712,26 @@ export default function SettingsView() {
           <button onClick={handleSave} className="bg-blue-600 text-white px-6 py-2.5 rounded-sm font-semibold shadow-sm hover:bg-blue-700 transition-colors text-[13px]">
             Save Configurations
           </button>
+        </div>
+
+        {/* Mock Generation */}
+        <div className="mt-8 pt-6 border-t border-zinc-200 dark:border-zinc-700">
+          <h3 className="text-[13px] font-bold text-zinc-600 mb-2 flex items-center gap-2">
+            <Database size={16} /> Data Generation
+          </h3>
+          <div className="bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-900/30 rounded-sm p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div>
+              <h4 className="text-[13px] font-semibold text-slate-900 dark:text-slate-100">Generate Mock Reports</h4>
+              <p className="text-[11px] text-slate-500 mt-1">This will generate mock Monthly (4-page) and Bi-Yearly (10-page) reports inside your SHAHEEN BACKUP folder using your current products.</p>
+            </div>
+            
+            <button
+              onClick={() => generateMockReports()}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-sm font-bold text-[12px] shadow-sm transition-colors whitespace-nowrap shrink-0"
+            >
+              Generate Mocks
+            </button>
+          </div>
         </div>
 
         {/* Danger Zone */}
