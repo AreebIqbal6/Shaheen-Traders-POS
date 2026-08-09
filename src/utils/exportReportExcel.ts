@@ -17,8 +17,7 @@ export const exportReportToExcel = async (data: ReportData) => {
     { width: 15 }, // C: Prod ID
     { width: 35 }, // D: Product Name
     { width: 12 }, // E: Quantity
-    { width: 12 }, // F: Rate
-    { width: 15 }  // G: Amount
+    { width: 15 }  // F: Amount
   ];
 
   // 1. Generate Base64 Images Locally
@@ -103,7 +102,7 @@ export const exportReportToExcel = async (data: ReportData) => {
 
   // Headers
   const headerRow = sheet.getRow(12);
-  headerRow.values = ['S.No', 'SKU', 'Prod ID', 'Product Name', 'Quantity', 'Rate', 'Amount'];
+  headerRow.values = ['S.No', 'SKU', 'Prod ID', 'Product Name', 'Quantity', 'Amount'];
   headerRow.font = { bold: true };
   headerRow.alignment = { horizontal: 'center' };
   headerRow.eachCell(cell => {
@@ -121,7 +120,6 @@ export const exportReportToExcel = async (data: ReportData) => {
       item.barcode || item.id,
       item.name,
       `${item.quantity} ${item.uom || 'Pcs'}`,
-      item.price.toFixed(2),
       (item.quantity * item.price).toFixed(2)
     ];
     row.eachCell((cell, colNumber) => {

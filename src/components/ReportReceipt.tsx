@@ -224,7 +224,6 @@ export default function ReportReceipt({ data, className = '', isPrintable = true
                     <th className="py-0.5 px-1 font-bold text-slate-900 border-x-2 border-slate-800 text-center w-[80px]">Prod ID</th>
                     <th className="py-0.5 px-1 font-bold text-slate-900 border-x-2 border-slate-800">Product Name</th>
                     <th className="py-0.5 px-1 font-bold text-slate-900 border-x-2 border-slate-800 text-center w-[60px]">Quantity</th>
-                    <th className="py-0.5 px-1 font-bold text-slate-900 border-x-2 border-slate-800 text-center w-[65px]">Rate/Pcs</th>
                     <th className="py-0.5 px-1 font-bold text-slate-900 border-x-2 border-slate-800 text-center w-[75px]">Amount</th>
                   </tr>
                 </thead>
@@ -238,7 +237,6 @@ export default function ReportReceipt({ data, className = '', isPrintable = true
                         <td className="py-0 px-1 text-center text-slate-800 border-x-2 border-slate-800 font-mono text-[9px] truncate max-w-[80px]">{item.barcode || item.id}</td>
                         <td className="py-0 px-1 text-slate-900 font-semibold border-x-2 border-slate-800 leading-tight">{item.name}</td>
                         <td className="py-0 px-1 text-center text-slate-900 border-x-2 border-slate-800 font-bold">{item.quantity} <span className="text-[9px] text-slate-600 font-normal">{item.uom || 'Pcs'}</span></td>
-                        <td className="py-0 px-1 text-center text-slate-800 border-x-2 border-slate-800">{(item as any).basePrice ? (item as any).basePrice.toFixed(2) : item.price.toFixed(2)}</td>
                         <td className="py-0 px-1 text-center text-slate-900 border-x-2 border-slate-800 font-bold">{(item.quantity * item.price).toFixed(2)}</td>
                       </tr>
                     );

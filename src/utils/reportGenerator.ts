@@ -30,12 +30,9 @@ export async function generateMonthlyReport(year: number, month: number) {
     return;
   }
 
-  if (!orders || orders.length === 0) {
-    return; // No orders this month
-  }
-
-  const aggregatedItems = aggregateItems(orders);
-  const totalAmount = orders.reduce((sum, order) => sum + (order.total || 0), 0);
+  const actualOrders = orders || [];
+  const aggregatedItems = aggregateItems(actualOrders);
+  const totalAmount = actualOrders.reduce((sum, order) => sum + (order.total || 0), 0);
 
   const reportId = `MONTHLY-${year}-${month.toString().padStart(2, '0')}`;
   
@@ -118,12 +115,9 @@ export async function generateBiYearlyReport(year: number, half: 1 | 2) {
     return;
   }
 
-  if (!orders || orders.length === 0) {
-    return; // No orders
-  }
-
-  const aggregatedItems = aggregateItems(orders);
-  const totalAmount = orders.reduce((sum, order) => sum + (order.total || 0), 0);
+  const actualOrders = orders || [];
+  const aggregatedItems = aggregateItems(actualOrders);
+  const totalAmount = actualOrders.reduce((sum, order) => sum + (order.total || 0), 0);
 
   const reportId = `BIYEARLY-${year}-H${half}`;
   
@@ -229,16 +223,32 @@ export async function autoGenerateMissingReports() {
   const baseDir = await ensureBackupFolder();
   if (!baseDir) return;
 
-  // Let's only go back 1 year to prevent infinite fetching or freezing
   const currentDate = new Date();
   const currentYear = currentDate.getFullYear();
   const currentMonth = currentDate.getMonth() + 1; // 1-12
+  
+  // Find the earliest order date to know how far back to go
+  let startYear = currentYear - 1;
+  try {
+    const { data: oldestOrder } = await supabase
+      .from('orders')
+      .select('created_at')
+      .order('created_at', { ascending: true })
+      .limit(1)
+      .single();
+      
+    if (oldestOrder && oldestOrder.created_at) {
+      startYear = new Date(oldestOrder.created_at).getFullYear();
+    }
+  } catch (err) {
+    console.error("Failed to fetch oldest order year", err);
+  }
   
   // We only generate reports for PAST months/periods. We don't generate the current active month.
   
   const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
-  for (let year = currentYear - 1; year <= currentYear; year++) {
+  for (let year = startYear; year <= currentYear; year++) {
     for (let month = 1; month <= 12; month++) {
       if (year === currentYear && month >= currentMonth) {
         break; // Stop at current or future months
