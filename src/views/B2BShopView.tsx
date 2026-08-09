@@ -631,7 +631,7 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
              </div>
 
              {/* Product List */}
-             {isLoading ? (
+             {isLoading && products.length === 0 ? (
                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 animate-slide-up w-full">
                  {[...Array(12)].map((_, i) => (
                    <div key={i} className="bg-white dark:bg-zinc-900/60 backdrop-blur-md border border-slate-200 dark:border-zinc-800/50 rounded-lg p-3 shadow-sm flex flex-col justify-between gap-3 h-28">
