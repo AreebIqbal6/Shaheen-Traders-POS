@@ -3,11 +3,12 @@ import React, { useState, useEffect, useRef, useMemo, useCallback, lazy, Suspens
 import { VirtuosoGrid } from 'react-virtuoso';
 import { playNotificationSound } from '../utils/audio';
 import { saveSilentBackup } from '../utils/silentBackup';
-import { LayoutDashboard, ShoppingBag, Package, Settings, Search, Trash2, Printer, ScanBarcode, BarChart3, Bell, X, AlertTriangle, FileText, User, Building, Moon, Sun, Grid, ShoppingCart, CreditCard, MapPin, LogOut, ClipboardList, Menu, Users, ChevronDown, Phone, Map as MapIcon, PieChart, BookOpen, Clock, Download } from 'lucide-react';
+import { LayoutDashboard, ShoppingBag, Package, Settings, Search, Trash2, Printer, ScanBarcode, BarChart3, Bell, X, AlertTriangle, FileText, User, Building, Moon, Sun, Grid, ShoppingCart, CreditCard, MapPin, LogOut, ClipboardList, Menu, Users, ChevronDown, Phone, Map as MapIcon, PieChart, BookOpen, Clock, Download, HelpCircle } from 'lucide-react';
 import { fetchAllProducts } from '../utils/fetchAllProducts';
 
 const ProductsView = lazy(() => import('./ProductsView'));
 import type { Product } from './ProductsView';
+import TourGuide from '../components/TourGuide';
 const UpdaterButton = lazy(() => import('../components/UpdaterButton'));
 const SettingsView = lazy(() => import('./SettingsView'));
 const AuthView = lazy(() => import('./AuthView'));
@@ -515,8 +516,17 @@ export default function AdminPOSView() {
   }, [products, pastOrders]);
 
   // Alerts System
-  const [isAlertDrawerOpen, setIsAlertDrawerOpen] = useState(false);
-  const [registerSearchQuery, setRegisterSearchQuery] = useState('');
+    const [isAlertDrawerOpen, setIsAlertDrawerOpen] = useState(false);
+    const [registerSearchQuery, setRegisterSearchQuery] = useState('');
+    const [tourRun, setTourRun] = useState(false);
+
+    useEffect(() => {
+      const tourCompleted = localStorage.getItem('shaheen_pos_tour_completed');
+      if (!tourCompleted) {
+        // Slight delay to ensure elements are mounted
+        setTimeout(() => setTourRun(true), 1000);
+      }
+    }, []);
   
   const barcodeBuffer = useRef('');
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -1416,7 +1426,7 @@ export default function AdminPOSView() {
             <div className="flex-1 flex overflow-hidden relative">
               
               {/* Center-Left Column: Product Catalog */}
-              <div className={`${mobileActiveTab === 'catalog' ? 'flex' : 'hidden'} md:flex flex-1 flex-col bg-slate-50 dark:bg-[#0a0a0c] min-w-0`}>
+              <div className={`${mobileActiveTab === 'catalog' ? 'flex' : 'hidden'} md:flex flex-1 flex-col bg-slate-50 dark:bg-[#0a0a0c] min-w-0 tour-catalog`}>
                 <div className="flex-1 flex flex-col h-full overflow-hidden relative">
                   
                   {/* Hidden Scanner Input */}
@@ -1438,7 +1448,7 @@ export default function AdminPOSView() {
                       <h1 className="text-2xl font-semibold text-slate-900 dark:text-slate-50 tracking-tight">Register</h1>
                     </div>
 
-                    <div className="flex items-center bg-white dark:bg-zinc-900/60 backdrop-blur-md border border-slate-200 dark:border-zinc-800/50 rounded-sm px-4 py-2.5 flex-1 max-w-[420px] shadow-sm focus-within:ring-1 ring-slate-400 transition-all">
+                    <div className="flex items-center bg-white dark:bg-zinc-900/60 backdrop-blur-md border border-slate-200 dark:border-zinc-800/50 rounded-sm px-4 py-2.5 flex-1 max-w-[420px] shadow-sm focus-within:ring-1 ring-slate-400 transition-all tour-search">
                       <Search size={18} className="text-slate-400 mr-3 shrink-0" />
                       <input 
                         type="text" 
@@ -1478,7 +1488,7 @@ export default function AdminPOSView() {
                       style={{ height: '100%', width: '100%' }}
                       data={filteredProducts}
                       overscan={200}
-                      listClassName="grid grid-cols-[repeat(auto-fill,minmax(180px,1fr))] gap-4"
+                      listClassName="grid grid-cols-[repeat(auto-fill,minmax(180px,1fr))] gap-4 tour-product-grid"
                       itemClassName="flex flex-col"
                       itemContent={(index, p) => (
                         <button 
@@ -1504,7 +1514,7 @@ export default function AdminPOSView() {
               </div>
 
               {/* Center-Right Column: Cart Items */}
-              <div className={`${mobileActiveTab === 'cart' ? 'flex' : 'hidden'} md:flex w-full md:w-[25%] lg:w-[25%] xl:w-[20%] shrink-0 border-l border-slate-200 dark:border-zinc-800/50 flex-col h-full bg-white dark:bg-zinc-900/60 backdrop-blur-md z-10`}>
+              <div className={`${mobileActiveTab === 'cart' ? 'flex' : 'hidden'} md:flex w-full md:w-[25%] lg:w-[25%] xl:w-[20%] shrink-0 border-l border-slate-200 dark:border-zinc-800/50 flex-col h-full bg-white dark:bg-zinc-900/60 backdrop-blur-md z-10 tour-cart-panel`}>
                 <div className="p-4 border-b border-slate-100 dark:border-zinc-900 flex justify-between items-center bg-slate-50 dark:bg-[#0a0a0c]/50 shrink-0">
                   <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-50 tracking-tight">Cart Items</h2>
                   <div className="flex items-center gap-2">
@@ -1627,7 +1637,7 @@ export default function AdminPOSView() {
               </div>
 
               {/* Rightmost Column: Checkout & Actions */}
-              <div className={`${mobileActiveTab === 'checkout' ? 'flex' : 'hidden'} md:flex w-full md:w-80 shrink-0 border-l border-slate-200 dark:border-zinc-800/50 flex-col h-full bg-slate-50 dark:bg-[#0a0a0c]/80 z-20 shadow-sm relative`}>
+              <div className={`${mobileActiveTab === 'checkout' ? 'flex' : 'hidden'} md:flex w-full md:w-80 shrink-0 border-l border-slate-200 dark:border-zinc-800/50 flex-col h-full bg-slate-50 dark:bg-[#0a0a0c]/80 z-20 shadow-sm relative tour-checkout-btn`}>
                 <div className="pb-3 border-b border-slate-200 dark:border-zinc-800/50 shrink-0 p-4">
                   <h3 className="text-xs font-bold text-slate-500 dark:text-slate-400 tracking-wider uppercase mb-0.5">Checkout</h3>
                   <h2 className="text-base font-semibold text-slate-900 dark:text-slate-50 tracking-tight">Summary & Dispatch</h2>
@@ -2017,6 +2027,13 @@ export default function AdminPOSView() {
                   <Settings size={20} />
                   <span className="text-[15px]">Settings</span>
                 </button>
+                <button 
+                  onClick={() => { setTourRun(true); setIsMobileMenuOpen(false); }}
+                  className="flex items-center gap-3 px-4 py-3 rounded-xl transition-all w-full text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-100 font-medium mt-1"
+                >
+                  <HelpCircle size={20} />
+                  <span className="text-[15px]">Help & Tour</span>
+                </button>
               </div>
             </div>
             
@@ -2049,8 +2066,16 @@ export default function AdminPOSView() {
         </div>
       )}
 
+        <TourGuide 
+          run={tourRun} 
+          onFinish={() => { 
+            setTourRun(false); 
+            localStorage.setItem('shaheen_pos_tour_completed', 'true'); 
+          }} 
+        />
+
       {/* Sidebar Navigation (Hidden on Mobile) */}
-      <aside className="hidden md:flex w-64 bg-slate-50 dark:bg-zinc-950 border-r border-slate-200 dark:border-zinc-800 flex-col shrink-0 z-30 px-3 py-3 print:hidden overflow-y-auto custom-scrollbar shadow-xl shadow-black/5">
+      <aside className="hidden md:flex w-64 bg-slate-50 dark:bg-zinc-950 border-r border-slate-200 dark:border-zinc-800 flex-col shrink-0 z-30 px-3 py-3 print:hidden overflow-y-auto custom-scrollbar shadow-xl shadow-black/5 tour-sidebar">
         <div className="flex items-center gap-2.5 px-1.5 pb-3 mb-1 border-b border-slate-200 dark:border-zinc-800/50 cursor-pointer" onClick={() => setActiveMenu('Register')}>
           <div className="w-8 h-8 flex items-center justify-center shrink-0 overflow-hidden rounded-md">
             {logo ? (
@@ -2124,6 +2149,14 @@ export default function AdminPOSView() {
           >
             <Settings size={15} className={`shrink-0 ${activeMenu === 'Settings' ? 'opacity-100' : 'opacity-60'}`} />
             <span className="whitespace-nowrap">Settings</span>
+          </button>
+
+          <button 
+            onClick={() => setTourRun(true)}
+            className="flex items-center gap-[9px] px-[9px] py-1.5 rounded-md transition-all text-[13px] font-medium w-full text-left relative overflow-hidden text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:text-slate-50"
+          >
+            <HelpCircle size={15} className="shrink-0 opacity-60" />
+            <span className="whitespace-nowrap">Help & Tour</span>
           </button>
 
           <button 
