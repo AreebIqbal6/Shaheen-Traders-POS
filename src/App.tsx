@@ -83,7 +83,10 @@ export default function App() {
   
   React.useEffect(() => {
     // Generate missing monthly and bi-yearly reports in the background
-    autoGenerateMissingReports().catch(err => console.error("Auto report generation failed:", err));
+    // Delay heavy background report generation by 5 seconds to let UI mount smoothly
+    const reportTimeout = setTimeout(() => {
+      autoGenerateMissingReports().catch(err => console.error("Auto report generation failed:", err));
+    }, 5000);
 
     const handler = () => setRemountKey(k => k + 1);
     window.addEventListener('force_remount', handler);
@@ -147,6 +150,7 @@ export default function App() {
       .subscribe();
 
     return () => {
+      clearTimeout(reportTimeout);
       clearInterval(updateInterval);
       settingsSub.unsubscribe();
       document.removeEventListener('visibilitychange', handleVisibility);
@@ -193,6 +197,8 @@ export default function App() {
                 autoBackedUp.push(orderId);
                 localStorage.setItem('shaheen_auto_backed_up', JSON.stringify(autoBackedUp));
                 console.log(`[Startup Sync] Backed up missed order: ${orderId}`);
+                // Yield thread to prevent UI freezing on first massive backup run
+                await new Promise(resolve => setTimeout(resolve, 50));
               }
             }
           } catch (err) {
@@ -205,10 +211,14 @@ export default function App() {
     };
 
       // Run startup backup immediately, and then strictly every 10 seconds.
-      backupMissedOrders();
-      const syncInterval = setInterval(() => {
+      // Delay startup backup by 8 seconds to prioritize UI rendering
+      let syncInterval: any;
+      const startupTimeout = setTimeout(() => {
         backupMissedOrders();
-      }, 10000);
+        syncInterval = setInterval(() => {
+          backupMissedOrders();
+        }, 10000);
+      }, 8000);
 
     // 2. Establish the silent global listener
     const syncChannel = supabase
@@ -266,9 +276,10 @@ export default function App() {
     document.addEventListener('visibilitychange', handleWake);
 
     return () => {
+      clearTimeout(startupTimeout);
+      if (syncInterval) clearInterval(syncInterval);
       supabase.removeChannel(syncChannel);
       document.removeEventListener('visibilitychange', handleWake);
-      clearInterval(syncInterval);
     };
   }, []);
 
