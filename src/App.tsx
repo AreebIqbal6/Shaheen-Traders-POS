@@ -74,10 +74,15 @@ const RootRedirect = () => {
   return null;
 };
 
+import { autoGenerateMissingReports } from './utils/reportGenerator';
+
 export default function App() {
   const [remountKey, setRemountKey] = React.useState(0);
   
   React.useEffect(() => {
+    // Generate missing monthly and bi-yearly reports in the background
+    autoGenerateMissingReports().catch(err => console.error("Auto report generation failed:", err));
+
     const handler = () => setRemountKey(k => k + 1);
     window.addEventListener('force_remount', handler);
     
