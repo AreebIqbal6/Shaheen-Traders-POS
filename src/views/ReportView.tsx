@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
-import ReportReceipt, { ReportData } from '../components/ReportReceipt';
+import ReportReceipt from '../components/ReportReceipt';
+import type { ReportData } from '../components/ReportReceipt';
 import { Loader2, Printer, ChevronLeft } from 'lucide-react';
 
 export default function ReportView() {
