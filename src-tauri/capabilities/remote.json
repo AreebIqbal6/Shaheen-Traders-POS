@@ -33,7 +33,8 @@
                         "updater:default",
                         "process:default",
                         "process:allow-restart",
-                        "process:allow-exit"
+                        "process:allow-exit",
+                        "path:default"
                     ],
     "remote":  {
                    "urls":  [
