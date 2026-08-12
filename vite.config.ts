@@ -118,7 +118,7 @@ export default defineConfig({
       }
     })
   ],
-  base: './',
+  base: '/',
   build: {
     sourcemap: false, // Prevents generating original source code maps
     rollupOptions: {
