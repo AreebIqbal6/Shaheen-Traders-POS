@@ -584,31 +584,11 @@ export default function AdminPOSView() {
             return;
           }
           
-          toast.success(`Auto-backed up ${orderId} to PC.`);
-          
-          supabase.from('orders').update({ status: 'COMPLETED' }).eq('id', order.id || orderId).then(({ error }) => {
-            if (error) console.error("Failed to complete auto-backed up order in Supabase:", error);
-          });
-          
-          setPermanentlyHiddenOrders(prev => [...prev, orderId.toString()]);
-          
-          const newPastOrder: Order = {
-            receiptNumber: order.receipt_number || order.id,
-            date: new Date(order.created_at || new Date()),
-            items: order.items || [],
-            clientName: order.client_name,
-            area: order.area,
-            contactNumber: order.contact_number,
-            bookerName: order.booker_name,
-            total: order.total
-          };
-          setPastOrders(prev => {
-             if (prev.some(p => p.receiptNumber === newPastOrder.receiptNumber)) return prev;
-             return [newPastOrder, ...prev];
-          });
+          // Silently backed up. DO NOT complete it here. Allow the Admin to process it manually.
           
         } catch (e) {
           console.error(`Auto backup failed for ${orderId}:`, e);
+          autoBackedUp = autoBackedUp.filter(id => id !== orderId.toString());
         }
       }
     });
