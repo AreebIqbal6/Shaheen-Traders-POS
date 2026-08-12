@@ -89,7 +89,7 @@ export default defineConfig({
     react(),
     // mkcert(),
     VitePWA({
-      registerType: 'autoUpdate',
+      registerType: 'prompt',
       workbox: {
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024 // 5 MB
       },
