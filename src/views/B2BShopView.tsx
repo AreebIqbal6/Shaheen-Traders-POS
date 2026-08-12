@@ -166,7 +166,7 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
             .order('created_at', { ascending: false });
           
           if (activeBooker.id) {
-            query = query.eq('b2b_user_id', activeBooker.id);
+            query = query.or(`b2b_user_id.eq.${activeBooker.id},booker_name.eq.${activeBooker.name}`);
           }
           
           const { data, error } = await query;
@@ -196,7 +196,11 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
     }
   };
 
+  const isSyncingRef = useRef(false);
+
   const syncOfflineOrders = async (showLoading: boolean = true) => {
+    if (isSyncingRef.current) return;
+    
     const offlineOrders = JSON.parse(localStorage.getItem('shaheen_offline_orders') || '[]');
     const statusQueue = JSON.parse(localStorage.getItem('shaheen_offline_status_updates') || '[]');
     
@@ -207,6 +211,7 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
     
     if (offlineOrders.length === 0 && statusQueue.length === 0) return;
     
+    isSyncingRef.current = true;
     if (showLoading) setIsLoading(true);
     const failedOrders: any[] = [];
     
@@ -262,6 +267,7 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
       console.error("Sync error", err);
     } finally {
       if (showLoading) setIsLoading(false);
+      isSyncingRef.current = false;
     }
   };
 
