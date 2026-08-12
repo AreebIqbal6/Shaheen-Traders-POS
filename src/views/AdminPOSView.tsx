@@ -1666,9 +1666,16 @@ export default function AdminPOSView() {
                               type="text" 
                               value={clientName}
                               onChange={e => {
-                                setClientName(e.target.value);
-                                setShowShopDropdown(true);
-                              }}
+                                  const val = e.target.value;
+                                  setClientName(val);
+                                  setShowShopDropdown(true);
+                                  
+                                  const exactShop = shops.find(s => (s.name || '').toLowerCase() === val.toLowerCase());
+                                  if (exactShop) {
+                                    if (!area) setArea(exactShop.address || exactShop.area || '');
+                                    if (!contactNumber) setContactNumber(exactShop.contact_number || exactShop.contactNumber || exactShop.phone || '');
+                                  }
+                                }}
                               onFocus={() => { setShowShopDropdown(true); setShowBookerDropdown(false); }}
                               className="w-full bg-slate-50 dark:bg-[#0a0a0c] border border-slate-200 dark:border-zinc-800/50 rounded-sm py-1.5 px-2 pr-8 font-medium focus:outline-none focus:border-blue-500 transition-all text-xs"
                               placeholder="e.g. Metro Wholesale"

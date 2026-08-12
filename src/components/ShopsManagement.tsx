@@ -33,7 +33,7 @@ export default function ShopsManagement() {
   const [shops, setShops] = useState<Shop[]>(() => {
     try {
       const saved = localStorage.getItem('shaheen_shops');
-      return saved ? JSON.parse(saved) : [];
+      return saved ? JSON.parse(saved).map(mapRowToShop) : [];
     } catch {
       return [];
     }
@@ -55,7 +55,7 @@ export default function ShopsManagement() {
       try {
         const cached = localStorage.getItem('shaheen_shops');
         if (cached) {
-          setShops(JSON.parse(cached));
+          setShops(JSON.parse(cached).map(mapRowToShop));
         }
       } catch {}
     }, 5000);
