@@ -215,7 +215,7 @@ export default function OrderPreviewModal({
               </button>
 
                {onDispatch && (
-                     {isCompletedLocally ? (
+                     isCompletedLocally ? (
                        <button 
                          disabled
                          className="px-4 py-2.5 rounded-sm font-semibold text-emerald-700 bg-emerald-100 flex items-center justify-center gap-2 shadow-sm border border-emerald-300 cursor-not-allowed opacity-100"
@@ -255,7 +255,7 @@ export default function OrderPreviewModal({
                          <Check size={18} />
                          Complete Order
                        </button>
-                     )}
+                     )
                )}
              </>
            )}
