@@ -2280,15 +2280,17 @@ export default function AdminPOSView() {
              setIncomingOrders(prev => prev.filter(o => o.id !== activeSupabaseId && o.receipt_number !== draftOrderId));
              setPermanentlyHiddenOrders(prev => [...prev, activeSupabaseId || draftOrderId]);
              
-             setIsReceiptOpen(false);
-             
-             setCart([]);
-             setClientName('');
-             setArea('');
-             setBookerName((() => { const n = localStorage.getItem('shaheen_bookerName'); return (n && n.includes('@')) ? 'Admin' : (n || ''); })());
-             setContactNumber('');
-             setPaymentTerms('CASH');
-             setIsCheckoutSuccess(false);
+             setTimeout(() => {
+               setIsReceiptOpen(false);
+               
+               setCart([]);
+               setClientName('');
+               setArea('');
+               setBookerName((() => { const n = localStorage.getItem('shaheen_bookerName'); return (n && n.includes('@')) ? 'Admin' : (n || ''); })());
+               setContactNumber('');
+               setPaymentTerms('CASH');
+               setIsCheckoutSuccess(false);
+             }, 1200);
           }}
           cart={cart}
           total={total}

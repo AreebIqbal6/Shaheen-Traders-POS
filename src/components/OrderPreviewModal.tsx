@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import type { Product } from '../views/ProductsView';
 import Receipt from './Receipt';
-import { FolderDown, Globe, Printer, X, Check, Download } from 'lucide-react';
+import { FolderDown, Globe, Printer, X, Check, Download, CheckCircle2 } from 'lucide-react';
 import { saveOrderBackup } from '../utils/exportManager';
 import toast from 'react-hot-toast';
 import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch';
@@ -46,10 +46,12 @@ export default function OrderPreviewModal({
   isDispatched
 }: OrderPreviewModalProps) {
   const [isLocalSubmitting, setIsLocalSubmitting] = useState(false);
+  const [isCompletedLocally, setIsCompletedLocally] = useState(false);
   const submitting = isSubmitting || isLocalSubmitting;
 
   useEffect(() => {
     if (isOpen) {
+      setIsCompletedLocally(false);
       const originalTitle = document.title;
       document.title = draftOrderId;
       return () => {
@@ -213,35 +215,47 @@ export default function OrderPreviewModal({
               </button>
 
                {onDispatch && (
-                 <button 
-                   onClick={async () => {
-                     setIsLocalSubmitting(true);
-                     let backupSuccess = true;
-                     if (isAdmin) {
-                       const details = { clientName, paymentTerms, area, bookerName, contactNumber, total, subTotal };
-                       backupSuccess = await saveOrderBackup(draftOrderId, cart, details);
-                     }
-                     
-                     if (onDispatch) {
-                        const dispatchResult = await onDispatch();
-                        
-                        if (dispatchResult !== false && backupSuccess) {
-                           toast.success('Order has been saved and is completed successfully');
-                           if (onBackupSuccess) onBackupSuccess();
-                        } else if (dispatchResult !== false && !backupSuccess) {
-                           // Dispatch worked but local file backup failed (rare edge case on desktop)
-                           toast.success('Order completed (Local backup file failed)');
-                           if (onBackupSuccess) onBackupSuccess();
-                        }
-                     }
-                     setIsLocalSubmitting(false);
-                   }}
-                   disabled={submitting}
-                   className="px-4 py-2.5 rounded-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                 >
-                   <Check size={18} />
-                   Complete Order
-                 </button>
+                     {isCompletedLocally ? (
+                       <button 
+                         disabled
+                         className="px-4 py-2.5 rounded-sm font-semibold text-emerald-700 bg-emerald-100 flex items-center justify-center gap-2 shadow-sm border border-emerald-300 cursor-not-allowed opacity-100"
+                       >
+                         <CheckCircle2 size={18} />
+                         Order Completed
+                       </button>
+                     ) : (
+                       <button 
+                         onClick={async () => {
+                           setIsLocalSubmitting(true);
+                           let backupSuccess = true;
+                           if (isAdmin) {
+                             const details = { clientName, paymentTerms, area, bookerName, contactNumber, total, subTotal };
+                             backupSuccess = await saveOrderBackup(draftOrderId, cart, details);
+                           }
+                           
+                           if (onDispatch) {
+                              const dispatchResult = await onDispatch();
+                              
+                              if (dispatchResult !== false && backupSuccess) {
+                                 toast.success('Order has been saved and is completed successfully');
+                                 setIsCompletedLocally(true);
+                                 if (onBackupSuccess) onBackupSuccess();
+                              } else if (dispatchResult !== false && !backupSuccess) {
+                                 // Dispatch worked but local file backup failed (rare edge case on desktop)
+                                 toast.success('Order completed (Local backup file failed)');
+                                 setIsCompletedLocally(true);
+                                 if (onBackupSuccess) onBackupSuccess();
+                              }
+                           }
+                           setIsLocalSubmitting(false);
+                         }}
+                         disabled={submitting}
+                         className="px-4 py-2.5 rounded-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                       >
+                         <Check size={18} />
+                         Complete Order
+                       </button>
+                     )}
                )}
              </>
            )}
