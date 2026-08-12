@@ -1,0 +1,44 @@
+{
+    "$schema":  "../gen/schemas/desktop-schema.json",
+    "identifier":  "remote-access",
+    "description":  "enables the default permissions",
+    "windows":  [
+                    "main"
+                ],
+    "permissions":  [
+                        "core:default",
+                        "fs:default",
+                        "fs:allow-read-file",
+                        "fs:allow-write-file",
+                        "fs:allow-write-text-file",
+                        "fs:allow-read-dir",
+                        "fs:allow-mkdir",
+                        "fs:allow-exists",
+                        "fs:allow-remove",
+                        "fs:allow-rename",
+                        "fs:allow-copy-file",
+                        {
+                            "identifier":  "fs:scope",
+                            "allow":  [
+                                          {
+                                              "path":  "**"
+                                          }
+                                      ]
+                        },
+                        "dialog:default",
+                        "dialog:allow-confirm",
+                        "dialog:allow-ask",
+                        "dialog:allow-message",
+                        "os:default",
+                        "updater:default",
+                        "process:default",
+                        "process:allow-restart",
+                        "process:allow-exit"
+                    ],
+    "remote":  {
+                   "urls":  [
+                                "https://shaheenglobaltraders.vercel.app",
+                                "https://shaheenglobaltraders.vercel.app/*"
+                            ]
+               }
+}
