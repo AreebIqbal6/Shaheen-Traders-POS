@@ -1,33 +1,23 @@
-import React, { useEffect, useState } from 'react';
-import { supabase } from '../lib/supabase';
+import React, { useState } from 'react';
 import AuthView from '../views/AuthView';
 
 export default function ReportAuthWrapper({ children }: { children: React.ReactNode }) {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isAuthChecking, setIsAuthChecking] = useState(true);
+  // We force re-authentication for reports to ensure that if the POS is left open,
+  // unauthorized employees cannot view sensitive 6-monthly/bi-yearly financial reports.
+  const [isVerified, setIsVerified] = useState(false);
 
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setIsAuthenticated(!!session);
-      setIsAuthChecking(false);
-    });
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setIsAuthenticated(!!session);
-      setIsAuthChecking(false);
-    });
-
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, []);
-
-  if (isAuthChecking) {
-    return <div className="fixed inset-0 bg-slate-50 dark:bg-[#0a0a0c] flex items-center justify-center font-sans text-slate-500">Checking security clearance...</div>;
-  }
-
-  if (!isAuthenticated) {
-    return <AuthView onLogin={() => setIsAuthenticated(true)} />;
+  if (!isVerified) {
+    return (
+      <div className="relative h-screen w-full">
+        <AuthView onLogin={() => setIsVerified(true)} />
+        {/* We add an overlay banner to make it clear this is a security checkpoint */}
+        <div className="fixed top-6 left-0 w-full text-center z-[9999] pointer-events-none print:hidden">
+          <span className="bg-rose-500 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg uppercase tracking-widest">
+            Security Checkpoint: Re-authentication Required
+          </span>
+        </div>
+      </div>
+    );
   }
 
   return <>{children}</>;
