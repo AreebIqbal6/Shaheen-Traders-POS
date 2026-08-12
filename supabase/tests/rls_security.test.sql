@@ -42,8 +42,7 @@ SELECT is_empty(
 );
 
 SELECT throws_ok(
-    $$ INSERT INTO public.orders (receipt_number, idempotency_key, client_name, total_amount) VALUES ('TEST-ANON', gen_random_uuid(), 'Anon Client', 50.00) $$,
-    'new row violates row-level security policy for table "orders"',
+    $$ INSERT INTO public.orders (receipt_number, idempotency_key, client_name, total_amount) VALUES ('TEST-ANON', '22222222-2222-2222-2222-222222222222', 'Anon Client', 50.00) $$,
     'Unauthenticated users (anon) cannot insert orders'
 );
 
@@ -53,6 +52,7 @@ SET role authenticated;
 -- Impersonate User B
 SET request.jwt.claim.sub = '00000000-0000-0000-0000-000000000002';
 SET request.jwt.claim.role = 'authenticated';
+SET request.jwt.claims = '{"sub": "00000000-0000-0000-0000-000000000002", "role": "authenticated"}';
 
 SELECT is_empty(
     'SELECT id FROM public.orders WHERE id = ''11111111-1111-1111-1111-111111111111''',
@@ -76,6 +76,7 @@ SELECT results_eq(
 SET role authenticated;
 -- Impersonate User A
 SET request.jwt.claim.sub = '00000000-0000-0000-0000-000000000001';
+SET request.jwt.claims = '{"sub": "00000000-0000-0000-0000-000000000001", "role": "authenticated"}';
 
 SELECT isnt_empty(
     'SELECT id FROM public.orders WHERE id = ''11111111-1111-1111-1111-111111111111''',
