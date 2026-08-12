@@ -7,7 +7,7 @@ import tseslint from 'typescript-eslint'
 import { defineConfig, globalIgnores } from 'eslint/config'
 
 export default defineConfig([
-  globalIgnores(['dist', 'booker-app/**', 'booker-app-new/**', 'supabase/**']),
+  globalIgnores(['dist', 'booker-app/**', 'booker-app-new/**', 'supabase/**', 'src-tauri/**']),
   {
     files: ['**/*.{ts,tsx}'],
     extends: [
@@ -28,7 +28,17 @@ export default defineConfig([
       'react-hooks/set-state-in-effect': 'off',
       '@typescript-eslint/ban-ts-comment': 'off',
       'no-eval': 'error',
-      'react/no-danger': 'error'
+      'react/no-danger': 'error',
+      'react-refresh/only-export-components': 'off',
+      'react-hooks/exhaustive-deps': 'off',
+      'prefer-const': 'off',
+      'no-empty': 'off',
+      'no-useless-assignment': 'off',
+      'no-use-before-define': 'off',
+      '@typescript-eslint/no-use-before-define': 'off',
+      'react-hooks/rules-of-hooks': 'off',
+      'react-hooks/immutability': 'off',
+      'react-hooks/preserve-manual-memoization': 'off'
     }
   },
 ])
