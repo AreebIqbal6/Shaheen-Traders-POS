@@ -7,9 +7,10 @@ a22cb17b3b93: Pulling fs layer
 4f4fb700ef54: Waiting
 a22cb17b3b93: Verifying Checksum
 a22cb17b3b93: Download complete
+dcccee43ad5d: Verifying Checksum
+dcccee43ad5d: Download complete
 06d62d0de6d7: Verifying Checksum
 06d62d0de6d7: Download complete
-dcccee43ad5d: Download complete
 4f4fb700ef54: Verifying Checksum
 4f4fb700ef54: Download complete
 dcccee43ad5d: Pull complete
@@ -20,9 +21,8 @@ Digest: sha256:eda7c5e68719e9c8287e78c017118407b48df904a51c935f5ab6098b8c0bc6bc
 Status: Downloaded newer image for ghcr.io/supabase/pg_prove:3.36
 ghcr.io/supabase/pg_prove:3.36
 psql:/home/runner/work/Shaheen-Traders-POS/Shaheen-Traders-POS/supabase/tests/rls_security.test.sql:2: NOTICE:  extension "pgtap" already exists, skipping
-psql:/home/runner/work/Shaheen-Traders-POS/Shaheen-Traders-POS/supabase/tests/rls_security.test.sql:34: ERROR:  relation "public.orders" does not exist
-LINE 1: INSERT INTO public.orders (id, receipt_number, idempotency_k...
-                    ^
+psql:/home/runner/work/Shaheen-Traders-POS/Shaheen-Traders-POS/supabase/tests/rls_security.test.sql:34: ERROR:  insert or update on table "orders" violates foreign key constraint "orders_booker_id_fkey"
+DETAIL:  Key (booker_id)=(00000000-0000-0000-0000-000000000001) is not present in table "users".
 /home/runner/work/Shaheen-Traders-POS/Shaheen-Traders-POS/supabase/tests/rls_security.test.sql .. 
 Dubious, test returned 3 (wstat 768, 0x300)
 Failed 7/7 subtests 
