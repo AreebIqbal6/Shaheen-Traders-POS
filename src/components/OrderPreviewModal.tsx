@@ -1,5 +1,5 @@
 import type { Order, CartItem } from '../types/index';
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import type { Product } from '../views/ProductsView';
 import Receipt from './Receipt';
@@ -48,6 +48,7 @@ export default function OrderPreviewModal({
   const [isLocalSubmitting, setIsLocalSubmitting] = useState(false);
   const [isCompletedLocally, setIsCompletedLocally] = useState(false);
   const submitting = isSubmitting || isLocalSubmitting;
+  const isSubmittingRef = useRef(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -226,6 +227,8 @@ export default function OrderPreviewModal({
                      ) : (
                        <button 
                          onClick={async () => {
+                           if (isSubmittingRef.current) return;
+                           isSubmittingRef.current = true;
                            setIsLocalSubmitting(true);
                            let backupSuccess = true;
                            if (isAdmin) {
@@ -241,10 +244,11 @@ export default function OrderPreviewModal({
                                  setIsCompletedLocally(true);
                                  if (onBackupSuccess) onBackupSuccess();
                               } else if (dispatchResult !== false && !backupSuccess) {
-                                 // Dispatch worked but local file backup failed (rare edge case on desktop)
                                  toast.success('Order completed (Local backup file failed)');
                                  setIsCompletedLocally(true);
                                  if (onBackupSuccess) onBackupSuccess();
+                              } else {
+                                 isSubmittingRef.current = false;
                               }
                            }
                            setIsLocalSubmitting(false);

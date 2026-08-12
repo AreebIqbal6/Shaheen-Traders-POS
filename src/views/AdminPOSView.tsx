@@ -129,6 +129,7 @@ export default function AdminPOSView() {
   const [isReceiptOpen, setIsReceiptOpen] = useState(false);
   const [isCheckoutSuccess, setIsCheckoutSuccess] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const isDispatchingRef = useRef(false);
   const [isCustomPayment, setIsCustomPayment] = useState(false);
   const [lastReceiptNumber, setLastReceiptNumber] = useState('');
   const [draftOrderId, setDraftOrderId] = useState('');
@@ -1086,7 +1087,8 @@ export default function AdminPOSView() {
   }, []);
 
   const handleDispatch = useCallback(async () => {
-    if (isSubmitting) return false;
+    if (isSubmitting || isDispatchingRef.current) return false;
+    isDispatchingRef.current = true;
     setIsSubmitting(true);
 
     try {
@@ -1119,11 +1121,15 @@ export default function AdminPOSView() {
           setPastOrders(prev => [{ receiptNumber: res.orderId, date: new Date(), ...orderData }, ...prev]);
           setLastReceiptNumber(res.orderId);
           setIsCheckoutSuccess(true);
-          setIsSubmitting(false);
+          isDispatchingRef.current = false;
+          isDispatchingRef.current = false;
+        setIsSubmitting(false);
           return true;
         } else {
           toast.error("Dispatch failed: " + res?.error);
-          setIsSubmitting(false);
+          isDispatchingRef.current = false;
+          isDispatchingRef.current = false;
+        setIsSubmitting(false);
           return false;
         }
       } else {
@@ -1168,13 +1174,15 @@ export default function AdminPOSView() {
           }
         }
         setIsCheckoutSuccess(true);
+        isDispatchingRef.current = false;
         setIsSubmitting(false);
         return true;
       }
     } catch (e) {
       console.error(e);
       toast.error("An error occurred during dispatch.");
-      setIsSubmitting(false);
+      isDispatchingRef.current = false;
+        setIsSubmitting(false);
       return false;
     }
   }, [isSubmitting, total, cart, clientName, paymentTerms, area, bookerName, contactNumber, draftOrderId, products, activeSupabaseId]);
