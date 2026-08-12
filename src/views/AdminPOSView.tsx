@@ -472,7 +472,7 @@ export default function AdminPOSView() {
           }
         });
         if (newOrders.length > 0) {
-          return [...newOrders, ...prev].sort((a, b) => b.date.getTime() - a.date.getTime());
+          return [...newOrders, ...prev].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
         }
         return prev;
       });
