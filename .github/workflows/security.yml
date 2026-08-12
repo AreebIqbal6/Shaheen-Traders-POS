@@ -30,7 +30,7 @@ jobs:
       - name: 🚨 Run ESLint Security Rules
         # Ensure you have eslint-plugin-security installed in package.json
         # npm install --save-dev eslint-plugin-security
-        run: npx eslint . --ext .ts,.tsx --rule 'no-eval: 2' --rule 'react/no-danger: 2'
+        run: npx eslint .
 
       # ---------------------------------------------------------
       # 2. SUPABASE DATABASE HARDENING & LINTING
@@ -58,3 +58,4 @@ jobs:
 
       - name: 💥 Run Playwright Security Scripts
         run: npx playwright test tests/e2e/security.spec.ts
+
