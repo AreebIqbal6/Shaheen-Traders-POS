@@ -183,10 +183,19 @@ export default function B2BCheckout({ cart, total, onSuccess, onBack }: B2BCheck
                           autoFocus
                           placeholder="Search shop by name, phone, or address..."
                           value={shopSearch}
-                          onChange={e => {
-                             setShopSearch(e.target.value);
-                             setFormData({...formData, businessName: e.target.value});
-                          }}
+                            onChange={e => {
+                               const val = e.target.value;
+                               setShopSearch(val);
+                               const exactShop = shops.find(s => (s.name || '').toLowerCase() === val.toLowerCase());
+                               setFormData({
+                                 ...formData, 
+                                 businessName: val,
+                                 ...(exactShop ? {
+                                   areaName: exactShop.address || formData.areaName,
+                                   contactNumber: exactShop.contact_number || exactShop.contactNumber || formData.contactNumber
+                                 } : {})
+                               });
+                            }}
                           className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-500"
                         />
                       </div>
@@ -205,7 +214,7 @@ export default function B2BCheckout({ cart, total, onSuccess, onBack }: B2BCheck
                                   ...formData,
                                   businessName: shop.name,
                                   areaName: shop.address || '',
-                                  contactNumber: shop.contactNumber || ''
+                                  contactNumber: shop.contact_number || shop.contactNumber || ''
                                 });
                                 setShopSearch('');
                                 setShowShopDropdown(false);
@@ -213,7 +222,7 @@ export default function B2BCheckout({ cart, total, onSuccess, onBack }: B2BCheck
                               className="px-3 py-2.5 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700/50 border-b border-slate-50 dark:border-slate-700/50 last:border-0"
                             >
                               <div className="font-semibold text-sm text-slate-800 dark:text-slate-200">{shop.name}</div>
-                              <div className="text-xs text-slate-500">{shop.address} {shop.contactNumber && `• ${shop.contactNumber}`}</div>
+                              <div className="text-xs text-slate-500">{shop.address} {(shop.contact_number || shop.contactNumber) && `📱 ${shop.contact_number || shop.contactNumber}`}</div>
                             </div>
                         ))}
                       </div>
