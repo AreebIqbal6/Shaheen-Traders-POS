@@ -197,9 +197,15 @@ export default function AdminPOSView() {
   }, []);
 
   useEffect(() => {
+    // If it already fired globally before this component mounted, grab it
+    if ((window as any).deferredPrompt) {
+      setDeferredPrompt((window as any).deferredPrompt);
+    }
+
     const handleBeforeInstallPrompt = (e: unknown) => {
       (e as any).preventDefault();
       setDeferredPrompt(e);
+      (window as any).deferredPrompt = e;
     };
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
     return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);

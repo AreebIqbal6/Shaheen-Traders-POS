@@ -5,7 +5,7 @@
   "theme_color": "#ffffff",
   "background_color": "#ffffff",
   "display": "standalone",
-  "start_url": "/?mode=admin",
+  "start_url": "/admin",
   "icons": [
     {
       "src": "pwa-192x192.png",

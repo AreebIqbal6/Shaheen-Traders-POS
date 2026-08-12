@@ -137,18 +137,17 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
   const [deferredPrompt, setDeferredPrompt] = useState<any>((window as any).deferredPrompt || null);
 
   useEffect(() => {
-    const handleBeforeInstallPrompt = (e: unknown) => {
-      e.preventDefault();
-      setDeferredPrompt(e);
-      (window as any).deferredPrompt = e;
-    };
-    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-    
-    // Catch-up check in case it fired just before this effect ran
+    // Grab global if already fired
     if ((window as any).deferredPrompt) {
       setDeferredPrompt((window as any).deferredPrompt);
     }
 
+    const handleBeforeInstallPrompt = (e: unknown) => {
+      (e as any).preventDefault();
+      setDeferredPrompt(e);
+      (window as any).deferredPrompt = e;
+    };
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
     return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
   }, []);
 
