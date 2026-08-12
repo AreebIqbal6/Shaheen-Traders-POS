@@ -3,7 +3,7 @@ import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import { VirtuosoGrid } from 'react-virtuoso';
 import { playNotificationSound } from '../utils/audio';
 import { supabase } from '../lib/supabase';
-import { ShoppingCart, Store, CreditCard, Search, ArrowRight, Package, User, LogOut, History, WifiOff, RefreshCw, CheckCircle2, FileText, Smartphone, Trash2, X } from 'lucide-react';
+import { ShoppingCart, Store, CreditCard, Search, ArrowRight, Package, User, LogOut, History, WifiOff, RefreshCw, CheckCircle2, FileText, Smartphone, Trash2, X, MapPin } from 'lucide-react';
 import { fetchAllProducts } from '../utils/fetchAllProducts';
 import toast from 'react-hot-toast';
 import B2BCheckout from '../components/B2BCheckout';
@@ -130,7 +130,12 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
     return saved ? JSON.parse(saved) : [];
   });
   const [isCheckoutSuccess, setIsCheckoutSuccess] = useState(false);
+  const [isReceiptOpen, setIsReceiptOpen] = useState(false);
+  const [draftOrderId, setDraftOrderId] = useState('');
   
+  // Location tracking state
+  const [locationStatus, setLocationStatus] = useState<'pending' | 'tracking' | 'error' | 'unsupported'>('pending');
+  const watchIdRef = useRef<number | null>(null);
   const [pastOrders, setPastOrders] = useState<any[]>([]);
   const [pastOrdersSearchQuery, setPastOrdersSearchQuery] = useState('');
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -276,8 +281,7 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
     }
   }, [activeTab]);
 
-  // --- Background Location Tracker ---
-  useEffect(() => {
+  const startLocationTracking = useCallback(() => {
     const activeBookerStr = localStorage.getItem('shaheen_active_booker');
     if (!activeBookerStr) return;
     const activeBooker = JSON.parse(activeBookerStr);
@@ -287,34 +291,40 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
 
     if (!navigator.geolocation) {
       console.warn('Geolocation is not supported by this browser.');
+      setLocationStatus('unsupported');
       return;
     }
+    
+    setLocationStatus('pending');
 
-      let wakeLock: any = null;
-      const requestWakeLock = async () => {
-        try {
-          if ('wakeLock' in navigator && document.visibilityState === 'visible') {
-            wakeLock = await (navigator as any).wakeLock.request('screen');
-          }
-        } catch (err) {
-          console.warn('Wake Lock error:', err);
+    let wakeLock: any = null;
+    const requestWakeLock = async () => {
+      try {
+        if ('wakeLock' in navigator && document.visibilityState === 'visible') {
+          wakeLock = await (navigator as any).wakeLock.request('screen');
         }
-      };
-      requestWakeLock();
+      } catch (err) {
+        console.warn('Wake Lock error:', err);
+      }
+    };
+    requestWakeLock();
 
-      const handleVisibilityChange = () => {
-        if (document.visibilityState === 'visible') {
-          requestWakeLock();
-        }
-      };
-      document.addEventListener('visibilitychange', handleVisibilityChange);
-
-      let isUpdating = false;
+    let isUpdating = false;
     let latestPosition: GeolocationPosition | null = null;
 
-    const watchId = navigator.geolocation.watchPosition(
-      (position) => { latestPosition = position; },
-      (error) => console.error('Geolocation error:', error),
+    if (watchIdRef.current !== null) {
+      navigator.geolocation.clearWatch(watchIdRef.current);
+    }
+
+    watchIdRef.current = navigator.geolocation.watchPosition(
+      (position) => { 
+        latestPosition = position; 
+        setLocationStatus('tracking');
+      },
+      (error) => {
+        console.error('Geolocation error:', error);
+        setLocationStatus('error');
+      },
       { enableHighAccuracy: true, maximumAge: 0, timeout: 20000 }
     );
 
@@ -346,15 +356,24 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
       }
     };
 
-      const intervalId = setInterval(pushLocation, 10000);
-      
-      return () => {
-        navigator.geolocation.clearWatch(watchId);
-        clearInterval(intervalId);
-        document.removeEventListener('visibilitychange', handleVisibilityChange);
-        if (wakeLock) wakeLock.release().catch(() => {});
-      };
-    }, []); 
+    const intervalId = setInterval(pushLocation, 10000);
+    
+    return () => {
+      if (watchIdRef.current !== null) {
+        navigator.geolocation.clearWatch(watchIdRef.current);
+      }
+      clearInterval(intervalId);
+      if (wakeLock) wakeLock.release().catch(() => {});
+    };
+  }, []);
+
+  // --- Background Location Tracker ---
+  useEffect(() => {
+    const cleanup = startLocationTracking();
+    return () => {
+      if (cleanup) cleanup();
+    };
+  }, [startLocationTracking]); 
 
   const handleCancelOrder = useCallback(async (orderId: string) => {
     toast((t) => (
@@ -832,17 +851,29 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
               </div>
               
               {!isImpersonating && (
-                <button
-                  onClick={() => {
-                    localStorage.removeItem('shaheen_active_booker');
-                    localStorage.removeItem('shaheen_bookerName');
-                    window.location.reload();
-                  }}
-                  className="w-full py-2.5 mt-2 bg-red-500/10 text-red-400 border border-red-500/20 rounded-lg font-bold text-sm flex justify-center items-center gap-2 hover:bg-red-500/20 transition-colors"
-                >
-                  <LogOut size={16} /> Sign Out
-                </button>
-              )}
+                  <>
+                  <button
+                    onClick={() => {
+                      localStorage.removeItem('shaheen_active_booker');
+                      localStorage.removeItem('shaheen_bookerName');
+                      window.location.reload();
+                    }}
+                    className="w-full py-2.5 mt-2 bg-red-500/10 text-red-400 border border-red-500/20 rounded-lg font-bold text-sm flex justify-center items-center gap-2 hover:bg-red-500/20 transition-colors"
+                  >
+                    <LogOut size={16} /> Sign Out
+                  </button>
+                  {locationStatus === 'error' && (
+                    <button onClick={startLocationTracking} className="w-full py-2.5 mt-2 bg-yellow-500/10 text-yellow-600 border border-yellow-500/20 rounded-lg font-bold text-sm flex justify-center items-center gap-2 hover:bg-yellow-500/20 transition-colors">
+                      <MapPin size={16} /> Enable Location
+                    </button>
+                  )}
+                  {locationStatus === 'tracking' && (
+                    <div className="w-full py-2.5 mt-2 bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 rounded-lg font-bold text-xs flex justify-center items-center gap-1.5">
+                      <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div> Tracking Active
+                    </div>
+                  )}
+                  </>
+                )}
             </div>
 
             <div className="flex-1 flex flex-col">

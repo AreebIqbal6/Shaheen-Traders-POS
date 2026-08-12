@@ -1,5 +1,6 @@
 import type { Booker } from '../types/index';
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { supabase } from '../lib/supabase';
 import { Users, Plus, Save, X, Phone, Mail, MapPin, User, Key, Hash, Edit2, AlertTriangle, Navigation, LogIn, ArrowLeft, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -620,7 +621,7 @@ export default function BookersView() {
       </div>
       
       {/* Tracking Modal */}
-      {trackingBooker && (
+      {trackingBooker && createPortal(
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
           <div className="bg-white dark:bg-[#0a0a0c] border border-slate-200 dark:border-zinc-800 rounded-lg shadow-2xl w-full max-w-4xl h-[80vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
             <div className="p-4 border-b border-slate-200 dark:border-zinc-800 flex justify-between items-center bg-slate-50 dark:bg-[#121214]">
@@ -662,7 +663,8 @@ export default function BookersView() {
               )}
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
       
     </div>
