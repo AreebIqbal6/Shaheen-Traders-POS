@@ -17,14 +17,6 @@
                         "fs:allow-remove",
                         "fs:allow-rename",
                         "fs:allow-copy-file",
-                        {
-                            "identifier":  "fs:scope",
-                            "allow":  [
-                                          {
-                                              "path":  "**"
-                                          }
-                                      ]
-                        },
                         "dialog:default",
                         "dialog:allow-confirm",
                         "dialog:allow-ask",
@@ -42,3 +34,4 @@
                             ]
                }
 }
+
