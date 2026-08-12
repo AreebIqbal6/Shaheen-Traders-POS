@@ -200,7 +200,12 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
     const offlineOrders = JSON.parse(localStorage.getItem('shaheen_offline_orders') || '[]');
     const statusQueue = JSON.parse(localStorage.getItem('shaheen_offline_status_updates') || '[]');
     
-    if ((offlineOrders.length === 0 && statusQueue.length === 0) || !navigator.onLine) return;
+    if (!navigator.onLine) {
+      toast.error('You are currently offline. Cannot sync.');
+      return;
+    }
+    
+    if (offlineOrders.length === 0 && statusQueue.length === 0) return;
     
     if (showLoading) setIsLoading(true);
     const failedOrders: any[] = [];
@@ -574,31 +579,33 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
           </div>
           <div className="flex items-center gap-4 md:gap-8">
             {/* Install App Button (Dynamic based on PWA support) */}
-            <button 
-              onClick={async () => {
-                if (deferredPrompt) {
-                  deferredPrompt.prompt();
-                  const { outcome } = await deferredPrompt.userChoice;
-                  if (outcome === 'accepted') setDeferredPrompt(null);
-                } else {
-                  // Fallback for iOS or already installed
-                  const isIos = () => {
-                    const userAgent = window.navigator.userAgent.toLowerCase();
-                    return /iphone|ipad|ipod/.test(userAgent);
-                  };
-                  if (isIos()) {
-                    toast.success("To install on iPhone: Tap the Share button at the bottom, then 'Add to Home Screen'.", { duration: 5000, icon: '📱' });
+            {!(window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone) && (
+              <button 
+                onClick={async () => {
+                  if (deferredPrompt) {
+                    deferredPrompt.prompt();
+                    const { outcome } = await deferredPrompt.userChoice;
+                    if (outcome === 'accepted') setDeferredPrompt(null);
                   } else {
-                    toast("App might already be installed, or your browser doesn't support automatic installation. Try opening browser menu and selecting 'Install App' or 'Add to Home Screen'.", { duration: 5000, icon: 'ℹ️' });
+                    // Fallback for iOS or already installed
+                    const isIos = () => {
+                      const userAgent = window.navigator.userAgent.toLowerCase();
+                      return /iphone|ipad|ipod/.test(userAgent);
+                    };
+                    if (isIos()) {
+                      toast.success("To install on iPhone: Tap the Share button at the bottom, then 'Add to Home Screen'.", { duration: 5000, icon: '📱' });
+                    } else {
+                      toast("App might already be installed, or your browser doesn't support automatic installation. Try opening browser menu and selecting 'Install App' or 'Add to Home Screen'.", { duration: 5000, icon: 'ℹ️' });
+                    }
                   }
-                }
-              }}
-              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 md:px-4 md:py-2 rounded-lg text-xs md:text-sm font-bold transition-colors shadow-sm"
-            >
-              <Smartphone size={16} className="md:w-5 md:h-5" />
-              <span className="hidden sm:inline">Install App</span>
-              <span className="sm:hidden">Install</span>
-            </button>
+                }}
+                className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 md:px-4 md:py-2 rounded-lg text-xs md:text-sm font-bold transition-colors shadow-sm"
+              >
+                <Smartphone size={16} className="md:w-5 md:h-5" />
+                <span className="hidden sm:inline">Install App</span>
+                <span className="sm:hidden">Install</span>
+              </button>
+            )}
 
             {/* Desktop Nav - Visible only on PC */}
             <div className="hidden md:flex gap-8 items-center pr-4">
@@ -783,7 +790,7 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
               </div>
             )}
             
-            {deferredPrompt && (
+            {deferredPrompt && !(window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone) && (
               <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 p-4 rounded-xl flex flex-col gap-3 shadow-sm relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-bl-full -z-0 pointer-events-none"></div>
                 <div className="relative z-10 flex flex-col gap-1">
@@ -798,7 +805,7 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
                   }}
                   className="relative z-10 w-full py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition-colors shadow-sm"
                 >
-                  Add to Home Screen
+                  Install Now
                 </button>
               </div>
             )}
@@ -901,10 +908,10 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
 
                        <div className="flex justify-between items-end mt-2 pt-3 border-t border-slate-700/50 relative z-10">
                          <div className="flex flex-col">
-                           <span className="text-[10px] text-slate-500 uppercase font-bold tracking-wider mb-0.5">Total Amount</span>
-                           <div className="flex items-baseline gap-1.5">
-                             <span className="text-lg font-black text-slate-900 dark:text-slate-50 font-mono">Rs {(order.total || order.total_amount || 0).toLocaleString()}</span>
-                             <span className="text-xs text-amber-700 dark:text-amber-400 font-medium">({(order.items || []).length} items)</span>
+                           <span className="text-[10px] text-slate-500 uppercase font-bold tracking-wider mb-0.5 whitespace-nowrap">Total Amount</span>
+                           <div className="flex items-baseline gap-1.5 whitespace-nowrap">
+                             <span className="text-lg font-black text-slate-900 dark:text-slate-50 font-mono whitespace-nowrap shrink-0">Rs {(order.total || order.total_amount || 0).toLocaleString()}</span>
+                             <span className="text-xs text-amber-700 dark:text-amber-400 font-medium whitespace-nowrap shrink-0">({(order.items || []).length} items)</span>
                            </div>
                          </div>
                          

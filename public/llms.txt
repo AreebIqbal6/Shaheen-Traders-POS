@@ -1,0 +1,8 @@
+# Shaheen Global Traders
+
+Shaheen Global Traders is a Point of Sale (POS) and B2B ordering application. This application provides inventory management, offline support, and automated sync.
+
+## Features
+- B2B Ordering Portal
+- Admin POS System
+- Offline First Architecture

@@ -52,6 +52,19 @@ const RootRedirect = () => {
         console.warn("CLI plugin not available or failed to read args");
       }
 
+      // Web PWA check: look for ?mode= in URL
+      const queryParams = new URLSearchParams(location.search);
+      const webMode = queryParams.get('mode');
+      if (webMode === 'admin') {
+        localStorage.setItem('shaheen_app_mode', 'admin');
+        setTarget(`/admin${location.hash}`);
+        return;
+      } else if (webMode === 'booker') {
+        localStorage.setItem('shaheen_app_mode', 'booker');
+        setTarget(`/booker${location.hash}`);
+        return;
+      }
+
       // Fallback to configured mode
       const configuredMode = localStorage.getItem('shaheen_app_mode');
       
@@ -106,8 +119,10 @@ export default function App() {
         }
       } catch(e) {}
       
-      // Update HTML Title
-      document.title = storeName;
+      // Update HTML Title (handled dynamically by route now, this just sets default)
+      if (document.title === 'Shaheen Traders' || document.title === '') {
+        document.title = storeName;
+      }
       
       // Update Favicon
       const icon = document.querySelector('link[rel="icon"]') || document.querySelector('link[rel="apple-touch-icon"]');
@@ -151,7 +166,6 @@ export default function App() {
 
     return () => {
       clearTimeout(reportTimeout);
-      clearInterval(updateInterval);
       settingsSub.unsubscribe();
       document.removeEventListener('visibilitychange', handleVisibility);
       window.removeEventListener('force_remount', handler);
@@ -282,6 +296,22 @@ export default function App() {
       document.removeEventListener('visibilitychange', handleWake);
     };
   }, []);
+
+  const location = useLocation();
+  useEffect(() => {
+    const storeName = localStorage.getItem('shaheen_store_name') || 'Shaheen Traders';
+    if (location.pathname.includes('/admin')) {
+      document.title = `Admin Portal | ${storeName}`;
+    } else if (location.pathname.includes('/booker')) {
+      document.title = `Booker Portal | ${storeName}`;
+    } else if (location.pathname.includes('/receipt')) {
+      document.title = `Order Receipt | ${storeName}`;
+    } else if (location.pathname.includes('/report')) {
+      document.title = `Report | ${storeName}`;
+    } else {
+      document.title = storeName;
+    }
+  }, [location]);
 
   return (
     <>

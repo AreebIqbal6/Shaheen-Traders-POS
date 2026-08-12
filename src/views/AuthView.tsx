@@ -19,6 +19,19 @@ export default function AuthView({ onLogin }: AuthViewProps) {
     setLoading(true);
 
     try {
+      if (!navigator.onLine) {
+        // Offline Login Fallback
+        const savedEmail = localStorage.getItem('admin_offline_email');
+        const savedHash = localStorage.getItem('admin_offline_hash');
+        
+        if (savedEmail === email && savedHash === btoa(password)) {
+          onLogin('Admin');
+        } else {
+          throw new Error('You are offline. Invalid cached credentials or never logged in.');
+        }
+        return;
+      }
+
       const { data, error: authError } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -27,12 +40,13 @@ export default function AuthView({ onLogin }: AuthViewProps) {
       if (authError) throw authError;
 
       // Verify if the user is an admin
-      // Note: A true enterprise app would check a 'profiles' table or JWT claim here.
-      // We will trust the successful auth for now, but restrict RLS on the DB side.
       if (data.session) {
+        // Save offline fallback credentials
+        localStorage.setItem('admin_offline_email', email);
+        localStorage.setItem('admin_offline_hash', btoa(password));
         onLogin('Admin');
       }
-    } catch (err: unknown) {
+    } catch (err: any) {
       setError(err.message || 'Invalid email or password.');
     } finally {
       setLoading(false);

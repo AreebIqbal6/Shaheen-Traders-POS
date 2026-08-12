@@ -95,12 +95,13 @@ export default defineConfig({
       },
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'mask-icon.svg', 'logo.png', 'logo_transparent.png'],
       manifest: {
-        name: 'Shaheen Traders',
-        short_name: 'Shaheen',
-        description: 'Shaheen Traders POS and B2B Shop',
+        name: 'Shaheen Booker',
+        short_name: 'Booker',
+        description: 'Shaheen Traders Booker Portal',
         theme_color: '#ffffff',
         background_color: '#ffffff',
         display: 'standalone',
+        start_url: '/?mode=booker',
         icons: [
           {
             src: 'pwa-192x192.png',

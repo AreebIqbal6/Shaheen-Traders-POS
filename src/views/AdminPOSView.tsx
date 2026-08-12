@@ -1929,7 +1929,7 @@ export default function AdminPOSView() {
             <span className="truncate text-[13px] font-semibold">{storeName}</span>
          </div>
          <div className="flex items-center gap-2">
-            {deferredPrompt && (
+            {deferredPrompt && !(window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone) && (
                <button
                   onClick={() => {
                      deferredPrompt.prompt();
