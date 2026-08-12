@@ -388,8 +388,8 @@ export default function BookersView() {
           <>
             <div className="flex justify-between items-center mb-8">
           <div>
-            <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-50 tracking-tight">Bookers Management</h2>
-            <p className="text-slate-500 dark:text-slate-400 mt-1">Add and manage field agents.</p>
+            <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-50 tracking-tight">Bookers & Shops Management</h2>
+            <p className="text-slate-500 dark:text-slate-400 mt-1">Add and manage field agents and registered B2B shops.</p>
           </div>
           <button
             onClick={isAdding ? closeForm : openAddForm}

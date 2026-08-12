@@ -1200,7 +1200,7 @@ export default function AdminPOSView() {
     { name: 'Register', icon: <LayoutDashboard size={22} /> },
     { name: 'Dashboard', icon: <PieChart size={22} /> },
     { name: 'Inventory', icon: <Package size={22} />, hasAlert: hasCriticalStock },
-    { name: 'Bookers', icon: <Users size={22} /> },
+    { name: 'Bookers & Shops', icon: <Users size={22} /> },
     { name: 'Our Order', icon: <ClipboardList size={22} /> },
     { name: 'Ledger', icon: <BookOpen size={22} /> },
   ];
@@ -1232,7 +1232,7 @@ export default function AdminPOSView() {
         return <TrackersView />;
       case 'Inventory':
         return <ProductsView products={products} setProducts={setProducts} />;
-      case 'Bookers':
+      case 'Bookers & Shops':
         return <BookersView />;
       case 'Our Order':
         return (
