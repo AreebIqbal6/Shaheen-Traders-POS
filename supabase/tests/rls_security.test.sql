@@ -2,7 +2,7 @@ BEGIN;
 CREATE EXTENSION IF NOT EXISTS pgtap;
 
 -- Plan the number of tests
-SELECT plan(8);
+SELECT plan(7);
 
 -- Setup: Create dummy users for testing
 -- We use a raw SQL block because we need deterministic UUIDs for our tests
