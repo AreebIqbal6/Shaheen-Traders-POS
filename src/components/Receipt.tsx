@@ -35,7 +35,7 @@ const ITEMS_CONTINUATION_PAGE = 45; // Continuation pages have no header/details
 
 export default function Receipt({ data, className = '', isPrintable = true }: ReceiptProps) {
   const isDesktop = typeof window !== 'undefined' && ('__TAURI_INTERNALS__' in window || '__TAURI__' in window);
-  const baseUrl = isDesktop ? 'https://shaheen-traders-pos.vercel.app' : window.location.origin;
+  const baseUrl = isDesktop ? 'https://shaheenglobaltraders.vercel.app' : window.location.origin;
   const receiptUrl = `${baseUrl}/receipt/${data.id}`;
   // Use the order ID directly — it's already formatted as ORD-XXXXXX or B2B-XXXX
   const displayId = data.id;

@@ -1718,8 +1718,8 @@ export default function AdminPOSView() {
                                         className="px-3 py-2 hover:bg-slate-50 dark:hover:bg-zinc-700/50 cursor-pointer border-b border-slate-100 dark:border-zinc-700/50 last:border-0"
                                         onClick={() => {
                                           setClientName(shop.name);
-                                          if (shop.address || shop.area) setArea(shop.address || shop.area);
-                                          if (shop.contact_number || shop.contactNumber) setContactNumber(shop.contact_number || shop.contactNumber);
+                                          setArea(shop.address || shop.area || '');
+                                          setContactNumber(shop.contact_number || shop.contactNumber || shop.phone || '');
                                           setShowShopDropdown(false);
                                         }}
                                       >

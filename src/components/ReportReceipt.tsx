@@ -33,7 +33,7 @@ const ITEMS_CONTINUATION_PAGE = 45; // Continuation pages have no header/details
 
 export default function ReportReceipt({ data, className = '', isPrintable = true }: ReportReceiptProps) {
   const isDesktop = typeof window !== 'undefined' && ('__TAURI_INTERNALS__' in window || '__TAURI__' in window);
-  const baseUrl = isDesktop ? 'https://shaheen-traders-pos.vercel.app' : window.location.origin;
+  const baseUrl = isDesktop ? 'https://shaheenglobaltraders.vercel.app' : window.location.origin;
   const receiptUrl = `${baseUrl}/report/${data.id}`;
   // Use the ID directly
   const displayId = data.id;
