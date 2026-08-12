@@ -2,7 +2,7 @@
   "installCommand": "npm install --legacy-peer-deps",
   "headers": [
     {
-      "source": "/(sw\\.js|index\\.html|manifest\\.webmanifest|workbox-.*\\.js)",
+      "source": "/(sw\\.js|index\\.html|admin\\.html|manifest\\.webmanifest|manifest-admin\\.json|workbox-.*\\.js)",
       "headers": [
         {
           "key": "Cache-Control",
@@ -13,8 +13,16 @@
   ],
   "rewrites": [
     {
+      "source": "/admin",
+      "destination": "/admin.html"
+    },
+    {
+      "source": "/admin/(.*)",
+      "destination": "/admin.html"
+    },
+    {
       "source": "/(.*)",
-      "destination": "/"
+      "destination": "/index.html"
     }
   ]
 }

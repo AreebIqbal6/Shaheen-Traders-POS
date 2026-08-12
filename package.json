@@ -6,7 +6,7 @@
   "main": "main.cjs",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "vite build && node -e \"const fs=require('fs'); fs.writeFileSync('dist/admin.html', fs.readFileSync('dist/admin.html', 'utf8').replace('manifest.webmanifest', 'manifest-admin.json'));\"",
     "lint": "eslint .",
     "preview": "vite preview",
     "test:e2e": "playwright test",
