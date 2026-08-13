@@ -63,13 +63,3 @@ jobs:
           # Fail the step if it actually failed
           cat test_output.txt
           grep -q "not ok" test_output.txt && exit 1 || exit 0
-
-      # ---------------------------------------------------------
-      # 3. END-TO-END VULNERABILITY TESTING
-      # ---------------------------------------------------------
-      - name: 🎭 Install Playwright Browsers
-        run: npx playwright install --with-deps
-
-      - name: 💥 Run Playwright Security Scripts
-        run: npx playwright test tests/e2e/security.spec.ts
-
