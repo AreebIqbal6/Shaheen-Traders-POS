@@ -8,7 +8,7 @@ export default defineConfig({
   workers: process.env.CI ? 1 : undefined,
   reporter: 'html',
   use: {
-    baseURL: 'https://localhost:5176',
+    baseURL: 'http://localhost:5177',
     ignoreHTTPSErrors: true,
     trace: 'on-first-retry',
   },
@@ -20,7 +20,7 @@ export default defineConfig({
   ],
   webServer: {
     command: 'npm run dev',
-    url: 'https://localhost:5176',
+    url: 'http://localhost:5177',
     reuseExistingServer: !process.env.CI,
     ignoreHTTPSErrors: true,
   },
