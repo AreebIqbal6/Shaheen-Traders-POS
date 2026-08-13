@@ -5,15 +5,15 @@ dcccee43ad5d: Pulling fs layer
 a22cb17b3b93: Pulling fs layer
 4f4fb700ef54: Pulling fs layer
 4f4fb700ef54: Waiting
-dcccee43ad5d: Verifying Checksum
-dcccee43ad5d: Download complete
 a22cb17b3b93: Verifying Checksum
 a22cb17b3b93: Download complete
+dcccee43ad5d: Verifying Checksum
+dcccee43ad5d: Download complete
+4f4fb700ef54: Verifying Checksum
+4f4fb700ef54: Download complete
 06d62d0de6d7: Verifying Checksum
 06d62d0de6d7: Download complete
 dcccee43ad5d: Pull complete
-4f4fb700ef54: Verifying Checksum
-4f4fb700ef54: Download complete
 06d62d0de6d7: Pull complete
 a22cb17b3b93: Pull complete
 4f4fb700ef54: Pull complete
@@ -21,18 +21,7 @@ Digest: sha256:eda7c5e68719e9c8287e78c017118407b48df904a51c935f5ab6098b8c0bc6bc
 Status: Downloaded newer image for ghcr.io/supabase/pg_prove:3.36
 ghcr.io/supabase/pg_prove:3.36
 psql:/home/runner/work/Shaheen-Traders-POS/Shaheen-Traders-POS/supabase/tests/rls_security.test.sql:2: NOTICE:  extension "pgtap" already exists, skipping
-/home/runner/work/Shaheen-Traders-POS/Shaheen-Traders-POS/supabase/tests/rls_security.test.sql .. 
-# Failed test 2: "threw Unauthenticated users (anon) cannot insert orders"
-#       caught: 42501: new row violates row-level security policy for table "orders"
-#       wanted: an exception: Unauthenticated users (anon) cannot insert orders
-# Looks like you failed 1 test of 7
-Failed 1/7 subtests 
-
-Test Summary Report
--------------------
-/home/runner/work/Shaheen-Traders-POS/Shaheen-Traders-POS/supabase/tests/rls_security.test.sql (Wstat: 0 Tests: 7 Failed: 1)
-  Failed test:  2
-Files=1, Tests=7,  0 wallclock secs ( 0.02 usr +  0.00 sys =  0.02 CPU)
-Result: FAIL
-[31merror running container: exit 1[39m
-Try rerunning the command with --debug to troubleshoot the error.
+/home/runner/work/Shaheen-Traders-POS/Shaheen-Traders-POS/supabase/tests/rls_security.test.sql .. ok
+All tests successful.
+Files=1, Tests=7,  1 wallclock secs ( 0.02 usr +  0.01 sys =  0.03 CPU)
+Result: PASS
