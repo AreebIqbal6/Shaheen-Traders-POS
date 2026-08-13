@@ -53,6 +53,8 @@ SELECT is_empty(
 
 SELECT throws_ok(
     $$ INSERT INTO public.orders (receipt_number, idempotency_key, client_name, total_amount) VALUES ('TEST-ANON', '22222222-2222-2222-2222-222222222222', 'Anon Client', 50.00) $$,
+    '42501',
+    'new row violates row-level security policy for table "orders"',
     'Unauthenticated users (anon) cannot insert orders'
 );
 
