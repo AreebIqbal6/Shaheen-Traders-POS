@@ -1,7 +1,7 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "Shaheen Admin",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "identifier": "com.shaheen.pos.global",
   "build": {
     "frontendDist": "https://shaheenglobaltraders.vercel.app",
