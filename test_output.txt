@@ -21,7 +21,8 @@ Digest: sha256:eda7c5e68719e9c8287e78c017118407b48df904a51c935f5ab6098b8c0bc6bc
 Status: Downloaded newer image for ghcr.io/supabase/pg_prove:3.36
 ghcr.io/supabase/pg_prove:3.36
 psql:/home/runner/work/Shaheen-Traders-POS/Shaheen-Traders-POS/supabase/tests/rls_security.test.sql:2: NOTICE:  extension "pgtap" already exists, skipping
-psql:/home/runner/work/Shaheen-Traders-POS/Shaheen-Traders-POS/supabase/tests/rls_security.test.sql:52: ERROR:  infinite recursion detected in policy for relation "users"
+psql:/home/runner/work/Shaheen-Traders-POS/Shaheen-Traders-POS/supabase/tests/rls_security.test.sql:52: ERROR:  permission denied for table orders
+HINT:  Grant the required privileges to the current role with: GRANT SELECT ON public.orders TO anon;
 CONTEXT:  SQL statement "SELECT id FROM public.orders"
 PL/pgSQL function is_empty(text,text) line 9 at FOR over EXECUTE statement
 /home/runner/work/Shaheen-Traders-POS/Shaheen-Traders-POS/supabase/tests/rls_security.test.sql .. 
@@ -33,7 +34,7 @@ Test Summary Report
 /home/runner/work/Shaheen-Traders-POS/Shaheen-Traders-POS/supabase/tests/rls_security.test.sql (Wstat: 768 (exited 3) Tests: 0 Failed: 0)
   Non-zero exit status: 3
   Parse errors: Bad plan.  You planned 7 tests but ran 0.
-Files=1, Tests=0,  0 wallclock secs ( 0.01 usr +  0.01 sys =  0.02 CPU)
+Files=1, Tests=0,  0 wallclock secs ( 0.01 usr  0.01 sys +  0.01 cusr  0.00 csys =  0.03 CPU)
 Result: FAIL
 [31merror running container: exit 1[39m
 Try rerunning the command with --debug to troubleshoot the error.
