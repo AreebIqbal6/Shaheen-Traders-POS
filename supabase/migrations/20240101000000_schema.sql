@@ -192,3 +192,26 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 GRANT USAGE ON SCHEMA public TO anon, authenticated, service_role;
 GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO anon, authenticated, service_role;
 GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO anon, authenticated, service_role;
+
+ - -   = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = 
+ - -   T A B L E :   b o o k e r _ l o c a t i o n s 
+ - -   = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = 
+ C R E A T E   T A B L E   p u b l i c . b o o k e r _ l o c a t i o n s   ( 
+     i d   u u i d   D E F A U L T   g e n _ r a n d o m _ u u i d ( )   P R I M A R Y   K E Y , 
+     b o o k e r _ n a m e   t e x t   N O T   N U L L   U N I Q U E , 
+     l a t   d o u b l e   p r e c i s i o n   N O T   N U L L , 
+     l n g   d o u b l e   p r e c i s i o n   N O T   N U L L , 
+     u p d a t e d _ a t   t i m e s t a m p   w i t h   t i m e   z o n e   D E F A U L T   n o w ( ) 
+ ) ; 
+ 
+ A L T E R   T A B L E   p u b l i c . b o o k e r _ l o c a t i o n s   E N A B L E   R O W   L E V E L   S E C U R I T Y ; 
+ 
+ C R E A T E   P O L I C Y   " A l l o w   p u b l i c   r e a d   a c c e s s   t o   b o o k e r _ l o c a t i o n s "   O N   p u b l i c . b o o k e r _ l o c a t i o n s   F O R   S E L E C T   U S I N G   ( t r u e ) ; 
+ C R E A T E   P O L I C Y   " A l l o w   p u b l i c   i n s e r t   t o   b o o k e r _ l o c a t i o n s "   O N   p u b l i c . b o o k e r _ l o c a t i o n s   F O R   I N S E R T   W I T H   C H E C K   ( t r u e ) ; 
+ C R E A T E   P O L I C Y   " A l l o w   p u b l i c   u p d a t e   t o   b o o k e r _ l o c a t i o n s "   O N   p u b l i c . b o o k e r _ l o c a t i o n s   F O R   U P D A T E   U S I N G   ( t r u e ) ; 
+ C R E A T E   P O L I C Y   " A l l o w   p u b l i c   d e l e t e   t o   b o o k e r _ l o c a t i o n s "   O N   p u b l i c . b o o k e r _ l o c a t i o n s   F O R   D E L E T E   U S I N G   ( t r u e ) ; 
+ 
+ G R A N T   A L L   O N   T A B L E   p u b l i c . b o o k e r _ l o c a t i o n s   T O   a n o n ; 
+ G R A N T   A L L   O N   T A B L E   p u b l i c . b o o k e r _ l o c a t i o n s   T O   a u t h e n t i c a t e d ; 
+  
+ 
