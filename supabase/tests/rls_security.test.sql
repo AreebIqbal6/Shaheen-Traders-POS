@@ -13,9 +13,19 @@ BEGIN
     VALUES ('00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'user_a@test.com', 'dummy', now(), now());
   END IF;
   
+  IF NOT EXISTS (SELECT 1 FROM public.users WHERE id = '00000000-0000-0000-0000-000000000001') THEN
+    INSERT INTO public.users (id, email, role, full_name) 
+    VALUES ('00000000-0000-0000-0000-000000000001', 'user_a@test.com', 'booker', 'User A');
+  END IF;
+  
   IF NOT EXISTS (SELECT 1 FROM auth.users WHERE id = '00000000-0000-0000-0000-000000000002') THEN
     INSERT INTO auth.users (id, instance_id, role, aud, email, encrypted_password, created_at, updated_at) 
     VALUES ('00000000-0000-0000-0000-000000000002', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'user_b@test.com', 'dummy', now(), now());
+  END IF;
+
+  IF NOT EXISTS (SELECT 1 FROM public.users WHERE id = '00000000-0000-0000-0000-000000000002') THEN
+    INSERT INTO public.users (id, email, role, full_name) 
+    VALUES ('00000000-0000-0000-0000-000000000002', 'user_b@test.com', 'booker', 'User B');
   END IF;
 END $$;
 
