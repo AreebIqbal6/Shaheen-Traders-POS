@@ -193,6 +193,15 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
         });
       }
 
+      const uniqueOrdersMap = new Map();
+      allOrders.forEach(o => {
+        const key = o.receipt_number || o.id;
+        if (!uniqueOrdersMap.has(key)) {
+          uniqueOrdersMap.set(key, o);
+        }
+      });
+      allOrders = Array.from(uniqueOrdersMap.values());
+
       allOrders.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
       setPastOrders(allOrders);
     } finally {
@@ -209,7 +218,7 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
     const statusQueue = JSON.parse(localStorage.getItem('shaheen_offline_status_updates') || '[]');
     
     if (!navigator.onLine) {
-      toast.error('You are currently offline. Cannot sync.');
+      if (showLoading) toast.error('You are currently offline. Cannot sync.');
       return;
     }
     
@@ -250,21 +259,21 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
           const { error } = await supabase.from('orders').insert(finalPayload);
           if (error && error.code !== '23505') {
             console.error('Sync failed for order', receipt_number || finalPayload.id, error);
-            toast.error(`Sync failed for ${receipt_number || finalPayload.id}: ${error.message}`);
+            if (showLoading) toast.error(`Sync failed for ${receipt_number || finalPayload.id}: ${error.message}`);
             failedOrders.push(order);
           }
         } catch (e: unknown) {
           console.error('Sync exception for order', order.receipt_number, e);
-          toast.error(`Sync error: ${e.message || 'Unknown'}`);
+          if (showLoading) toast.error(`Sync error: ${(e as Error).message || 'Unknown'}`);
           failedOrders.push(order);
         }
       }
       if (failedOrders.length === 0) {
         localStorage.removeItem('shaheen_offline_orders');
-        toast.success('All offline orders synced successfully!');
+        if (showLoading) toast.success('All offline orders synced successfully!');
       } else {
         localStorage.setItem('shaheen_offline_orders', JSON.stringify(failedOrders));
-        toast.error(`${failedOrders.length} order(s) failed to sync. Check console.`);
+        if (showLoading) toast.error(`${failedOrders.length} order(s) failed to sync. Check console.`);
       }
       await fetchPastOrders();
     } catch (err) {
@@ -285,7 +294,7 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
     const activeBookerStr = localStorage.getItem('shaheen_active_booker');
     if (!activeBookerStr) return;
     const activeBooker = JSON.parse(activeBookerStr);
-    const bookerUsername = activeBooker.username;
+    const bookerUsername = activeBooker.username || activeBooker.name;
 
     if (!bookerUsername || bookerUsername.includes('@')) return;
 
