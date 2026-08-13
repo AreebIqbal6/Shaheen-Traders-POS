@@ -342,12 +342,12 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
         if (existing) {
            await supabase
              .from('booker_locations')
-             .update({ lat: latitude, lng: longitude })
+             .update({ lat: latitude, lng: longitude, updated_at: new Date().toISOString() })
              .eq('id', existing.id);
         } else {
            await supabase
              .from('booker_locations')
-             .insert({ booker_name: bookerUsername, lat: latitude, lng: longitude });
+             .insert({ booker_name: bookerUsername, lat: latitude, lng: longitude, updated_at: new Date().toISOString() });
         }
       } catch (error) {
         console.error('Failed to push location:', error);
