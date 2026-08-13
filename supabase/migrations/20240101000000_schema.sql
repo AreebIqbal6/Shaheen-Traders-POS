@@ -186,3 +186,9 @@ EXCEPTION
         RETURN json_build_object('success', false, 'error_code', 'ERR_UNKNOWN', 'error', SQLERRM);
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
+-- 4. GRANTS
+-- ==============================================================================
+-- Grant permissions to anon and authenticated roles so PostgREST and RLS can function
+GRANT USAGE ON SCHEMA public TO anon, authenticated, service_role;
+GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO anon, authenticated, service_role;
+GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO anon, authenticated, service_role;
