@@ -8,7 +8,7 @@ import { fetchAllProducts } from '../utils/fetchAllProducts';
 
 const ProductsView = lazy(() => import('./ProductsView'));
 import type { Product } from './ProductsView';
-const UpdaterButton = lazy(() => import('../components/UpdaterButton'));
+
 const SettingsView = lazy(() => import('./SettingsView'));
 const AuthView = lazy(() => import('./AuthView'));
 const BookersView = lazy(() => import('./BookersView'));
@@ -2238,7 +2238,7 @@ export default function AdminPOSView() {
 
       {/* Main Content Area */}
       <main className="flex-1 flex flex-col overflow-hidden bg-white dark:bg-[#0a0a0c] relative z-10 md:pt-0 pt-[53px]">
-        <UpdaterButton />
+
         <Suspense fallback={<div className="flex h-full items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div></div>}>
           {renderContent()}
         </Suspense>
