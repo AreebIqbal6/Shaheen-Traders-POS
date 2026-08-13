@@ -67,19 +67,29 @@ ALTER TABLE public.product_barcodes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.orders ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.order_items ENABLE ROW LEVEL SECURITY;
 
+-- Create a security definer function to safely get the current user's role without triggering RLS recursion
+CREATE OR REPLACE FUNCTION public.get_user_role()
+RETURNS text
+LANGUAGE sql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT role FROM public.users WHERE id = auth.uid();
+$$;
+
 -- Admins: Full Access
 CREATE POLICY "Admins have full access to everything" ON public.products
-    FOR ALL USING ( (SELECT role FROM public.users WHERE id = auth.uid()) = 'admin' );
+    FOR ALL USING ( public.get_user_role() = 'admin' );
 
 CREATE POLICY "Admins have full access to orders" ON public.orders
-    FOR ALL USING ( (SELECT role FROM public.users WHERE id = auth.uid()) = 'admin' );
+    FOR ALL USING ( public.get_user_role() = 'admin' );
 
 -- Bookers: SELECT Inventory, INSERT Orders
 CREATE POLICY "Bookers can view products" ON public.products
-    FOR SELECT USING ( (SELECT role FROM public.users WHERE id = auth.uid()) IN ('booker', 'admin') );
+    FOR SELECT USING ( public.get_user_role() IN ('booker', 'admin') );
 
 CREATE POLICY "Bookers can insert orders" ON public.orders
-    FOR INSERT WITH CHECK ( (SELECT role FROM public.users WHERE id = auth.uid()) IN ('booker', 'admin') );
+    FOR INSERT WITH CHECK ( public.get_user_role() IN ('booker', 'admin') );
 
 CREATE POLICY "Bookers can view own orders" ON public.orders
     FOR SELECT USING ( auth.uid() = booker_id );
@@ -97,21 +107,21 @@ CREATE POLICY "Bookers can view own order items" ON public.order_items
 
 -- Admins have full access to order items
 CREATE POLICY "Admins full access to order items" ON public.order_items
-    FOR ALL USING ( (SELECT role FROM public.users WHERE id = auth.uid()) = 'admin' );
+    FOR ALL USING ( public.get_user_role() = 'admin' );
 
 -- Product Barcodes: Readable by authenticated, writable by admins
 CREATE POLICY "Authenticated can read barcodes" ON public.product_barcodes
     FOR SELECT USING (auth.role() = 'authenticated');
 
 CREATE POLICY "Admins can manage barcodes" ON public.product_barcodes
-    FOR ALL USING ( (SELECT role FROM public.users WHERE id = auth.uid()) = 'admin' );
+    FOR ALL USING ( public.get_user_role() = 'admin' );
 
 -- Users: Read own profile only
 CREATE POLICY "Users can read own profile" ON public.users
     FOR SELECT USING (id = auth.uid());
 
 CREATE POLICY "Admins can read all users" ON public.users
-    FOR SELECT USING ( (SELECT role FROM public.users WHERE id = auth.uid()) = 'admin' );
+    FOR SELECT USING ( public.get_user_role() = 'admin' );
 
 
 -- 3. REMOTE PROCEDURE CALL (RPC) for Transaction Integrity
