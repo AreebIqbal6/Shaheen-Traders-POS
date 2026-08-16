@@ -23,5 +23,5 @@ ghcr.io/supabase/pg_prove:3.36
 psql:/home/runner/work/Shaheen-Traders-POS/Shaheen-Traders-POS/supabase/tests/rls_security.test.sql:2: NOTICE:  extension "pgtap" already exists, skipping
 /home/runner/work/Shaheen-Traders-POS/Shaheen-Traders-POS/supabase/tests/rls_security.test.sql .. ok
 All tests successful.
-Files=1, Tests=7,  0 wallclock secs ( 0.01 usr +  0.02 sys =  0.03 CPU)
+Files=1, Tests=7,  0 wallclock secs ( 0.01 usr +  0.00 sys =  0.01 CPU)
 Result: PASS
