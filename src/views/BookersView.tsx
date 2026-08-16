@@ -36,12 +36,14 @@ export default function BookersView() {
   const [mapError, setMapError] = useState('');
   const [impersonatingBooker, setImpersonatingBooker] = useState<Booker | null>(null);
 
-  const fetchLiveLocation = async (uname: string) => {
+  const fetchLiveLocation = async (bkr: Booker) => {
     try {
       const { data, error } = await supabase
         .from('booker_locations')
         .select('lat, lng, updated_at')
-        .eq('booker_name', uname)
+        .or(`booker_name.eq.${bkr.name}${bkr.username ? `,booker_name.eq.${bkr.username}` : ''}`)
+        .order('updated_at', { ascending: false })
+        .limit(1)
         .maybeSingle();
       
       if (error) throw error;
@@ -60,9 +62,9 @@ export default function BookersView() {
   useEffect(() => {
     let interval: any;
     if (trackingBooker) {
-      fetchLiveLocation(trackingBooker.username);
+      fetchLiveLocation(trackingBooker);
       interval = setInterval(() => {
-        fetchLiveLocation(trackingBooker.username);
+        fetchLiveLocation(trackingBooker);
       }, 10000);
     }
     return () => clearInterval(interval);
