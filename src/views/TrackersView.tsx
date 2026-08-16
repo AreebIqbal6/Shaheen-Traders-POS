@@ -94,7 +94,7 @@ export default function TrackersView() {
         <MapContainer 
           center={locations.length > 0 ? [locations[0].lat, locations[0].lng] : center} 
           zoom={13} 
-          style={{ height: '100%', width: '100%' }}
+          className="absolute inset-0 z-0"
         >
           <TileLayer
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
