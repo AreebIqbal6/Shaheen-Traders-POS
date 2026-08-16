@@ -5,15 +5,15 @@ dcccee43ad5d: Pulling fs layer
 a22cb17b3b93: Pulling fs layer
 4f4fb700ef54: Pulling fs layer
 4f4fb700ef54: Waiting
-a22cb17b3b93: Verifying Checksum
-a22cb17b3b93: Download complete
 dcccee43ad5d: Verifying Checksum
 dcccee43ad5d: Download complete
-06d62d0de6d7: Verifying Checksum
-06d62d0de6d7: Download complete
+a22cb17b3b93: Verifying Checksum
+a22cb17b3b93: Download complete
 dcccee43ad5d: Pull complete
 4f4fb700ef54: Verifying Checksum
 4f4fb700ef54: Download complete
+06d62d0de6d7: Verifying Checksum
+06d62d0de6d7: Download complete
 06d62d0de6d7: Pull complete
 a22cb17b3b93: Pull complete
 4f4fb700ef54: Pull complete
@@ -23,5 +23,5 @@ ghcr.io/supabase/pg_prove:3.36
 psql:/home/runner/work/Shaheen-Traders-POS/Shaheen-Traders-POS/supabase/tests/rls_security.test.sql:2: NOTICE:  extension "pgtap" already exists, skipping
 /home/runner/work/Shaheen-Traders-POS/Shaheen-Traders-POS/supabase/tests/rls_security.test.sql .. ok
 All tests successful.
-Files=1, Tests=7,  0 wallclock secs ( 0.01 usr +  0.00 sys =  0.01 CPU)
+Files=1, Tests=7,  0 wallclock secs ( 0.02 usr +  0.00 sys =  0.02 CPU)
 Result: PASS
