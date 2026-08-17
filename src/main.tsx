@@ -48,6 +48,11 @@ window.addEventListener('appinstalled', () => {
   console.log('PWA was installed');
 });
 
+// If the app is currently running in standalone mode, it must be installed
+if (window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone) {
+  localStorage.setItem('shaheen_pwa_installed', 'true');
+}
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <ErrorBoundary>

@@ -25,9 +25,15 @@ const RootRedirect = () => {
         return;
       }
       
+      const params = new URLSearchParams(location.search);
+      if (params.get('mode') === 'admin') {
+        setTarget(`/admin${location.search}${location.hash}`);
+        return;
+      }
+      
       const isDesktop = '__TAURI_INTERNALS__' in window || '__TAURI__' in window;
       if (!isDesktop) {
-        // Mobile browsers always default to Booker (or whatever you prefer)
+        // Mobile browsers always default to Booker unless explicitly asking for admin
         setTarget(`/booker${location.search}${location.hash}`);
         return;
       }

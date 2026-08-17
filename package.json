@@ -6,7 +6,7 @@
   "main": "main.cjs",
   "scripts": {
     "dev": "vite",
-    "build": "vite build && node -e \"const fs=require('fs'); fs.writeFileSync('dist/admin.html', fs.readFileSync('dist/admin.html', 'utf8').replace('manifest.webmanifest', 'manifest-admin.json')); const m=JSON.parse(fs.readFileSync('dist/manifest.webmanifest','utf8')); m.name='Shaheen Admin'; m.short_name='Admin'; m.start_url='/admin.html'; m.id='/?mode=admin'; fs.writeFileSync('dist/manifest-admin.json', JSON.stringify(m));\"",
+    "build": "vite build && node -e \"const fs=require('fs'); fs.writeFileSync('dist/admin.html', fs.readFileSync('dist/admin.html', 'utf8').replace('manifest.webmanifest', 'manifest-admin.json')); const m=JSON.parse(fs.readFileSync('dist/manifest.webmanifest','utf8')); m.name='Shaheen Admin'; m.short_name='Admin'; m.start_url='/?mode=admin'; m.id='/?mode=admin'; fs.writeFileSync('dist/manifest-admin.json', JSON.stringify(m));\"",
     "lint": "eslint .",
     "preview": "vite preview",
     "test:e2e": "playwright test",
