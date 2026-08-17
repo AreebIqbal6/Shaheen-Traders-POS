@@ -1,4 +1,4 @@
-﻿import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import type { Order } from '../types';
 import { Search, Calendar, History, RotateCcw } from 'lucide-react';
 import { format, subDays, startOfWeek, startOfMonth, startOfYear, isAfter, parseISO } from 'date-fns';
@@ -83,7 +83,7 @@ export default function CancelledOrdersView({ pastOrders, onRestore }: { pastOrd
               <button
                 key={period}
                 onClick={() => setFilterPeriod(period)}
-                className={px-3 py-1 font-semibold rounded-sm transition-colors text-[13px] }
+                className={`px-3 py-1 font-semibold rounded-sm transition-colors text-[13px] ${filterPeriod === period ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-zinc-50 shadow-sm' : 'text-slate-500 dark:text-zinc-400 hover:text-slate-800 dark:hover:text-zinc-200'}`}
               >
                 {period}
               </button>
