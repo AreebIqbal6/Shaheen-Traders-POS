@@ -127,19 +127,6 @@ export default function AdminPOSView() {
   const [mobileActiveTab, setMobileActiveTab] = useState<'catalog' | 'cart' | 'checkout'>('catalog');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState<any>((window as any).deferredPrompt || null);
-  
-  useEffect(() => {
-    if ((window as any).deferredPrompt) {
-      setDeferredPrompt((window as any).deferredPrompt);
-    }
-    const handleBeforeInstallPrompt = (e: unknown) => {
-      (e as any).preventDefault();
-      setDeferredPrompt(e);
-      (window as any).deferredPrompt = e;
-    };
-    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-    return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-  }, []);
   const [isCameraOpen, setIsCameraOpen] = useState(false);
   const [isReceiptOpen, setIsReceiptOpen] = useState(false);
   const [isCheckoutSuccess, setIsCheckoutSuccess] = useState(false);
