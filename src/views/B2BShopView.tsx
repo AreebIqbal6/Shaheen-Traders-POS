@@ -712,7 +712,7 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
         )}
 
         {activeTab === 'cart' && (
-          <div className="p-4 md:p-8 h-full flex flex-col w-full max-w-4xl mx-auto">
+          <div className="p-4 md:p-8 flex flex-col w-full max-w-4xl mx-auto">
              <div className="flex items-center gap-3 mb-4 shrink-0">
                <button onClick={() => setActiveTab('shop')} className="text-slate-500 hover:text-slate-900 dark:hover:text-slate-50 transition-colors p-1 bg-white dark:bg-zinc-900/60 backdrop-blur-md rounded shadow-sm border border-slate-200 dark:border-zinc-800/50">
                  <ArrowRight size={20} className="rotate-180" />
@@ -720,12 +720,12 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
                <h2 className="text-xl font-bold text-slate-900 dark:text-slate-50 tracking-tight">Your Cart</h2>
              </div>
              {cart.length === 0 ? (
-               <div className="flex-1 flex flex-col items-center justify-center text-slate-500 pb-20">
+               <div className="flex-1 flex flex-col items-center justify-center text-slate-500 pb-20 mt-20">
                  <ShoppingCart size={48} className="mb-4 opacity-20" />
                  <p className="font-medium text-[15px]">Your cart is empty</p>
                </div>
              ) : (
-                <div className="flex flex-col gap-3 pb-[40px] flex-1 overflow-y-auto custom-scrollbar">
+                <div className="flex flex-col gap-3 pb-8">
                  {cart.map(item => (
                    <div key={item.cartId} className="bg-white dark:bg-zinc-900/60 backdrop-blur-md border border-slate-200 dark:border-zinc-800/50 rounded-xl p-3 flex flex-col gap-2 relative">
                      <div className="flex justify-between items-start pr-8">
@@ -801,7 +801,7 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
         )}
 
         {activeTab === 'dashboard' && (
-          <div className="p-4 md:p-8 flex flex-col gap-6 h-full w-full max-w-4xl mx-auto">
+          <div className="p-4 md:p-8 flex flex-col gap-6 w-full max-w-4xl mx-auto">
             <div className="flex items-center gap-3 mt-2 shrink-0">
                <button onClick={() => setActiveTab('shop')} className="text-slate-500 hover:text-slate-900 dark:hover:text-slate-50 transition-colors p-1 bg-white dark:bg-zinc-900/60 backdrop-blur-md rounded shadow-sm border border-slate-200 dark:border-zinc-800/50">
                  <ArrowRight size={20} className="rotate-180" />
@@ -910,7 +910,7 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
                 </div>
               </div>
               
-              <div className="flex-1 min-h-0 bg-white dark:bg-zinc-900/60 backdrop-blur-md border border-slate-200 dark:border-zinc-800/50 rounded-lg p-2 md:p-4 flex flex-col gap-3 overflow-y-auto custom-scrollbar shadow-sm pb-8">
+              <div className="bg-white dark:bg-zinc-900/60 backdrop-blur-md border border-slate-200 dark:border-zinc-800/50 rounded-lg p-2 md:p-4 flex flex-col gap-3 shadow-sm pb-8">
                 {pastOrders.filter(order => {
                   if (!pastOrdersSearchQuery.trim()) return true;
                   const q = pastOrdersSearchQuery.toLowerCase();
