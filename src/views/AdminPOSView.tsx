@@ -18,6 +18,7 @@ const SimpleOrderViewModal = lazy(() => import('../components/SimpleOrderViewMod
 const Receipt = lazy(() => import('../components/Receipt'));
 const CameraScanner = lazy(() => import('../components/CameraScanner'));
 const DashboardView = lazy(() => import('./DashboardView'));
+const CancelledOrdersView = lazy(() => import('./CancelledOrdersView'));
 const LedgerView = lazy(() => import('./LedgerView'));
 const CashManagementView = lazy(() => import('./CashManagementView'));
 
@@ -103,6 +104,7 @@ export default function AdminPOSView() {
   const [activeMenu, setActiveMenuState] = useState(() => {
     return localStorage.getItem('shaheen_admin_activeMenu') || 'Dashboard';
   });
+  const [activeOrdersTab, setActiveOrdersTab] = useState<'incoming' | 'cancelled'>('incoming');
   
   const setActiveMenu = (menu: string) => {
     setActiveMenuState(menu);
@@ -303,6 +305,38 @@ export default function AdminPOSView() {
       // 2. Sync Offline Status Updates
       await syncOfflineStatusUpdates();
       
+      // 2.5 Sync Offline Orders
+      const offlineOrdersQueue = JSON.parse(localStorage.getItem('shaheen_offline_orders') || '[]');
+      if (offlineOrdersQueue.length > 0) {
+        const failedOrders = [];
+        for (const order of offlineOrdersQueue) {
+          const finalPayload = {
+            id: order.id,
+            receipt_number: order.receipt_number || order.receiptNumber,
+            idempotency_key: order.id,
+            client_name: order.client_name || order.clientName || 'Unknown',
+            area: order.area || '',
+            contact_number: order.contact_number || order.contactNumber || '',
+            booker_name: order.booker_name || order.bookerName || 'Admin',
+            b2b_user_id: null,
+            total_amount: order.total_amount || order.total || 0,
+            status: order.status || 'PENDING',
+            created_at: order.created_at || order.date || new Date().toISOString(),
+            items: order.items || []
+          };
+          const { error } = await supabase.from('orders').insert(finalPayload);
+          if (error && error.code !== '23505') {
+            console.error('Admin sync failed for order', finalPayload.receipt_number, error);
+            failedOrders.push(order);
+          }
+        }
+        if (failedOrders.length === 0) {
+          localStorage.removeItem('shaheen_offline_orders');
+        } else {
+          localStorage.setItem('shaheen_offline_orders', JSON.stringify(failedOrders));
+        }
+      }
+      
       // 3. Sync Offline Bookers
       const offlineBookers = JSON.parse(localStorage.getItem('shaheen_offline_bookers') || '[]');
       if (offlineBookers.length > 0) {
@@ -476,12 +510,20 @@ export default function AdminPOSView() {
               total: remote.total || remote.total_amount,
               status: remote.status
             });
+            existingIds.add(id);
           }
         });
-        if (newOrders.length > 0) {
-          return [...newOrders, ...prev].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-        }
-        return prev;
+        
+        const combined = [...newOrders, ...prev];
+        const uniqueOrdersMap = new Map();
+        combined.forEach(o => {
+          const key = o.receiptNumber || o.id;
+          if (!uniqueOrdersMap.has(key)) {
+            uniqueOrdersMap.set(key, o);
+          }
+        });
+        
+        return Array.from(uniqueOrdersMap.values()).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
       });
     } catch (err) {
       console.warn('Failed to pull past orders from cloud:', err);
@@ -1308,10 +1350,30 @@ export default function AdminPOSView() {
         const aggregatedList = Object.entries(aggregatedItems).sort((a, b) => b[1] - a[1]);
 
         return (
-          <div className="flex-1 flex flex-col h-full bg-slate-50 dark:bg-[#0a0a0c] overflow-y-auto p-6">
-        <h2 className="text-2xl font-bold mb-6 text-slate-900 dark:text-white">Incoming B2B Orders</h2>
-        
-        {incomingOrders.length > 0 && (
+          <div className="flex-1 flex flex-col h-full bg-slate-50 dark:bg-[#0a0a0c]">
+            <div className="bg-white dark:bg-zinc-900/60 border-b border-slate-200 dark:border-zinc-800/50 px-6 py-4 shrink-0 z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Orders Management</h2>
+              <div className="flex bg-slate-100 dark:bg-zinc-800 p-1 rounded-lg self-start">
+                <button
+                  onClick={() => setActiveOrdersTab('incoming')}
+                  className={`px-4 py-2 text-sm font-bold rounded-md transition-all ${activeOrdersTab === 'incoming' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'}`}
+                >
+                  Incoming Orders {incomingOrders.length > 0 && <span className="ml-1.5 bg-blue-500 text-white px-1.5 py-0.5 rounded-full text-[10px]">{incomingOrders.length}</span>}
+                </button>
+                <button
+                  onClick={() => setActiveOrdersTab('cancelled')}
+                  className={`px-4 py-2 text-sm font-bold rounded-md transition-all ${activeOrdersTab === 'cancelled' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'}`}
+                >
+                  Cancelled Orders
+                </button>
+              </div>
+            </div>
+
+            {activeOrdersTab === 'cancelled' ? (
+              <CancelledOrdersView pastOrders={pastOrders} onRestore={handleRestoreOrder} />
+            ) : (
+              <div className="flex-1 overflow-y-auto p-6 flex flex-col">
+              {incomingOrders.length > 0 && (
           <div className="max-w-3xl mx-auto w-full mb-8 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-5 shadow-sm">
              <h3 className="text-lg font-bold text-slate-900 dark:text-slate-50 mb-4 flex items-center gap-2">
                <Package size={18} className="text-blue-500" /> Inventory Pick List
@@ -1397,6 +1459,8 @@ export default function AdminPOSView() {
                   </div>
                 )}
         </div>
+              </div>
+            )}
           </div>
         );
       }

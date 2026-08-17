@@ -239,13 +239,6 @@ export default function DashboardView({ pastOrders, products, onRestoreOrder }: 
                 </div>
               </div>
             )}
-            <button
-              onClick={() => setShowCancelled(!showCancelled)}
-              className={`px-3 py-1.5 font-semibold rounded-sm transition-colors shadow-sm text-[12px] flex items-center gap-2 ${showCancelled ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' : 'bg-white dark:bg-zinc-900/60 border border-slate-200 dark:border-zinc-800/50 text-slate-600 dark:text-slate-300'}`}
-            >
-              <AlertTriangle size={14} />
-              {showCancelled ? 'Viewing Cancelled' : 'View Cancelled'}
-            </button>
           </div>
         </div>
 

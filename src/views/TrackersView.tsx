@@ -62,6 +62,31 @@ export default function TrackersView() {
 
   const center: [number, number] = [31.5204, 74.3587]; // Default to Lahore, Pakistan
 
+  const mapStyle = {
+    version: 8,
+    sources: {
+      'raster-tiles': {
+        type: 'raster',
+        tiles: [
+          'https://a.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png',
+          'https://b.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png',
+          'https://c.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png'
+        ],
+        tileSize: 256,
+        attribution: 'Map tiles by Carto, under CC BY 3.0. Data by OpenStreetMap, under ODbL.'
+      }
+    },
+    layers: [
+      {
+        id: 'simple-tiles',
+        type: 'raster',
+        source: 'raster-tiles',
+        minzoom: 0,
+        maxzoom: 22
+      }
+    ]
+  } as any;
+
   return (
     <div className="flex-1 flex flex-col h-full bg-slate-50 dark:bg-[#0a0a0c]">
       <header className="bg-white dark:bg-zinc-900/60 backdrop-blur-md border-b border-slate-200 dark:border-zinc-800/50 px-6 py-4 flex justify-between items-center shrink-0 z-10">
@@ -84,7 +109,7 @@ export default function TrackersView() {
             latitude: locations.length > 0 ? locations[0].lat : center[0],
             zoom: 13
           }}
-          mapStyle="https://tiles.openfreemap.org/styles/liberty"
+          mapStyle={mapStyle}
           style={{width: '100%', height: '100%', position: 'absolute', inset: 0}}
         >
           {locations.map((loc) => (

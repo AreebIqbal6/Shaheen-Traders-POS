@@ -37,6 +37,31 @@ function LocateControl({ lat, lng }: { lat: number; lng: number }) {
 
 export default function TrackingMap({ lat, lng, bookerName, lastSeen, isOffline }: TrackingMapProps) {
   
+  const mapStyle = {
+    version: 8,
+    sources: {
+      'raster-tiles': {
+        type: 'raster',
+        tiles: [
+          'https://a.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png',
+          'https://b.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png',
+          'https://c.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png'
+        ],
+        tileSize: 256,
+        attribution: 'Map tiles by Carto, under CC BY 3.0. Data by OpenStreetMap, under ODbL.'
+      }
+    },
+    layers: [
+      {
+        id: 'simple-tiles',
+        type: 'raster',
+        source: 'raster-tiles',
+        minzoom: 0,
+        maxzoom: 22
+      }
+    ]
+  } as any;
+
   return (
     <div className="w-full h-full rounded-md overflow-hidden relative border border-slate-200 dark:border-zinc-800 bg-slate-200 dark:bg-zinc-800">
       {isOffline && (
@@ -58,7 +83,7 @@ export default function TrackingMap({ lat, lng, bookerName, lastSeen, isOffline 
           latitude: lat,
           zoom: 15
         }}
-        mapStyle="https://tiles.openfreemap.org/styles/liberty"
+        mapStyle={mapStyle}
         style={{width: '100%', height: '100%', position: 'absolute', inset: 0}}
       >
         <LocateControl lat={lat} lng={lng} />

@@ -25,8 +25,8 @@ const ProductCard = React.memo(({ product, onAdd }: { product: Product, onAdd: (
       className="bg-white dark:bg-zinc-900/60 backdrop-blur-md border border-slate-200 dark:border-zinc-800/50 rounded-sm p-3 flex flex-col justify-between cursor-pointer hover:border-slate-400 dark:hover:border-slate-500 transition-all active:scale-[0.98] group text-left"
     > 
       <div className="w-full"> 
-        <h4 className="font-semibold text-slate-800 dark:text-slate-200 leading-tight mb-1 text-sm truncate w-full">{product.name}</h4> 
-        <p className="text-xs text-slate-500 dark:text-slate-400 font-mono mb-3 truncate w-full">{product.barcode || "\u00A0"}</p> 
+        <h4 className="font-semibold text-slate-800 dark:text-slate-200 leading-tight mb-1 text-sm break-words w-full">{product.name}</h4> 
+        <p className="text-xs text-slate-500 dark:text-slate-400 font-mono mb-3 break-all w-full">{product.sku || generateSKU(product.name, product.barcode || '')}</p> 
       </div> 
       <div className="mt-auto w-full flex justify-between items-center"> 
         <span className="font-bold text-slate-900 dark:text-slate-50 text-[14px]">Rs {product.price.toLocaleString()}</span> 
@@ -174,11 +174,16 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
           }
           
           const { data, error } = await query;
-          if (data) onlineOrders = data;
+          if (data) {
+            onlineOrders = data;
+            localStorage.setItem('shaheen_cached_past_orders', JSON.stringify(data));
+          }
           if (error) console.warn('Failed to fetch orders from Supabase:', error.message);
         } catch (e) {
           console.warn('Supabase query failed:', e);
         }
+      } else {
+        onlineOrders = JSON.parse(localStorage.getItem('shaheen_cached_past_orders') || '[]');
       }
 
       const offlineOrders = JSON.parse(localStorage.getItem('shaheen_offline_orders') || '[]');
@@ -672,7 +677,7 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
 
              {/* Product List */}
              {isLoading && products.length === 0 ? (
-               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 animate-slide-up w-full">
+               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 animate-slide-up w-full">
                  {[...Array(12)].map((_, i) => (
                    <div key={i} className="bg-white dark:bg-zinc-900/60 backdrop-blur-md border border-slate-200 dark:border-zinc-800/50 rounded-lg p-3 shadow-sm flex flex-col justify-between gap-3 h-28">
                       <div className="flex flex-col gap-2">
@@ -695,7 +700,7 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
                        style={{ height: '100%', width: '100%' }}
                        data={filteredProducts}
                        overscan={200}
-                       listClassName="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 w-full"
+                       listClassName="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 w-full"
                        itemContent={(index, product) => (
                          <ProductCard product={product} onAdd={addToCart} />
                        )}
