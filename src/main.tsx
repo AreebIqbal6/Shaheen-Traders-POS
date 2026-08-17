@@ -20,6 +20,12 @@ window.addEventListener('beforeinstallprompt', (e) => {
   (window as any).deferredPrompt = e;
 });
 
+// Track when app is successfully installed
+window.addEventListener('appinstalled', () => {
+  localStorage.setItem('shaheen_pwa_installed', 'true');
+  console.log('PWA was installed');
+});
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <ErrorBoundary>

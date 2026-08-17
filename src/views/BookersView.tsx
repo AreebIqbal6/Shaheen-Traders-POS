@@ -659,7 +659,7 @@ export default function BookersView() {
                   lat={liveLocation.lat} 
                   lng={liveLocation.lng} 
                   bookerName={trackingBooker.name}
-                  lastSeen={new Date(liveLocation.updated_at).toLocaleTimeString()}
+                  lastSeen={new Date(liveLocation.updated_at).toLocaleDateString('en-GB') + ' at ' + new Date(liveLocation.updated_at).toLocaleTimeString('en-US', {hour: 'numeric', minute:'2-digit'})}
                   isOffline={Math.abs(new Date().getTime() - new Date(liveLocation.updated_at).getTime()) > 300000} // offline if >5m old or clock drift
                 />
               )}

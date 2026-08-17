@@ -617,7 +617,7 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
           </div>
           <div className="flex items-center gap-4 md:gap-8">
             {/* Install App Button (Dynamic based on PWA support) */}
-            {!(window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone) && (
+            {!(window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone || localStorage.getItem('shaheen_pwa_installed') === 'true') && (
               <button 
                 onClick={async () => {
                   if (deferredPrompt) {
@@ -828,7 +828,7 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
               </div>
             )}
             
-            {deferredPrompt && !(window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone) && (
+            {deferredPrompt && !(window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone || localStorage.getItem('shaheen_pwa_installed') === 'true') && (
               <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 p-4 rounded-xl flex flex-col gap-3 shadow-sm relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-bl-full -z-0 pointer-events-none"></div>
                 <div className="relative z-10 flex flex-col gap-1">

@@ -219,6 +219,20 @@ export default function AdminPOSView() {
   }, [bookerName]);
   
   const [isSyncing, setIsSyncing] = useState(false);
+  const [deferredPrompt, setDeferredPrompt] = useState<any>((window as any).deferredPrompt || null);
+
+  useEffect(() => {
+    if ((window as any).deferredPrompt) {
+      setDeferredPrompt((window as any).deferredPrompt);
+    }
+    const handleBeforeInstallPrompt = (e: unknown) => {
+      (e as any).preventDefault();
+      setDeferredPrompt(e);
+      (window as any).deferredPrompt = e;
+    };
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+  }, []);
 
   // ==========================================
   // PRIORITY 1: HARDENED MANUAL SYNC ENGINE
@@ -2199,6 +2213,29 @@ export default function AdminPOSView() {
             <CloudUpload size={16} className={`shrink-0 ${isSyncing ? "animate-pulse" : ""}`} />
             <span className="whitespace-nowrap uppercase tracking-wider">{isSyncing ? 'Syncing...' : 'Sync All'}</span>
           </button>
+
+          {!(window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone || localStorage.getItem('shaheen_pwa_installed') === 'true') && (
+            <button 
+              onClick={async () => {
+                if (deferredPrompt) {
+                  deferredPrompt.prompt();
+                  const { outcome } = await deferredPrompt.userChoice;
+                  if (outcome === 'accepted') setDeferredPrompt(null);
+                } else {
+                  const isIos = () => /iphone|ipad|ipod/.test(window.navigator.userAgent.toLowerCase());
+                  if (isIos()) {
+                    toast.success("To install on iPhone: Tap the Share button, then 'Add to Home Screen'.");
+                  } else {
+                    toast("App might already be installed, or try opening browser menu and selecting 'Install App'.");
+                  }
+                }
+              }}
+              className="flex items-center justify-center gap-2 px-3 py-2 rounded-lg transition-all text-[12.5px] font-bold w-full relative overflow-hidden shadow-sm bg-indigo-600 hover:bg-indigo-700 text-white"
+            >
+              <Smartphone size={16} className="shrink-0" />
+              <span className="whitespace-nowrap uppercase tracking-wider">Install App</span>
+            </button>
+          )}
 
           <button 
             onClick={() => {
