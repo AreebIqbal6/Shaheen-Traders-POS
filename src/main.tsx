@@ -9,10 +9,32 @@ import toast from 'react-hot-toast';
 
 // Register PWA service worker with auto-update
 const updateSW = registerSW({
+  onNeedRefresh() {
+    toast((t) => (
+      <div className="flex flex-col gap-2">
+        <span className="font-bold">App Update Available!</span>
+        <span className="text-sm">A new version of Shaheen POS is ready.</span>
+        <button 
+          onClick={() => {
+            updateSW(true);
+            toast.dismiss(t.id);
+          }}
+          className="bg-blue-600 text-white px-3 py-1.5 rounded-md text-sm font-bold mt-1"
+        >
+          Update Now
+        </button>
+      </div>
+    ), { duration: Infinity, position: 'bottom-right' });
+  },
   onOfflineReady() {
     console.log("App ready to work offline");
   },
 });
+
+// Check for updates every 15 minutes
+setInterval(() => {
+  updateSW(false);
+}, 15 * 60 * 1000);
 
 // Capture PWA install prompt globally before React lazy loads views
 window.addEventListener('beforeinstallprompt', (e) => {
