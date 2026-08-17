@@ -1424,12 +1424,20 @@ export default function AdminPOSView() {
                             <span className="text-slate-800 dark:text-slate-200 font-bold text-lg">Rs {(order.total || 0).toLocaleString()}</span>
                             <div className="flex gap-2">
                               {order.status === 'PENDING' ? (
-                                <button 
-                                  onClick={() => handleAcknowledgeOrder(order)}
-                                  className="px-3 py-1.5 bg-yellow-500 hover:bg-yellow-600 text-white font-semibold text-xs rounded-md shadow-sm transition-colors"
-                                >
-                                  Order Received
-                                </button>
+                                <>
+                                  <button 
+                                    onClick={() => setViewOrderDetails(order)}
+                                    className="px-3 py-1.5 bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 font-semibold text-xs rounded-md shadow-sm transition-colors"
+                                  >
+                                    View
+                                  </button>
+                                  <button 
+                                    onClick={() => handleAcknowledgeOrder(order)}
+                                    className="px-3 py-1.5 bg-yellow-500 hover:bg-yellow-600 text-white font-semibold text-xs rounded-md shadow-sm transition-colors"
+                                  >
+                                    Order Received
+                                  </button>
+                                </>
                               ) : (
                                 <>
                                   <button 
@@ -2285,12 +2293,20 @@ export default function AdminPOSView() {
                             <span className="text-slate-800 dark:text-slate-200 font-bold text-lg">Rs {(order.total || 0).toLocaleString()}</span>
                             <div className="flex gap-2">
                               {order.status === 'PENDING' ? (
-                                <button 
-                                  onClick={() => handleAcknowledgeOrder(order)}
-                                  className="px-3 py-1.5 bg-yellow-500 hover:bg-yellow-600 text-white font-semibold text-xs rounded-md shadow-sm transition-colors"
-                                >
-                                  Order Received
-                                </button>
+                                <>
+                                  <button 
+                                    onClick={() => setViewOrderDetails(order)}
+                                    className="px-3 py-1.5 bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 font-semibold text-xs rounded-md shadow-sm transition-colors"
+                                  >
+                                    View
+                                  </button>
+                                  <button 
+                                    onClick={() => handleAcknowledgeOrder(order)}
+                                    className="px-3 py-1.5 bg-yellow-500 hover:bg-yellow-600 text-white font-semibold text-xs rounded-md shadow-sm transition-colors"
+                                  >
+                                    Order Received
+                                  </button>
+                                </>
                               ) : (
                                 <>
                                   <button 
