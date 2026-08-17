@@ -617,13 +617,16 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
           </div>
           <div className="flex items-center gap-4 md:gap-8">
             {/* Install App Button (Dynamic based on PWA support) */}
-            {!(window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone || localStorage.getItem('shaheen_pwa_installed') === 'true') && (
+            {(!localStorage.getItem('shaheen_pwa_installed') && (deferredPrompt || /iphone|ipad|ipod/.test(window.navigator.userAgent.toLowerCase())) && !(window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone)) && (
               <button 
                 onClick={async () => {
                   if (deferredPrompt) {
                     deferredPrompt.prompt();
                     const { outcome } = await deferredPrompt.userChoice;
-                    if (outcome === 'accepted') setDeferredPrompt(null);
+                    if (outcome === 'accepted') {
+                      setDeferredPrompt(null);
+                      localStorage.setItem('shaheen_pwa_installed', 'true');
+                    }
                   } else {
                     // Fallback for iOS or already installed
                     const isIos = () => {
@@ -828,18 +831,28 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
               </div>
             )}
             
-            {deferredPrompt && !(window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone || localStorage.getItem('shaheen_pwa_installed') === 'true') && (
+            {(!localStorage.getItem('shaheen_pwa_installed') && (deferredPrompt || /iphone|ipad|ipod/.test(window.navigator.userAgent.toLowerCase())) && !(window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone)) && (
               <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 p-4 rounded-xl flex flex-col gap-3 shadow-sm relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-bl-full -z-0 pointer-events-none"></div>
                 <div className="relative z-10 flex flex-col gap-1">
-                  <h3 className="font-bold text-blue-900 dark:text-blue-100 flex items-center gap-2"><Smartphone size={18} /> Install Shaheen App</h3>
-                  <p className="text-sm text-blue-700 dark:text-blue-300">Add to your home screen for quick offline access without a browser.</p>
+                  <h3 className="font-bold text-blue-900 dark:text-blue-100 flex items-center gap-2">
+                    <Smartphone size={16} /> Install App
+                  </h3>
+                  <p className="text-xs text-blue-700/80 dark:text-blue-300">Get quick access from your home screen</p>
                 </div>
                 <button 
                   onClick={async () => {
-                    deferredPrompt.prompt();
-                    const { outcome } = await deferredPrompt.userChoice;
-                    if (outcome === 'accepted') setDeferredPrompt(null);
+                    if (deferredPrompt) {
+                      deferredPrompt.prompt();
+                      const { outcome } = await deferredPrompt.userChoice;
+                      if (outcome === 'accepted') {
+                        setDeferredPrompt(null);
+                        localStorage.setItem('shaheen_pwa_installed', 'true');
+                      }
+                    } else {
+                      const isIos = () => /iphone|ipad|ipod/.test(window.navigator.userAgent.toLowerCase());
+                      if (isIos()) toast.success("To install on iPhone: Tap the Share button at the bottom, then 'Add to Home Screen'.");
+                    }
                   }}
                   className="relative z-10 w-full py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition-colors shadow-sm"
                 >

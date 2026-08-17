@@ -2115,7 +2115,7 @@ export default function AdminPOSView() {
       )}
 
       {/* Sidebar Navigation (Hidden on Mobile) */}
-      <aside className="hidden md:flex w-64 bg-slate-50 dark:bg-zinc-950 border-r border-slate-200 dark:border-zinc-800 flex-col shrink-0 z-30 px-3 py-3 print:hidden overflow-y-auto custom-scrollbar shadow-xl shadow-black/5">
+      <aside className="hidden md:flex w-64 bg-slate-50 dark:bg-zinc-950 border-r border-slate-200 dark:border-zinc-800 flex-col shrink-0 z-30 px-3 py-3 print:hidden overflow-hidden shadow-xl shadow-black/5">
         <div className="flex items-center gap-2.5 px-1.5 pb-3 mb-1 border-b border-slate-200 dark:border-zinc-800/50 cursor-pointer" onClick={() => setActiveMenu('Register')}>
           <div className="w-8 h-8 flex items-center justify-center shrink-0 overflow-hidden rounded-md">
             {logo ? (
@@ -2200,19 +2200,20 @@ export default function AdminPOSView() {
             <span className="whitespace-nowrap uppercase tracking-wider">{isSyncing ? 'Syncing...' : 'Sync All'}</span>
           </button>
 
-          {!(window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone || localStorage.getItem('shaheen_pwa_installed') === 'true') && (
+          {(!localStorage.getItem('shaheen_pwa_installed') && (deferredPrompt || /iphone|ipad|ipod/.test(window.navigator.userAgent.toLowerCase())) && !(window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone)) && (
             <button 
               onClick={async () => {
                 if (deferredPrompt) {
                   deferredPrompt.prompt();
                   const { outcome } = await deferredPrompt.userChoice;
-                  if (outcome === 'accepted') setDeferredPrompt(null);
+                  if (outcome === 'accepted') {
+                    setDeferredPrompt(null);
+                    localStorage.setItem('shaheen_pwa_installed', 'true');
+                  }
                 } else {
                   const isIos = () => /iphone|ipad|ipod/.test(window.navigator.userAgent.toLowerCase());
                   if (isIos()) {
                     toast.success("To install on iPhone: Tap the Share button, then 'Add to Home Screen'.");
-                  } else {
-                    toast("App might already be installed, or try opening browser menu and selecting 'Install App'.");
                   }
                 }
               }}
