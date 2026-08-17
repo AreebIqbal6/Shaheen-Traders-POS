@@ -1,15 +1,14 @@
 import React, { useState, useMemo } from 'react';
 import type { Order } from '../types';
-import { Search, Calendar, History, RotateCcw } from 'lucide-react';
-import { format, subDays, startOfWeek, startOfMonth, startOfYear, isAfter, parseISO } from 'date-fns';
+import { Search, History, RotateCcw } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 type FilterPeriod = 'Today' | 'Week' | 'Month' | 'Year' | 'Custom';
 
 export default function CancelledOrdersView({ pastOrders, onRestore }: { pastOrders: Order[], onRestore: (order: Order) => void }) {
   const [filterPeriod, setFilterPeriod] = useState<FilterPeriod>('Today');
-  const [customStartDate, setCustomStartDate] = useState(format(new Date(), 'yyyy-MM-dd'));
-  const [customEndDate, setCustomEndDate] = useState(format(new Date(), 'yyyy-MM-dd'));
+  const [customStartDate, setCustomStartDate] = useState(new Date().toISOString().split('T')[0]);
+  const [customEndDate, setCustomEndDate] = useState(new Date().toISOString().split('T')[0]);
   const [searchQuery, setSearchQuery] = useState('');
 
   const cancelledOrders = useMemo(() => {
@@ -26,15 +25,17 @@ export default function CancelledOrdersView({ pastOrders, onRestore }: { pastOrd
         return orderDate.toDateString() === today.toDateString();
       }
       if (filterPeriod === 'Week') {
-        return orderDate >= startOfWeek(today, { weekStartsOn: 1 });
+        const oneWeekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+        return orderDate >= oneWeekAgo && orderDate <= today;
       }
       if (filterPeriod === 'Month') {
-        return orderDate >= startOfMonth(today);
+        return orderDate.getMonth() === today.getMonth() && orderDate.getFullYear() === today.getFullYear();
       }
       if (filterPeriod === 'Year') {
-        return orderDate >= startOfYear(today);
+        return orderDate.getFullYear() === today.getFullYear();
       }
       if (filterPeriod === 'Custom') {
+        if (!customStartDate || !customEndDate) return true;
         const start = new Date(customStartDate);
         start.setHours(0, 0, 0, 0);
         const end = new Date(customEndDate);
@@ -60,8 +61,8 @@ export default function CancelledOrdersView({ pastOrders, onRestore }: { pastOrd
 
   const isRestorable = (order: Order) => {
     const cancelDate = order.cancelled_at ? new Date(order.cancelled_at) : new Date(order.date || order.created_at || new Date());
-    const thirtyDaysAgo = subDays(new Date(), 30);
-    return isAfter(cancelDate, thirtyDaysAgo);
+    const thirtyDaysAgo = new Date(new Date().getTime() - 30 * 24 * 60 * 60 * 1000);
+    return cancelDate >= thirtyDaysAgo;
   };
 
   return (
@@ -141,7 +142,7 @@ export default function CancelledOrdersView({ pastOrders, onRestore }: { pastOrd
                 
                 <div className="text-xs text-slate-500 dark:text-slate-400 space-y-1 mb-4">
                   <p>Order #{order.receipt_number || order.id}</p>
-                  <p>Date: {format(new Date(order.date || order.created_at || new Date()), 'PP p')}</p>
+                  <p>Date: {new Date(order.date || order.created_at || new Date()).toLocaleString()}</p>
                   <p className="font-semibold text-slate-700 dark:text-slate-300">Total: Rs {(order.total || 0).toLocaleString()}</p>
                 </div>
                 
