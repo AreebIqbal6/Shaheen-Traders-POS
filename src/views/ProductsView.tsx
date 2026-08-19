@@ -36,7 +36,7 @@ const REFETCH_DEBOUNCE_MS = 250;
 
 export default function ProductsView({ products = [], setProducts }: ProductsViewProps) {
   const [searchQuery, setSearchQuery] = useState('');
-  const [currentFilter, setCurrentFilter] = useState<'all' | 'critical' | 'low'>('all');
+  const [currentFilter, setCurrentFilter] = useState<'all' | 'critical' | 'low' | 'local' | 'imported'>('all');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [isLoadingApi, setIsLoadingApi] = useState(false);
@@ -111,7 +111,7 @@ export default function ProductsView({ products = [], setProducts }: ProductsVie
     stock: product.stock,
     sku: product.sku ?? null,
     category: product.category ?? null,
-    
+    item_type: product.item_type || 'Local',
   });
 
   const fetchProducts = async () => {
@@ -189,7 +189,9 @@ export default function ProductsView({ products = [], setProducts }: ProductsVie
     const matchSearch = safeName.toLowerCase().includes(searchQuery.toLowerCase()) || safeBarcode.toLowerCase().includes(searchQuery.toLowerCase());
     const matchFilter = currentFilter === 'all' || 
                         (currentFilter === 'critical' && p.stock <= 2) || 
-                        (currentFilter === 'low' && p.stock <= 10);
+                        (currentFilter === 'low' && p.stock <= 10) ||
+                        (currentFilter === 'local' && p.item_type !== 'Imported') ||
+                        (currentFilter === 'imported' && p.item_type === 'Imported');
     return matchSearch && matchFilter;
   });
 
@@ -478,6 +480,20 @@ export default function ProductsView({ products = [], setProducts }: ProductsVie
             <div className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0"></div>
             Low Stock
           </button>
+          <button 
+            onClick={() => setCurrentFilter('local')}
+            className={`flex-1 md:flex-none px-1 sm:px-4 py-1.5 rounded-md text-[11px] sm:text-[13px] font-medium whitespace-nowrap transition-all flex items-center justify-center gap-1 sm:gap-1.5 ${currentFilter === 'local' ? 'bg-slate-800 dark:bg-slate-100 text-white dark:text-slate-900 shadow-sm border border-slate-800 dark:border-slate-100' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-50 hover:bg-slate-100 dark:hover:bg-slate-700'}`}
+          >
+            <div className="w-1.5 h-1.5 rounded-full bg-green-500 shrink-0"></div>
+            Local
+          </button>
+          <button 
+            onClick={() => setCurrentFilter('imported')}
+            className={`flex-1 md:flex-none px-1 sm:px-4 py-1.5 rounded-md text-[11px] sm:text-[13px] font-medium whitespace-nowrap transition-all flex items-center justify-center gap-1 sm:gap-1.5 ${currentFilter === 'imported' ? 'bg-slate-800 dark:bg-slate-100 text-white dark:text-slate-900 shadow-sm border border-slate-800 dark:border-slate-100' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-50 hover:bg-slate-100 dark:hover:bg-slate-700'}`}
+          >
+            <div className="w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0"></div>
+            Imported
+          </button>
         </div>
 
         <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto shrink-0">
@@ -763,6 +779,18 @@ export default function ProductsView({ products = [], setProducts }: ProductsVie
                   className="w-full bg-white dark:bg-zinc-900/60 backdrop-blur-md border border-slate-200 dark:border-zinc-800/50 rounded-lg px-3 py-2.5 focus:outline-none focus:border-blue-500 transition-all font-medium text-[13px] text-slate-900 dark:text-slate-50 placeholder:text-slate-500 dark:text-slate-500"
                   placeholder="e.g. Lays French Cheese"
                 />
+              </div>
+
+              <div>
+                <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-1.5 block">Item Type</label>
+                <select
+                  value={formData.item_type || 'Local'}
+                  onChange={e => setFormData({...formData, item_type: e.target.value as 'Local' | 'Imported'})}
+                  className="w-full bg-white dark:bg-zinc-900/60 backdrop-blur-md border border-slate-200 dark:border-zinc-800/50 rounded-lg px-3 py-2.5 focus:outline-none focus:border-blue-500 transition-all font-medium text-[13px] text-slate-900 dark:text-slate-50"
+                >
+                  <option value="Local">Local</option>
+                  <option value="Imported">Imported</option>
+                </select>
               </div>
 
               <div>

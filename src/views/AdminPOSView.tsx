@@ -566,6 +566,7 @@ export default function AdminPOSView() {
   // Alerts System
     const [isAlertDrawerOpen, setIsAlertDrawerOpen] = useState(false);
     const [registerSearchQuery, setRegisterSearchQuery] = useState('');
+    const [registerItemTypeFilter, setRegisterItemTypeFilter] = useState<'All' | 'Local' | 'Imported'>('All');
   
   const barcodeBuffer = useRef('');
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -1014,10 +1015,14 @@ export default function AdminPOSView() {
   }, [activeMenu, isAlertDrawerOpen]);
 
   const filteredProducts = useMemo(() => {
-    if (!registerSearchQuery.trim()) return products;
+    let result = products;
+    if (registerItemTypeFilter !== 'All') {
+      result = result.filter(p => registerItemTypeFilter === 'Imported' ? p.item_type === 'Imported' : p.item_type !== 'Imported');
+    }
+    if (!registerSearchQuery.trim()) return result;
     const lowerQ = registerSearchQuery.toLowerCase();
-    return products.filter(p => (p.name || '').toLowerCase().includes(lowerQ) || (p.barcode || '').includes(lowerQ));
-  }, [products, registerSearchQuery]);
+    return result.filter(p => (p.name || '').toLowerCase().includes(lowerQ) || (p.barcode || '').includes(lowerQ));
+  }, [products, registerSearchQuery, registerItemTypeFilter]);
 
   const removeFromCart = useCallback((cartId: string) => {
     setCart(prev => prev.filter(item => item.cartId !== cartId));
@@ -1499,12 +1504,26 @@ export default function AdminPOSView() {
                     }}
                   />
 
-                  <div className="flex justify-between items-center shrink-0 p-4 md:p-6 pb-4 gap-3 md:gap-6">
-                    <div className="shrink-0">
+                  <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center shrink-0 p-4 md:p-6 pb-4 gap-3 md:gap-6">
+                    <div className="flex items-center gap-4 shrink-0 w-full lg:w-auto justify-between lg:justify-start">
                       <h1 className="text-2xl font-semibold text-slate-900 dark:text-slate-50 tracking-tight">Register</h1>
+                      <div className="flex bg-white dark:bg-zinc-900/60 backdrop-blur-md p-1 rounded-sm border border-slate-200 dark:border-zinc-800/50 shadow-sm shrink-0 gap-1">
+                        <button 
+                          onClick={() => setRegisterItemTypeFilter('All')}
+                          className={`px-3 py-1 rounded-sm text-[12px] font-medium transition-all ${registerItemTypeFilter === 'All' ? 'bg-slate-800 dark:bg-slate-100 text-white dark:text-slate-900' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
+                        >All</button>
+                        <button 
+                          onClick={() => setRegisterItemTypeFilter('Local')}
+                          className={`px-3 py-1 rounded-sm text-[12px] font-medium transition-all flex items-center gap-1.5 ${registerItemTypeFilter === 'Local' ? 'bg-slate-800 dark:bg-slate-100 text-white dark:text-slate-900' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
+                        ><div className="w-1.5 h-1.5 rounded-full bg-green-500"></div> Local</button>
+                        <button 
+                          onClick={() => setRegisterItemTypeFilter('Imported')}
+                          className={`px-3 py-1 rounded-sm text-[12px] font-medium transition-all flex items-center gap-1.5 ${registerItemTypeFilter === 'Imported' ? 'bg-slate-800 dark:bg-slate-100 text-white dark:text-slate-900' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
+                        ><div className="w-1.5 h-1.5 rounded-full bg-blue-500"></div> Imported</button>
+                      </div>
                     </div>
 
-                    <div className="flex items-center bg-white dark:bg-zinc-900/60 backdrop-blur-md border border-slate-200 dark:border-zinc-800/50 rounded-sm px-4 py-2.5 flex-1 max-w-[420px] shadow-sm focus-within:ring-1 ring-slate-400 transition-all">
+                    <div className="flex items-center bg-white dark:bg-zinc-900/60 backdrop-blur-md border border-slate-200 dark:border-zinc-800/50 rounded-sm px-4 py-2.5 w-full lg:max-w-[420px] shadow-sm focus-within:ring-1 ring-slate-400 transition-all">
                       <Search size={18} className="text-slate-400 mr-3 shrink-0" />
                       <input 
                         type="text" 

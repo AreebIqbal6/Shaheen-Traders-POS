@@ -4,6 +4,7 @@ export interface Product {
   price: number;
   stock: number;
   barcode: string;
+  item_type?: 'Local' | 'Imported';
 }
 
 export interface CartItem extends Product {

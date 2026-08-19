@@ -124,6 +124,7 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
   });
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [itemTypeFilter, setItemTypeFilter] = useState<'All' | 'Local' | 'Imported'>('All');
   
   const [cart, setCart] = useState<CartItem[]>(() => {
     const saved = localStorage.getItem('b2b_cart');
@@ -566,11 +567,15 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
   const cartTotal = useMemo(() => cart.reduce((sum, item) => sum + (item.price * item.quantity), 0), [cart]);
 
   const filteredProducts = useMemo(() => {
-    return products.filter(p => 
-      (p.name || '').toLowerCase().includes(searchQuery.toLowerCase()) || 
-      (p.category && p.category.toLowerCase().includes(searchQuery.toLowerCase()))
-    );
-  }, [products, searchQuery]);
+    return products.filter(p => {
+      const matchSearch = (p.name || '').toLowerCase().includes(searchQuery.toLowerCase()) || 
+                          (p.category && p.category.toLowerCase().includes(searchQuery.toLowerCase()));
+      const matchType = itemTypeFilter === 'All' || 
+                        (itemTypeFilter === 'Local' && p.item_type !== 'Imported') || 
+                        (itemTypeFilter === 'Imported' && p.item_type === 'Imported');
+      return matchSearch && matchType;
+    });
+  }, [products, searchQuery, itemTypeFilter]);
 
   const handleCheckoutSuccess = useCallback(() => {
     playNotificationSound();
@@ -664,9 +669,9 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
       <div className="flex-1 pb-32 overflow-y-auto w-full">
         {activeTab === 'shop' && (
           <div className="p-4 md:p-8 w-full max-w-[1400px] mx-auto">
-             {/* Search Bar */}
-             <div className="relative mb-6">
-               <div className="flex items-center bg-white dark:bg-zinc-900/60 backdrop-blur-md border border-slate-200 dark:border-zinc-800/50 rounded-lg px-4 py-2.5 shadow-sm focus-within:border-blue-500 transition-all w-full md:max-w-2xl">
+             {/* Search Bar & Filters */}
+             <div className="flex flex-col md:flex-row gap-4 mb-6">
+               <div className="flex items-center bg-white dark:bg-zinc-900/60 backdrop-blur-md border border-slate-200 dark:border-zinc-800/50 rounded-lg px-4 py-2.5 shadow-sm focus-within:border-blue-500 transition-all flex-1">
                  <Search className="text-slate-400 mr-3" size={18} />
                  <input 
                    type="text" 
@@ -675,6 +680,24 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
                    onChange={e => setSearchQuery(e.target.value)}
                    className="bg-transparent border-none outline-none text-[14px] w-full text-slate-900 dark:text-slate-50 placeholder:text-slate-400 font-medium"
                  />
+               </div>
+               <div className="flex bg-white dark:bg-zinc-900/60 backdrop-blur-md p-1 rounded-lg border border-slate-200 dark:border-zinc-800/50 shadow-sm shrink-0 gap-1">
+                  <button 
+                    onClick={() => setItemTypeFilter('All')}
+                    className={`px-4 py-1.5 rounded-md text-[13px] font-medium transition-all ${itemTypeFilter === 'All' ? 'bg-slate-800 dark:bg-slate-100 text-white dark:text-slate-900 shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
+                  >All</button>
+                  <button 
+                    onClick={() => setItemTypeFilter('Local')}
+                    className={`px-4 py-1.5 rounded-md text-[13px] font-medium transition-all flex items-center gap-1.5 ${itemTypeFilter === 'Local' ? 'bg-slate-800 dark:bg-slate-100 text-white dark:text-slate-900 shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
+                  >
+                    <div className="w-1.5 h-1.5 rounded-full bg-green-500"></div> Local
+                  </button>
+                  <button 
+                    onClick={() => setItemTypeFilter('Imported')}
+                    className={`px-4 py-1.5 rounded-md text-[13px] font-medium transition-all flex items-center gap-1.5 ${itemTypeFilter === 'Imported' ? 'bg-slate-800 dark:bg-slate-100 text-white dark:text-slate-900 shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
+                  >
+                    <div className="w-1.5 h-1.5 rounded-full bg-blue-500"></div> Imported
+                  </button>
                </div>
              </div>
 
