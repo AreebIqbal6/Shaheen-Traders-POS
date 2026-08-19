@@ -239,7 +239,7 @@ export default function Receipt({ data, className = '', isPrintable = true }: Re
                   <tr className="bg-slate-200 border-b-2 border-t-2 border-slate-800 text-[11px]">
                     <th className="py-0.5 px-1 font-bold text-slate-900 border-x-2 border-slate-800 text-center w-8">S.No</th>
                     <th className="py-0.5 px-1 font-bold text-slate-900 border-x-2 border-slate-800 text-center w-[85px]">SKU</th>
-                    <th className="py-0.5 px-1 font-bold text-slate-900 border-x-2 border-slate-800 text-center w-[80px]">Prod ID</th>
+                    <th className="py-0.5 px-1 font-bold text-slate-900 border-x-2 border-slate-800 text-center w-[105px]">Prod ID</th>
                     <th className="py-0.5 px-1 font-bold text-slate-900 border-x-2 border-slate-800">Product Name</th>
                     <th className="py-0.5 px-1 font-bold text-slate-900 border-x-2 border-slate-800 text-center w-[60px]">Quantity</th>
                     <th className="py-0.5 px-1 font-bold text-slate-900 border-x-2 border-slate-800 text-center w-[65px]">Rate/Pcs</th>
@@ -253,7 +253,7 @@ export default function Receipt({ data, className = '', isPrintable = true }: Re
                       <tr key={idx} className="border-b border-slate-400 print:break-inside-avoid text-[11px]">
                         <td className="py-0 px-1 text-center text-slate-900 border-x-2 border-slate-800 font-bold">{serialNo}</td>
                         <td className="py-0 px-1 text-center text-slate-800 border-x-2 border-slate-800 font-mono text-[9px] font-bold whitespace-nowrap">{item.sku || '-'}</td>
-                        <td className="py-0 px-1 text-center text-slate-800 border-x-2 border-slate-800 font-mono text-[9px] truncate max-w-[80px]">{item.barcode || item.id}</td>
+                        <td className="py-0 px-1 text-center text-slate-800 border-x-2 border-slate-800 font-mono text-[9px] truncate max-w-[105px]">{item.barcode || item.id}</td>
                         <td className="py-0 px-1 text-slate-900 font-semibold border-x-2 border-slate-800 leading-tight">{item.name}</td>
                         <td className="py-0 px-1 text-center text-slate-900 border-x-2 border-slate-800 font-bold">{item.quantity} <span className="text-[9px] text-slate-600 font-normal">{item.uom || 'Pcs'}</span></td>
                         <td className="py-0 px-1 text-center text-slate-800 border-x-2 border-slate-800">{(item as any).basePrice ? (item as any).basePrice.toFixed(2) : item.price.toFixed(2)}</td>
