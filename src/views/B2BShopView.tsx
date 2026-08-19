@@ -26,7 +26,16 @@ const ProductCard = React.memo(({ product, onAdd }: { product: Product, onAdd: (
     > 
       <div className="w-full"> 
         <h4 className="font-semibold text-slate-800 dark:text-slate-200 leading-tight mb-1 text-sm break-words w-full">{product.name}</h4> 
-        <p className="text-xs text-slate-500 dark:text-slate-400 font-mono mb-3 break-all w-full">{product.sku || generateSKU(product.name, product.barcode || '')}</p> 
+        <p className="text-xs text-slate-500 dark:text-slate-400 font-mono mb-3 flex items-center gap-1.5 flex-wrap">
+          {product.barcode && <span>{product.barcode}</span>}
+          {product.sku && product.sku !== product.barcode && (
+            <>
+              {product.barcode && <span className="opacity-40">&bull;</span>}
+              <span className="text-blue-600 dark:text-blue-400 font-semibold">{product.sku}</span>
+            </>
+          )}
+          {!product.barcode && !product.sku && (<span>{generateSKU(product.name, '')}</span>)}
+        </p> 
       </div> 
       <div className="mt-auto w-full flex justify-between items-center"> 
         <span className="font-bold text-slate-900 dark:text-slate-50 text-[14px]">Rs {product.price.toLocaleString()}</span> 
@@ -574,8 +583,11 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
 
   const filteredProducts = useMemo(() => {
     return products.filter(p => {
-      const matchSearch = (p.name || '').toLowerCase().includes(searchQuery.toLowerCase()) || 
-                          (p.category && p.category.toLowerCase().includes(searchQuery.toLowerCase()));
+      const lowerQ = searchQuery.toLowerCase();
+      const matchSearch = (p.name || '').toLowerCase().includes(lowerQ) || 
+                          (p.category && p.category.toLowerCase().includes(lowerQ)) ||
+                          (p.barcode || '').toLowerCase().includes(lowerQ) ||
+                          (p.sku || '').toLowerCase().includes(lowerQ);
       const matchType = itemTypeFilter === 'All' || 
                         (itemTypeFilter === 'Local' && p.item_type !== 'Imported') || 
                         (itemTypeFilter === 'Imported' && p.item_type === 'Imported');
@@ -1117,3 +1129,4 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
     </>
   );
 }
+

@@ -1029,7 +1029,7 @@ export default function AdminPOSView() {
     }
     if (!registerSearchQuery.trim()) return result;
     const lowerQ = registerSearchQuery.toLowerCase();
-    return result.filter(p => (p.name || '').toLowerCase().includes(lowerQ) || (p.barcode || '').includes(lowerQ));
+    return result.filter(p => (p.name || '').toLowerCase().includes(lowerQ) || (p.barcode || '').toLowerCase().includes(lowerQ) || (p.sku || '').toLowerCase().includes(lowerQ));
   }, [products, registerSearchQuery, registerItemTypeFilter]);
 
   const removeFromCart = useCallback((cartId: string) => {
@@ -1586,7 +1586,15 @@ export default function AdminPOSView() {
                         >
                           <div className="flex flex-col items-start min-w-0 flex-1">
                             <h4 className="font-bold text-slate-800 dark:text-slate-200 leading-tight mb-1 text-[14px] truncate w-full">{p.name}</h4>
-                            <p className="text-[11px] text-slate-500 dark:text-slate-400 font-mono">{p.barcode}</p>
+                            <p className="text-[11px] text-slate-500 dark:text-slate-400 font-mono flex items-center gap-1.5 flex-wrap">
+                              <span>{p.barcode}</span>
+                              {p.sku && p.sku !== p.barcode && (
+                                <>
+                                  <span className="opacity-40">•</span>
+                                  <span className="text-blue-600 dark:text-blue-400 font-semibold">{p.sku}</span>
+                                </>
+                              )}
+                            </p>
                           </div>
                           <div className="flex flex-col sm:flex-row items-end sm:items-center gap-2 sm:gap-5 shrink-0">
                             <span className="font-black text-slate-900 dark:text-slate-50 text-[15px]">Rs {p.price}</span>
