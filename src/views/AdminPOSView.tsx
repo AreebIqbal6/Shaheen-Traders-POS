@@ -1564,8 +1564,8 @@ export default function AdminPOSView() {
                       style={{ height: '100%', width: '100%' }}
                       data={filteredProducts}
                       overscan={200}
-                      listClassName="grid grid-cols-[repeat(auto-fill,minmax(180px,1fr))] gap-4"
-                      itemClassName="flex flex-col"
+                      listClassName="flex flex-col gap-2.5"
+                      itemClassName="flex flex-col w-full"
                       itemContent={(index, p) => (
                         <button 
                           onClick={() => {
@@ -1574,13 +1574,15 @@ export default function AdminPOSView() {
                               hiddenScannerRef.current?.focus();
                             }
                           }}
-                          className="bg-white dark:bg-zinc-900/60 backdrop-blur-md border border-slate-200 dark:border-zinc-800/50 rounded-sm p-3 flex flex-col items-start hover:border-slate-400 transition-all text-left flex-1 w-full"
+                          className="bg-white dark:bg-zinc-900/60 backdrop-blur-md border border-slate-200 dark:border-zinc-800/50 rounded-sm p-3.5 hover:border-slate-400 transition-all text-left w-full flex flex-row items-center justify-between gap-3 shadow-sm"
                         >
-                          <h4 className="font-semibold text-slate-800 dark:text-slate-200 leading-tight mb-1 text-sm truncate w-full">{p.name}</h4>
-                          <p className="text-xs text-slate-500 dark:text-slate-400 font-mono mb-3">{p.barcode}</p>
-                          <div className="mt-auto w-full flex justify-between items-center">
-                            <span className="font-bold text-slate-900 dark:text-slate-50 text-[15px]">Rs {p.price}</span>
-                            <span className="text-[11px] font-semibold bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 px-2 py-0.5 rounded-sm truncate">Stock: {p.stock}</span>
+                          <div className="flex flex-col items-start min-w-0 flex-1">
+                            <h4 className="font-bold text-slate-800 dark:text-slate-200 leading-tight mb-1 text-[14px] truncate w-full">{p.name}</h4>
+                            <p className="text-[11px] text-slate-500 dark:text-slate-400 font-mono">{p.barcode}</p>
+                          </div>
+                          <div className="flex flex-col sm:flex-row items-end sm:items-center gap-2 sm:gap-5 shrink-0">
+                            <span className="font-black text-slate-900 dark:text-slate-50 text-[15px]">Rs {p.price}</span>
+                            <span className="text-[11px] font-semibold bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 px-2 py-0.5 rounded-sm">Stock: {p.stock}</span>
                           </div>
                         </button>
                       )}
