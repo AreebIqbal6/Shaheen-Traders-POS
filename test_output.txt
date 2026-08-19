@@ -7,7 +7,6 @@ a22cb17b3b93: Pulling fs layer
 4f4fb700ef54: Waiting
 a22cb17b3b93: Verifying Checksum
 a22cb17b3b93: Download complete
-dcccee43ad5d: Verifying Checksum
 dcccee43ad5d: Download complete
 06d62d0de6d7: Verifying Checksum
 06d62d0de6d7: Download complete
