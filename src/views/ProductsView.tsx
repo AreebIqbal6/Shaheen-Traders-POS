@@ -702,13 +702,15 @@ export default function ProductsView({ products = [], setProducts }: ProductsVie
 
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-50 flex items-center justify-center p-4" onClick={() => setIsModalOpen(false)}>
-          <div className="bg-white dark:bg-zinc-900/60 backdrop-blur-md border border-slate-200 dark:border-zinc-800/50 shadow-xl rounded-2xl w-full max-w-md overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in duration-200" onClick={(e) => e.stopPropagation()}>
+          <div className="bg-white dark:bg-zinc-900/60 backdrop-blur-md border border-slate-200 dark:border-zinc-800/50 shadow-xl rounded-2xl w-full max-w-3xl overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in duration-200" onClick={(e) => e.stopPropagation()}>
             <div className="px-6 py-5 border-b border-slate-200 dark:border-zinc-800/50 flex justify-between items-center bg-slate-100 dark:bg-zinc-900/60 backdrop-blur-md shrink-0">
               <h2 className="text-lg font-bold text-slate-900 dark:text-white tracking-tight">{editingProduct ? 'Edit Product' : 'Add New Product'}</h2>
               <button onClick={() => setIsModalOpen(false)} className="text-slate-600 dark:text-slate-400 hover:text-white transition-colors"><X size={18} /></button>
             </div>
             
-            <div className="p-6 flex flex-col gap-4 overflow-y-auto custom-scrollbar">
+            <div className="p-6 flex flex-col md:flex-row gap-8 overflow-y-auto custom-scrollbar">
+              {/* Left Column */}
+              <div className="flex-1 flex flex-col gap-4">
               <div className="relative">
                 <div className="flex justify-between items-center mb-1.5">
                   <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider block">Barcode Scanner / SKU</label>
@@ -803,7 +805,10 @@ export default function ProductsView({ products = [], setProducts }: ProductsVie
                   placeholder="Auto-generated if empty"
                 />
               </div>
-              
+              </div>
+
+              {/* Right Column */}
+              <div className="flex-1 flex flex-col gap-4">
                 <div className="flex gap-4">
                   <div className="flex-1">
                     <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-1.5 block">Price (PKR) / Pc</label>
@@ -888,6 +893,7 @@ export default function ProductsView({ products = [], setProducts }: ProductsVie
                       >Add Stock</button>
                    </div>
                 </div>
+              </div>
               </div>
             <div className="px-6 py-5 border-t border-slate-200 dark:border-zinc-800/50 flex justify-end gap-3 bg-slate-100 dark:bg-zinc-900/60 backdrop-blur-md shrink-0">
               <button onClick={() => setIsModalOpen(false)} className="px-4 py-2 text-slate-600 dark:text-slate-400 font-semibold hover:text-slate-900 dark:hover:text-slate-50 rounded-lg transition-colors text-[13px]">Cancel</button>
