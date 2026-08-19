@@ -458,8 +458,8 @@ export default function ProductsView({ products = [], setProducts }: ProductsVie
         </div>
       </div>
 
-      <div className="mb-4 flex flex-col md:flex-row md:justify-between items-start md:items-center gap-4">
-        <div className="flex bg-white dark:bg-zinc-900/60 backdrop-blur-md p-1 rounded-lg border border-slate-200 dark:border-zinc-800/50 w-full md:w-auto shadow-inner gap-1">
+      <div className="mb-4 flex flex-col lg:flex-row lg:justify-between items-start lg:items-center gap-4 flex-wrap w-full">
+        <div className="flex bg-white dark:bg-zinc-900/60 backdrop-blur-md p-1 rounded-lg border border-slate-200 dark:border-zinc-800/50 w-full lg:w-auto shadow-inner gap-1 overflow-x-auto custom-scrollbar">
           <button 
             onClick={() => setCurrentFilter('all')}
             className={`flex-1 md:flex-none px-1 sm:px-4 py-1.5 rounded-md text-[11px] sm:text-[13px] font-medium whitespace-nowrap transition-all ${currentFilter === 'all' ? 'bg-slate-800 dark:bg-slate-100 text-white dark:text-slate-900 shadow-sm border border-slate-800 dark:border-slate-100' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-50 hover:bg-slate-100 dark:hover:bg-slate-700'}`}
@@ -496,7 +496,7 @@ export default function ProductsView({ products = [], setProducts }: ProductsVie
           </button>
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto shrink-0">
+        <div className="flex flex-col sm:flex-row gap-2 w-full lg:w-auto shrink-0">
           <div className="flex items-center bg-white dark:bg-zinc-900/60 backdrop-blur-md border border-slate-200 dark:border-zinc-800/50 shadow-sm rounded-lg px-3 py-1.5 w-full sm:w-64 h-[36px] focus-within:border-blue-500 transition-all">
             <Search size={16} className="text-slate-600 dark:text-slate-400 mr-2 shrink-0" />
             <input 
