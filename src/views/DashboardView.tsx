@@ -25,13 +25,6 @@ export default function DashboardView({ pastOrders, products, onRestoreOrder }: 
   const [selectedOrder, setSelectedOrder] = useState<any | null>(null);
   const [previewOrder, setPreviewOrder] = useState<Order | null>(null);
 
-  const [currentTime, setCurrentTime] = useState(new Date());
-
-  useEffect(() => {
-    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
-    return () => clearInterval(timer);
-  }, []);
-
   useEffect(() => {
     try {
       const stored = JSON.parse(localStorage.getItem('shaheen_cancelled_orders') || '[]');

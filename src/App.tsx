@@ -237,7 +237,7 @@ export default function App() {
         backupMissedOrders();
         syncInterval = setInterval(() => {
           backupMissedOrders();
-        }, 10000);
+        }, 60000);
       }, 8000);
 
     // 2. Establish the silent global listener

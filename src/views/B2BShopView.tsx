@@ -447,17 +447,23 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
     fetchProducts();
     syncOfflineOrders();
 
+    let productsFetchTimeout: any;
     // Real-time: Products (inventory wipe, price changes, new products)
     const productsChannel = supabase.channel('b2b-products-realtime')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'products' }, () => {
-        fetchProducts(false);
+        clearTimeout(productsFetchTimeout);
+        productsFetchTimeout = setTimeout(() => fetchProducts(false), 2000);
       })
       .subscribe();
 
+    let ordersFetchTimeout: any;
     // Real-time: Orders (status changes from admin)
     const ordersChannel = supabase.channel('b2b-orders-realtime')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, () => {
-        if (activeTab === 'dashboard') fetchPastOrders();
+        if (activeTab === 'dashboard') {
+          clearTimeout(ordersFetchTimeout);
+          ordersFetchTimeout = setTimeout(() => fetchPastOrders(), 2000);
+        }
       })
       .subscribe();
 
@@ -478,13 +484,13 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
     };
     window.addEventListener('online', handleOnline);
 
-    // 10-second background auto-sync
+    // 5-minute background auto-sync
     const autoSyncTimer = setInterval(() => {
       if (navigator.onLine) {
         fetchProducts(false);
         syncOfflineOrders(false);
       }
-    }, 10000);
+    }, 300000);
 
     return () => {
       supabase.removeChannel(productsChannel);

@@ -762,6 +762,7 @@ export default function AdminPOSView() {
     };
     document.addEventListener('visibilitychange', handleVisibility);
 
+    let ordersTimeout: any;
     const ordersChannel = supabase.channel('public:orders')
       .on(
         'postgres_changes',
@@ -770,37 +771,44 @@ export default function AdminPOSView() {
           if (payload.eventType === 'INSERT') {
             playNotificationSound();
           }
-          fetchOrders();
+          clearTimeout(ordersTimeout);
+          ordersTimeout = setTimeout(() => fetchOrders(), 2000);
         }
       )
       .subscribe();
 
+    let productsTimeout: any;
     const productsChannel = supabase.channel('public:products')
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'products' },
         () => {
-          pullProductsFromCloud();
+          clearTimeout(productsTimeout);
+          productsTimeout = setTimeout(() => pullProductsFromCloud(), 2000);
         }
       )
       .subscribe();
 
+    let bookersTimeout: any;
     const bookersChannel = supabase.channel('public:bookers')
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'bookers' },
         () => {
-          pullBookersFromCloud();
+          clearTimeout(bookersTimeout);
+          bookersTimeout = setTimeout(() => pullBookersFromCloud(), 2000);
         }
       )
       .subscribe();
 
+    let shopsTimeout: any;
     const shopsChannel = supabase.channel('public:shops')
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'shops' },
         () => {
-          pullShopsFromCloud();
+          clearTimeout(shopsTimeout);
+          shopsTimeout = setTimeout(() => pullShopsFromCloud(), 2000);
         }
       )
       .subscribe();
