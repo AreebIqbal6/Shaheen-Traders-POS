@@ -1504,10 +1504,11 @@ export default function AdminPOSView() {
                     }}
                   />
 
-                  <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center shrink-0 p-4 md:p-6 pb-4 gap-3 md:gap-6">
-                    <div className="flex flex-col gap-3 shrink-0 w-full lg:w-auto">
-                      <h1 className="text-2xl font-semibold text-slate-900 dark:text-slate-50 tracking-tight">Register</h1>
-                      <div className="flex bg-white dark:bg-zinc-900/60 backdrop-blur-md p-1 rounded-sm border border-slate-200 dark:border-zinc-800/50 shadow-sm shrink-0 gap-1 self-start">
+                  <div className="flex flex-col shrink-0 p-4 md:px-6 md:pt-6 md:pb-2 gap-3 md:gap-4">
+                    <h1 className="text-2xl font-semibold text-slate-900 dark:text-slate-50 tracking-tight">Register</h1>
+                    
+                    <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-3 md:gap-4 w-full">
+                      <div className="flex bg-white dark:bg-zinc-900/60 backdrop-blur-md p-1 rounded-sm border border-slate-200 dark:border-zinc-800/50 shadow-sm shrink-0 gap-1">
                         <button 
                           onClick={() => setRegisterItemTypeFilter('All')}
                           className={`px-3 py-1 rounded-sm text-[12px] font-medium transition-all ${registerItemTypeFilter === 'All' ? 'bg-slate-800 dark:bg-slate-100 text-white dark:text-slate-900' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
@@ -1521,10 +1522,9 @@ export default function AdminPOSView() {
                           className={`px-3 py-1 rounded-sm text-[12px] font-medium transition-all flex items-center gap-1.5 ${registerItemTypeFilter === 'Imported' ? 'bg-slate-800 dark:bg-slate-100 text-white dark:text-slate-900' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
                         ><div className="w-1.5 h-1.5 rounded-full bg-blue-500"></div> Imported</button>
                       </div>
-                    </div>
 
-                    <div className="flex items-center bg-white dark:bg-zinc-900/60 backdrop-blur-md border border-slate-200 dark:border-zinc-800/50 rounded-sm px-4 py-2.5 w-full lg:max-w-[420px] shadow-sm focus-within:ring-1 ring-slate-400 transition-all">
-                      <Search size={18} className="text-slate-400 mr-3 shrink-0" />
+                      <div className="flex items-center bg-white dark:bg-zinc-900/60 backdrop-blur-md border border-slate-200 dark:border-zinc-800/50 rounded-sm px-4 py-2 w-full lg:max-w-[420px] shadow-sm focus-within:ring-1 ring-slate-400 transition-all">
+                        <Search size={18} className="text-slate-400 mr-3 shrink-0" />
                       <input 
                         type="text" 
                         placeholder="Search or scan..."
@@ -1554,6 +1554,7 @@ export default function AdminPOSView() {
                         >
                           <ScanBarcode size={22} className={`${isScannerFocused ? 'text-green-500 drop-shadow-[0_0_2px_rgba(34,197,94,0.5)]' : 'text-red-500'} transition-all`} />
                         </button>
+                      </div>
                     </div>
                   </div>
 
