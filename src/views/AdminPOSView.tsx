@@ -1505,9 +1505,9 @@ export default function AdminPOSView() {
                   />
 
                   <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center shrink-0 p-4 md:p-6 pb-4 gap-3 md:gap-6">
-                    <div className="flex items-center gap-4 shrink-0 w-full lg:w-auto justify-between lg:justify-start">
+                    <div className="flex flex-col gap-3 shrink-0 w-full lg:w-auto">
                       <h1 className="text-2xl font-semibold text-slate-900 dark:text-slate-50 tracking-tight">Register</h1>
-                      <div className="flex bg-white dark:bg-zinc-900/60 backdrop-blur-md p-1 rounded-sm border border-slate-200 dark:border-zinc-800/50 shadow-sm shrink-0 gap-1">
+                      <div className="flex bg-white dark:bg-zinc-900/60 backdrop-blur-md p-1 rounded-sm border border-slate-200 dark:border-zinc-800/50 shadow-sm shrink-0 gap-1 self-start">
                         <button 
                           onClick={() => setRegisterItemTypeFilter('All')}
                           className={`px-3 py-1 rounded-sm text-[12px] font-medium transition-all ${registerItemTypeFilter === 'All' ? 'bg-slate-800 dark:bg-slate-100 text-white dark:text-slate-900' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
