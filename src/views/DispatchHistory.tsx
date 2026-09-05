@@ -45,6 +45,10 @@ export default function DispatchHistory({ pastOrders = [] }: DispatchHistoryProp
         return orderDate >= start && orderDate <= end;
       }
       return true;
+    }).filter(order => {
+      // Exclude un-dispatched orders
+      if (order.status === 'PENDING' || order.status === 'ACCEPTED' || order.status === 'PROCESSING') return false;
+      return true;
     });
   }, [pastOrders, filterPeriod, customStartDate, customEndDate]);
 

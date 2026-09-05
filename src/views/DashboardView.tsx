@@ -120,6 +120,11 @@ export default function DashboardView({ pastOrders, products, onRestoreOrder }: 
     const bookerSales: Record<string, number> = {};
 
     filteredOrders.forEach(order => {
+      // Exclude un-dispatched orders from revenue calculations
+      if (order.status === 'PENDING' || order.status === 'ACCEPTED' || order.status === 'PROCESSING') {
+        return;
+      }
+
       totalRevenue += (order.total || 0);
       totalOrders += 1;
 
