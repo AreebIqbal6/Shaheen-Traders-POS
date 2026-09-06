@@ -43,12 +43,10 @@ export default function TrackingMap({ lat, lng, bookerName, lastSeen, isOffline 
       'raster-tiles': {
         type: 'raster',
         tiles: [
-          'https://a.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png',
-          'https://b.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png',
-          'https://c.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png'
+          'https://tile.openstreetmap.org/{z}/{x}/{y}.png'
         ],
         tileSize: 256,
-        attribution: 'Map tiles by Carto, under CC BY 3.0. Data by OpenStreetMap, under ODbL.'
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
       }
     },
     layers: [

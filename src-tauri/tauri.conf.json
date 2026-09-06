@@ -1,11 +1,11 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "Shaheen Global Traders",
-  "version": "0.5.6",
+  "version": "0.5.7",
   "identifier": "com.shaheen.pos.global",
   "build": {
-    "frontendDist": "../dist",
-    "devUrl": "http://localhost:5173",
+    "frontendDist": "https://shaheenglobaltraders.vercel.app",
+    "devUrl": "http://localhost:5177",
     "beforeDevCommand": "npm run dev",
     "beforeBuildCommand": "npm run build"
   },
