@@ -103,7 +103,7 @@ export default function B2BCheckout({ cart, total, onSuccess, onBack }: B2BCheck
       source: 'BOOKER_APP',
       b2b_user_id: activeBooker.id || null,
       idempotency_key: typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function' ? crypto.randomUUID() : 'ord-' + Math.random().toString(36).substring(2) + Date.now().toString(36),
-      receipt_number: 'ORD-' + Math.floor(100000 + Math.random() * 900000).toString(),
+      receipt_number: 'ORD-' + Date.now().toString(36).toUpperCase() + '-' + Math.floor(1000 + Math.random() * 9000).toString(),
       created_at: new Date().toISOString()
     };
 

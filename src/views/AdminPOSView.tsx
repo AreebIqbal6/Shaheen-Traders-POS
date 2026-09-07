@@ -341,6 +341,36 @@ export default function AdminPOSView() {
         }
       }
       
+      // 2.6 Sync Offline Stock Deductions
+      const stockDeductions = JSON.parse(localStorage.getItem('shaheen_stock_deductions') || '[]');
+      if (stockDeductions.length > 0) {
+        const aggregated: Record<string, number> = {};
+        for (const d of stockDeductions) {
+          aggregated[d.id] = (aggregated[d.id] || 0) + d.deduct;
+        }
+        
+        const failedDeductions = [];
+        for (const [pId, deductQty] of Object.entries(aggregated)) {
+          try {
+            const { data: p, error: fetchErr } = await supabase.from('products').select('stock').eq('id', pId).single();
+            if (fetchErr) throw fetchErr;
+            if (p) {
+              const { error: updateErr } = await supabase.from('products').update({ stock: Math.max(0, p.stock - deductQty) }).eq('id', pId);
+              if (updateErr) throw updateErr;
+            }
+          } catch (e) {
+            console.error('Failed to sync stock deduction for', pId, e);
+            failedDeductions.push({ id: pId, deduct: deductQty });
+          }
+        }
+        
+        if (failedDeductions.length === 0) {
+          localStorage.removeItem('shaheen_stock_deductions');
+        } else {
+          localStorage.setItem('shaheen_stock_deductions', JSON.stringify(failedDeductions));
+        }
+      }
+      
       // 3. Sync Offline Bookers
       const offlineBookers = JSON.parse(localStorage.getItem('shaheen_offline_bookers') || '[]');
       if (offlineBookers.length > 0) {
@@ -1118,7 +1148,7 @@ export default function AdminPOSView() {
     if (!bookerName.trim()) { toast.error('Please enter Booker Name.'); return; }
 
     if (!draftOrderId) {
-      setDraftOrderId('ORD-' + Math.floor(100000 + Math.random() * 900000));
+      setDraftOrderId('ORD-' + Date.now().toString(36).toUpperCase() + '-' + Math.floor(1000 + Math.random() * 9000).toString());
     }
 
     const insufficientItems = cart.filter(item => {
@@ -1205,17 +1235,28 @@ export default function AdminPOSView() {
           console.error("Hardware print failed:", e);
         }
 
+        const deductionsToQueue: { id: string, deduct: number }[] = [];
+        
         const updatedProducts = products.map(p => {
           const cartItem = cart.find(c => c.id === p.id);
           if (cartItem) {
             let multiplier = 1;
             if (cartItem.uom === 'Box') multiplier = p.pcsPerBox || 1;
             if (cartItem.uom === 'Ctn') multiplier = (p.pcsPerBox || 1) * (p.boxPerCtn || 1);
-            return { ...p, stock: Math.max(0, p.stock - (cartItem.quantity * multiplier)) };
+            const deductAmt = cartItem.quantity * multiplier;
+            if (deductAmt > 0) {
+              deductionsToQueue.push({ id: p.id, deduct: deductAmt });
+            }
+            return { ...p, stock: Math.max(0, p.stock - deductAmt) };
           }
           return p;
         });
         setProducts(updatedProducts);
+        
+        if (deductionsToQueue.length > 0) {
+          const currentQueue = JSON.parse(localStorage.getItem('shaheen_stock_deductions') || '[]');
+          localStorage.setItem('shaheen_stock_deductions', JSON.stringify([...currentQueue, ...deductionsToQueue]));
+        }
 
         if (draftOrderId) {
           if (activeSupabaseId) {
