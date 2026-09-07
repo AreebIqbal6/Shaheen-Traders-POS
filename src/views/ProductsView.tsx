@@ -37,6 +37,7 @@ const PENDING_OP_TTL_MS = 6000;
 const REFETCH_DEBOUNCE_MS = 250;
 
 export default function ProductsView({ products = [], setProducts }: ProductsViewProps) {
+  const searchContainerRef = useRef<HTMLDivElement>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [currentFilter, setCurrentFilter] = useState<'all' | 'critical' | 'low' | 'local' | 'imported'>('all');
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -501,7 +502,7 @@ export default function ProductsView({ products = [], setProducts }: ProductsVie
           </button>
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-2 w-full lg:w-auto shrink-0">
+        <div className="flex flex-col sm:flex-row gap-2 w-full lg:w-auto shrink-0" ref={searchContainerRef}>
           <div className="flex items-center bg-white dark:bg-zinc-900/60 backdrop-blur-md border border-slate-200 dark:border-zinc-800/50 shadow-sm rounded-lg px-3 py-1.5 w-full sm:w-64 h-[36px] focus-within:border-blue-500 transition-all">
             <Search size={16} className="text-slate-600 dark:text-slate-400 mr-2 shrink-0" />
             <input 
@@ -509,7 +510,13 @@ export default function ProductsView({ products = [], setProducts }: ProductsVie
               placeholder="Search by name or barcode..."
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
-              className="bg-transparent border-none outline-none text-[13px] w-full font-medium placeholder:text-slate-500 dark:text-slate-500 text-white"
+              onFocus={() => {
+                // Give the mobile keyboard a moment to pop up before scrolling
+                setTimeout(() => {
+                  searchContainerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }, 300);
+              }}
+              className="bg-transparent border-none outline-none text-[13px] w-full font-medium placeholder:text-slate-500 dark:text-slate-500 text-slate-900 dark:text-white"
             />
           </div>
           
