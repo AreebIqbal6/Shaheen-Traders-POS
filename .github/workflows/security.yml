@@ -35,8 +35,10 @@ jobs:
       # ---------------------------------------------------------
       # 2. SUPABASE DATABASE HARDENING & LINTING
       # ---------------------------------------------------------
-      - name: 🗄️ Setup Supabase CLI
+      - name: 🛠️ Setup Supabase CLI
         uses: supabase/setup-cli@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           version: latest
 
