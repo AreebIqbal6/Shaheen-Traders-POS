@@ -826,30 +826,30 @@ export default function ProductsView({ products = [], setProducts }: ProductsVie
                     <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-1.5 block">Price (PKR) / Pc</label>
                     <input 
                       type="number" 
-                      value={formData.price === 0 && (formData as any)._isClearedPrice ? '' : formData.price} 
-                      onChange={e => setFormData({...formData, _isClearedPrice: e.target.value === '', price: e.target.value === '' ? 0 : parseFloat(e.target.value) || 0} as any)}
-                      onFocus={e => e.target.select()}
-                      className="w-full bg-white dark:bg-zinc-900/60 backdrop-blur-md border border-slate-200 dark:border-zinc-800/50 rounded-lg px-3 py-2.5 focus:outline-none focus:border-blue-500 transition-all font-mono font-bold text-[13px] text-blue-600 dark:text-blue-400"
+                      placeholder="0"
+                      value={formData.price === 0 ? '' : formData.price} 
+                      onChange={e => setFormData({...formData, price: e.target.value === '' ? 0 : parseFloat(e.target.value) || 0})}
+                      className="w-full bg-white dark:bg-zinc-900/60 backdrop-blur-md border border-slate-200 dark:border-zinc-800/50 rounded-lg px-3 py-2.5 focus:outline-none focus:border-blue-500 transition-all font-mono font-bold text-[13px] text-blue-600 dark:text-blue-400 placeholder:text-blue-600/40 dark:placeholder:text-blue-400/40"
                     />
                   </div>
                   <div className="flex-1">
                     <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-1.5 block">Total Stock (Pcs)</label>
                     <input 
                       type="number" 
-                      value={formData.stock === 0 && (formData as any)._isClearedStock ? '' : formData.stock} 
-                      onChange={e => setFormData({...formData, _isClearedStock: e.target.value === '', stock: e.target.value === '' ? 0 : parseInt(e.target.value) || 0} as any)}
-                      onFocus={e => e.target.select()}
-                      className="w-full bg-white dark:bg-zinc-900/60 backdrop-blur-md border border-slate-200 dark:border-zinc-800/50 rounded-lg px-3 py-2.5 focus:outline-none focus:border-blue-500 transition-all font-mono font-bold text-[13px] text-slate-900 dark:text-slate-50"
+                      placeholder="0"
+                      value={formData.stock === 0 ? '' : formData.stock} 
+                      onChange={e => setFormData({...formData, stock: e.target.value === '' ? 0 : parseInt(e.target.value) || 0})}
+                      className="w-full bg-white dark:bg-zinc-900/60 backdrop-blur-md border border-slate-200 dark:border-zinc-800/50 rounded-lg px-3 py-2.5 focus:outline-none focus:border-blue-500 transition-all font-mono font-bold text-[13px] text-slate-900 dark:text-slate-50 placeholder:text-slate-400 dark:placeholder:text-slate-600"
                     />
                   </div>
                   <div className="flex-1">
                     <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-1.5 block">Min Stock (Alert)</label>
                     <input 
                       type="number" 
-                      value={(formData.minStock === 0 && (formData as any)._isClearedMin) ? '' : (formData.minStock ?? 5)} 
-                      onChange={e => setFormData({...formData, _isClearedMin: e.target.value === '', minStock: e.target.value === '' ? 0 : parseInt(e.target.value) || 0} as any)}
-                      onFocus={e => e.target.select()}
-                      className="w-full bg-white dark:bg-zinc-900/60 backdrop-blur-md border border-slate-200 dark:border-zinc-800/50 rounded-lg px-3 py-2.5 focus:outline-none focus:border-amber-500 transition-all font-mono font-bold text-[13px] text-amber-600 dark:text-amber-500"
+                      placeholder="5"
+                      value={(formData.minStock === 5 || formData.minStock === 0) ? '' : formData.minStock} 
+                      onChange={e => setFormData({...formData, minStock: e.target.value === '' ? 5 : parseInt(e.target.value) || 0})}
+                      className="w-full bg-white dark:bg-zinc-900/60 backdrop-blur-md border border-slate-200 dark:border-zinc-800/50 rounded-lg px-3 py-2.5 focus:outline-none focus:border-amber-500 transition-all font-mono font-bold text-[13px] text-amber-600 dark:text-amber-500 placeholder:text-amber-600/40 dark:placeholder:text-amber-500/40"
                     />
                   </div>
                 </div>
