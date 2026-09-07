@@ -6,6 +6,7 @@ import toast from 'react-hot-toast';
 import * as XLSX from 'xlsx';
 import { fetchAllProducts } from '../utils/fetchAllProducts';
 import { supabase } from '../lib/supabase';
+import { safeSupabaseInsert, safeSupabaseUpdate } from '../utils/safeSync';
 import { TableVirtuoso, Virtuoso } from 'react-virtuoso';
 
 
@@ -236,11 +237,12 @@ export default function ProductsView({ products = [], setProducts }: ProductsVie
       setIsModalOpen(false);
 
       try {
-        const { error } = await supabase.from('products').update(mapProductToRow(updatedProduct)).eq('id', editingProduct.id);
+        const { error } = await safeSupabaseUpdate('products', editingProduct.id, mapProductToRow(updatedProduct));
         if (error) throw error;
       } catch (err: any) {
         clearPending(editingProduct.id);
-        toast.error('Offline mode: Saved locally. Will sync when online.');
+        const errMsg = navigator.onLine ? `Sync failed: ${err.message}. Saved locally.` : 'Offline mode: Saved locally. Will sync when online.';
+        toast.error(errMsg);
         const offlineQ = JSON.parse(localStorage.getItem('shaheen_offline_products') || '[]');
         offlineQ.push(updatedProduct);
         localStorage.setItem('shaheen_offline_products', JSON.stringify(offlineQ));
@@ -255,8 +257,9 @@ export default function ProductsView({ products = [], setProducts }: ProductsVie
       setIsModalOpen(false);
 
       try {
-        const { data, error } = await supabase.from('products').insert(mapProductToRow(finalFormData as Omit<Product, 'id'>)).select().single();
+        const { data: results, error } = await safeSupabaseInsert('products', mapProductToRow(finalFormData as Omit<Product, 'id'>));
         if (error) throw error;
+        const data = results?.[0];
         if (!data) throw new Error("No data returned from insertion (RLS block or offline)");
 
         const savedProduct = mapRowToProduct(data);
@@ -267,7 +270,8 @@ export default function ProductsView({ products = [], setProducts }: ProductsVie
            setProducts((prev = []) => prev.map(p => p.id === tempId ? savedProduct : p));
         }
       } catch (err: any) {
-        toast.error('Offline mode: Saved locally. Will sync when online.');
+        const errMsg = navigator.onLine ? `Sync failed: ${err.message}. Saved locally.` : 'Offline mode: Saved locally. Will sync when online.';
+        toast.error(errMsg);
         const offlineQ = JSON.parse(localStorage.getItem('shaheen_offline_products') || '[]');
         offlineQ.push(tempProduct);
         localStorage.setItem('shaheen_offline_products', JSON.stringify(offlineQ));

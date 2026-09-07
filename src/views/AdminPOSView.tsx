@@ -5,6 +5,7 @@ import { playNotificationSound } from '../utils/audio';
 import { saveSilentBackup } from '../utils/silentBackup';
 import { LayoutDashboard, ShoppingBag, Package, Settings, Search, Trash2, Printer, ScanBarcode, BarChart3, Bell, X, AlertTriangle, FileText, User, Building, Moon, Sun, Grid, ShoppingCart, CreditCard, MapPin, LogOut, ClipboardList, Menu, Users, ChevronDown, Phone, Map as MapIcon, PieChart, BookOpen, Clock, Download, Smartphone } from 'lucide-react';
 import { fetchAllProducts } from '../utils/fetchAllProducts';
+import { safeSupabaseUpsert, safeSupabaseInsert } from '../utils/safeSync';
 
 const ProductsView = lazy(() => import('./ProductsView'));
 import type { Product } from './ProductsView';
@@ -290,12 +291,12 @@ export default function AdminPOSView() {
         });
 
         if (toUpdate.length > 0) {
-            const { error: updateErr } = await supabase.from('products').upsert(toUpdate, { onConflict: 'id' });
+            const { error: updateErr } = await safeSupabaseUpsert('products', toUpdate, { onConflict: 'id' });
             if (updateErr) throw updateErr;
         }
         
         if (toInsert.length > 0) {
-            const { error: insErr } = await supabase.from('products').insert(toInsert);
+            const { error: insErr } = await safeSupabaseInsert('products', toInsert);
             if (insErr) throw insErr;
         }
         
@@ -324,7 +325,7 @@ export default function AdminPOSView() {
             created_at: order.created_at || order.date || new Date().toISOString(),
             items: order.items || []
           };
-          const { error } = await supabase.from('orders').insert(finalPayload);
+          const { error } = await safeSupabaseInsert('orders', finalPayload);
           if (error && error.code !== '23505') {
             console.error('Admin sync failed for order', finalPayload.receipt_number, error);
             failedOrders.push(order);

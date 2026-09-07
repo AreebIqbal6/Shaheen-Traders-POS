@@ -1,6 +1,7 @@
 import type { Order, CartItem, Booker } from '../types/index';
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '../lib/supabase';
+import { safeSupabaseInsert } from '../utils/safeSync';
 import { Package, MapPin, User, CreditCard, Send, Building, Phone, ChevronDown, Search } from 'lucide-react';
 
 interface CartItem {
@@ -131,7 +132,7 @@ export default function B2BCheckout({ cart, total, onSuccess, onBack }: B2BCheck
         b2b_user_id: b2b_user_id
       };
 
-      const { error: submitError } = await supabase.from('orders').insert(finalPayload);
+      const { error: submitError } = await safeSupabaseInsert('orders', finalPayload);
 
       if (submitError) throw submitError;
 
