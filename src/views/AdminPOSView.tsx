@@ -6,6 +6,7 @@ import { saveSilentBackup } from '../utils/silentBackup';
 import { LayoutDashboard, ShoppingBag, Package, Settings, Search, Trash2, Printer, ScanBarcode, BarChart3, Bell, X, AlertTriangle, FileText, User, Building, Moon, Sun, Grid, ShoppingCart, CreditCard, MapPin, LogOut, ClipboardList, Menu, Users, ChevronDown, Phone, Map as MapIcon, PieChart, BookOpen, Clock, Download, Smartphone } from 'lucide-react';
 import { fetchAllProducts } from '../utils/fetchAllProducts';
 import { safeSupabaseUpsert, safeSupabaseInsert } from '../utils/safeSync';
+import { generateUUID } from '../utils/uuid';
 
 const ProductsView = lazy(() => import('./ProductsView'));
 import type { Product } from './ProductsView';
@@ -249,7 +250,8 @@ export default function AdminPOSView() {
     try {
       // 1. Sync Offline Products (Instead of wholesale upsert to prevent overriding cloud edits)
       const offlineQueue = JSON.parse(localStorage.getItem('shaheen_offline_products') || '[]');
-      const tempProducts = products.filter(p => p.id.startsWith('temp-'));
+      const offlineIds = new Set(offlineQueue.map((oq: any) => String(oq.id)));
+      const tempProducts = products.filter(p => offlineIds.has(String(p.id)));
       
       const combinedToSync = [...offlineQueue];
       tempProducts.forEach(tp => {
@@ -286,7 +288,7 @@ export default function AdminPOSView() {
         const toUpdate = productsToSync.filter(p => p.id && !p.id.startsWith('temp-'));
         const toInsert = productsToSync.filter(p => !p.id || p.id.startsWith('temp-')).map(p => {
             const copy = {...p};
-            delete (copy as any).id;
+            copy.id = generateUUID(); // Replace temp- with a valid UUID so it doesn't fail the not-null constraint
             return copy;
         });
 
@@ -438,7 +440,7 @@ export default function AdminPOSView() {
         const pendingTempIds = new Set(offlineQueue.map((oq: any) => String(oq.id)));
         
         for (const p of prev) {
-           if (String(p.id).startsWith('temp-') && pendingTempIds.has(String(p.id))) {
+           if (pendingTempIds.has(String(p.id)) && !cloudIds.has(String(p.id))) {
               merged.push(p);
            }
         }

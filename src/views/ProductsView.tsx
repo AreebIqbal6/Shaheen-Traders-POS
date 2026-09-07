@@ -7,6 +7,7 @@ import * as XLSX from 'xlsx';
 import { fetchAllProducts } from '../utils/fetchAllProducts';
 import { supabase } from '../lib/supabase';
 import { safeSupabaseInsert, safeSupabaseUpdate } from '../utils/safeSync';
+import { generateUUID } from '../utils/uuid';
 import { TableVirtuoso, Virtuoso } from 'react-virtuoso';
 
 
@@ -105,7 +106,8 @@ export default function ProductsView({ products = [], setProducts }: ProductsVie
     };
   };
 
-  const mapProductToRow = (product: Omit<Product, 'id'>) => ({
+  const mapProductToRow = (product: Product) => ({
+    id: product.id,
     barcode: product.barcode,
     name: product.name,
     price: product.price,
@@ -248,7 +250,7 @@ export default function ProductsView({ products = [], setProducts }: ProductsVie
         localStorage.setItem('shaheen_offline_products', JSON.stringify(offlineQ));
       }
     } else {
-      const tempId = 'temp-' + Date.now().toString() + Math.random().toString(36).slice(2);
+      const tempId = generateUUID();
       const tempProduct = { ...finalFormData, id: tempId } as Product;
 
       if (typeof setProducts === 'function') {
@@ -257,7 +259,7 @@ export default function ProductsView({ products = [], setProducts }: ProductsVie
       setIsModalOpen(false);
 
       try {
-        const { data: results, error } = await safeSupabaseInsert('products', mapProductToRow(finalFormData as Omit<Product, 'id'>));
+        const { data: results, error } = await safeSupabaseInsert('products', mapProductToRow(tempProduct));
         if (error) throw error;
         const data = results?.[0];
         if (!data) throw new Error("No data returned from insertion (RLS block or offline)");
@@ -374,7 +376,7 @@ export default function ProductsView({ products = [], setProducts }: ProductsVie
             const [barcode, name, priceStr, stockStr] = line.split(',');
             const sku = generateSKU(name?.trim() || 'Product', barcode?.trim() || '');
             newProducts.push({
-              id: 'temp-' + Date.now().toString() + Math.random() + i,
+              id: generateUUID(),
               barcode: barcode?.trim() || '',
               sku: sku,
               name: name?.trim() || 'Unknown Product',
@@ -385,20 +387,19 @@ export default function ProductsView({ products = [], setProducts }: ProductsVie
         } else if (file.name.toLowerCase().match(/\.xlsx?$/)) {
           const workbook = XLSX.read(data, { type: 'binary' });
           const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-          const rows: any[] = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
+          const rows: any[] = XLSX.utils.sheet_to_json(firstSheet);
           
-          for (let i = 1; i < rows.length; i++) {
-            const row = rows[i];
-            if (!row || row.length === 0) continue;
-            const barcode = String(row[0] || '').trim();
-            const name = String(row[1] || 'Unknown Product').trim();
-            const price = parseFloat(row[2]) || 0;
-            const stock = parseInt(row[3]) || 0;
-            const sku = generateSKU(name, barcode);
+          for (let i = 0; i < rows.length; i++) {
+            const row: any = rows[i];
+            const barcode = String(row.Barcode || row.barcode || '');
+            const name = String(row.Name || row['Product Name'] || row.name || '');
+            const price = parseFloat(row.Price || row.price || '0');
+            const stock = parseInt(row.Stock || row.stock || row.Qty || '0');
+            const sku = generateSKU(name || 'Product', barcode || '');
             
-            if (name !== 'Unknown Product' && name.length > 0) {
+            if (barcode && name) {
               newProducts.push({
-                id: 'temp-' + Date.now().toString() + Math.random() + i,
+                id: generateUUID(),
                 barcode: barcode,
                 sku: sku,
                 name: name,
