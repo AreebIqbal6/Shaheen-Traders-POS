@@ -3,6 +3,8 @@ import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import { VirtuosoGrid } from 'react-virtuoso';
 import { playNotificationSound } from '../utils/audio';
 import { supabase } from '../lib/supabase';
+import { safeSupabaseInsert } from '../utils/safeSync';
+import { generateUUID } from '../utils/uuid';
 import { ShoppingCart, Store, CreditCard, Search, ArrowRight, Package, User, LogOut, History, WifiOff, RefreshCw, CheckCircle2, FileText, Smartphone, Trash2, X, MapPin } from 'lucide-react';
 import { fetchAllProducts } from '../utils/fetchAllProducts';
 import toast from 'react-hot-toast';
@@ -259,6 +261,7 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
           const { isOffline, contact_number, b2b_user_id, idempotency_key, source, receipt_number, payment_terms, area, booker_name, ...supabasePayload } = order;
           const finalPayload = {
             ...supabasePayload,
+            id: supabasePayload.id || generateUUID(),
             idempotency_key: idempotency_key,
             receipt_number: receipt_number,
             client_phone: contact_number,
@@ -271,7 +274,7 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
               basePrice: i.basePrice || i.price
             })) || []
           };
-          const { error } = await supabase.from('orders').insert(finalPayload);
+          const { error } = await safeSupabaseInsert('orders', finalPayload);
           if (error && error.code !== '23505') {
             console.error('Sync failed for order', receipt_number || finalPayload.id, error);
             if (showLoading) toast.error(`Sync failed for ${receipt_number || finalPayload.id}: ${error.message}`);

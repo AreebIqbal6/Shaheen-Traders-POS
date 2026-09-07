@@ -343,7 +343,7 @@ export default function AdminPOSView() {
       // 3. Sync Offline Bookers
       const offlineBookers = JSON.parse(localStorage.getItem('shaheen_offline_bookers') || '[]');
       if (offlineBookers.length > 0) {
-         const { error: bookerError } = await supabase.from('bookers').upsert(offlineBookers, { onConflict: 'booker_number' });
+         const { error: bookerError } = await safeSupabaseUpsert('bookers', offlineBookers, { onConflict: 'booker_number' });
          if (!bookerError) localStorage.removeItem('shaheen_offline_bookers');
       }
       

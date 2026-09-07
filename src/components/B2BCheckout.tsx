@@ -2,6 +2,7 @@ import type { Order, CartItem, Booker } from '../types/index';
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import { safeSupabaseInsert } from '../utils/safeSync';
+import { generateUUID } from '../utils/uuid';
 import { Package, MapPin, User, CreditCard, Send, Building, Phone, ChevronDown, Search } from 'lucide-react';
 
 interface CartItem {
@@ -90,6 +91,7 @@ export default function B2BCheckout({ cart, total, onSuccess, onBack }: B2BCheck
     // Phone validation removed
 
     const orderPayload = {
+      id: generateUUID(),
       client_name: formData.businessName,
       area: formData.areaName,
       booker_name: formData.bookerName,

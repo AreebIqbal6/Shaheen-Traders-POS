@@ -2,6 +2,7 @@ import type { Booker } from '../types/index';
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { supabase } from '../lib/supabase';
+import { safeSupabaseInsert, safeSupabaseUpdate } from '../utils/safeSync';
 import { Users, Plus, Save, X, Phone, Mail, MapPin, User, Key, Hash, Edit2, AlertTriangle, Navigation, LogIn, ArrowLeft, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { hashPassword } from '../utils/cryptoUtils';
@@ -160,7 +161,7 @@ export default function BookersView() {
     const failedBookers: any[] = [];
     for (const bkr of offlineBookers) {
       try {
-        const { error } = await supabase.from('bookers').insert([bkr]);
+        const { error } = await safeSupabaseInsert('bookers', bkr);
         if (error) {
           failedBookers.push(bkr);
         }
@@ -229,7 +230,7 @@ export default function BookersView() {
           payload.auth_token = await hashPassword(password);
         }
 
-        const { error } = await supabase.from('bookers').update(payload).eq('id', editingBooker.id);
+        const { error } = await safeSupabaseUpdate('bookers', editingBooker.id, payload);
         if (error) console.warn("Supabase update failed:", error.message);
 
         const updatedBookers = bookers.map(b => b.id === editingBooker.id ? { ...b, ...payload } : b);
@@ -251,7 +252,7 @@ export default function BookersView() {
         
         let insertFailed = false;
         try {
-          const { error } = await supabase.from('bookers').insert([payload]);
+          const { error } = await safeSupabaseInsert('bookers', payload);
           if (error) {
             insertFailed = true;
             console.warn("Supabase insert failed:", error.message);

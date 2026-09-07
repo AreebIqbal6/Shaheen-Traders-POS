@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Store, Plus, Save, X, Phone, MapPin, User, Search, Trash2, Edit2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { supabase } from '../lib/supabase';
+import { safeSupabaseInsert, safeSupabaseUpdate } from '../utils/safeSync';
 
 export interface Shop {
   id: string;
@@ -127,7 +128,7 @@ export default function ShopsManagement() {
         localStorage.setItem('shaheen_shops', JSON.stringify(updatedShops));
         
         // Send snake_case payload to Supabase
-        const { error } = await supabase.from('shops').update(mapShopToRow(updatedShop)).eq('id', editingShop.id);
+        const { error } = await safeSupabaseUpdate('shops', editingShop.id, mapShopToRow(updatedShop));
         if (error) {
           console.error('Failed to update shop in cloud:', error);
           toast.error('Shop updated locally but cloud sync failed. Will retry.');
@@ -147,7 +148,7 @@ export default function ShopsManagement() {
         localStorage.setItem('shaheen_shops', JSON.stringify(updatedShops));
         
         // Send snake_case payload to Supabase
-        const { error } = await supabase.from('shops').insert([mapShopToRow(newShop)]);
+        const { error } = await safeSupabaseInsert('shops', mapShopToRow(newShop));
         if (error) {
           console.error('Failed to insert shop in cloud:', error);
           toast.error('Shop saved locally but cloud sync failed. Will retry.');
