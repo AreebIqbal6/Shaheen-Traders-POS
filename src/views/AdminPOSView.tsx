@@ -313,10 +313,11 @@ export default function AdminPOSView() {
       if (offlineOrdersQueue.length > 0) {
         const failedOrders = [];
         for (const order of offlineOrdersQueue) {
+          const generatedId = order.id || generateUUID();
           const finalPayload = {
-            id: order.id,
+            id: generatedId,
             receipt_number: order.receipt_number || order.receiptNumber,
-            idempotency_key: order.id,
+            idempotency_key: order.idempotency_key || generatedId,
             client_name: order.client_name || order.clientName || 'Unknown',
             area: order.area || '',
             contact_number: order.contact_number || order.contactNumber || '',
@@ -1230,6 +1231,25 @@ export default function AdminPOSView() {
             offlineOrders[orderIndex].status = 'COMPLETED';
             localStorage.setItem('shaheen_offline_orders', JSON.stringify(offlineOrders));
           }
+        } else {
+          // Sync walk-in order to Supabase
+          const generatedId = generateUUID();
+          const finalPayload = {
+            id: generatedId,
+            receipt_number: newOrder.receiptNumber,
+            idempotency_key: generatedId,
+            client_name: newOrder.clientName || 'Walk-in',
+            area: newOrder.area || '',
+            contact_number: newOrder.contactNumber || '',
+            booker_name: 'Admin',
+            total_amount: newOrder.total || 0,
+            status: 'COMPLETED',
+            created_at: newOrder.date.toISOString(),
+            items: newOrder.items || []
+          };
+          safeSupabaseInsert('orders', finalPayload).catch(err => {
+             console.error("Failed to sync walk-in order to Supabase:", err);
+          });
         }
         setIsCheckoutSuccess(true);
         isDispatchingRef.current = false;
