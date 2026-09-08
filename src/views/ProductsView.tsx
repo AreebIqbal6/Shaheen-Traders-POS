@@ -620,7 +620,8 @@ export default function ProductsView({ products = [], setProducts }: ProductsVie
         <div className="flex-1 w-full relative">
           <div className="hidden md:block absolute inset-0">
             <TableVirtuoso
-              style={{ height: '100%', width: '100%' }}
+                className="custom-scrollbar overflow-y-scroll"
+                style={{ height: '100%', width: '100%' }}
               data={filteredProducts}
               components={{ Table: TableComponent }}
               fixedHeaderContent={() => (
@@ -643,7 +644,7 @@ export default function ProductsView({ products = [], setProducts }: ProductsVie
                   <>
                     <td className="px-5 py-3 font-mono text-slate-600 dark:text-slate-400">{product.barcode}</td>
                     <td className="px-5 py-3 font-mono font-bold text-slate-900 dark:text-slate-50">{product.sku || '-'}</td>
-                    <td className="px-5 py-3 font-medium text-slate-900 dark:text-slate-50 flex items-center gap-2 whitespace-normal break-words min-w-[200px]">
+                    <td className="px-5 py-3 font-medium text-slate-900 dark:text-slate-50 whitespace-normal break-words min-w-[200px]">
                        {product.name}
                     </td>
                     <td className="px-5 py-3 text-slate-900 dark:text-slate-50 font-medium">Rs {product.price.toFixed(2)}</td>
@@ -669,7 +670,8 @@ export default function ProductsView({ products = [], setProducts }: ProductsVie
           </div>
             <div className="md:hidden absolute inset-0 flex flex-col divide-y divide-slate-200 dark:divide-slate-700">
             <Virtuoso
-              style={{ height: '100%', width: '100%' }}
+                className="custom-scrollbar overflow-y-scroll"
+                style={{ height: '100%', width: '100%' }}
               data={filteredProducts}
               itemContent={(index, product) => {
                 const mStock = minStockDict[product.id] ?? 5;
