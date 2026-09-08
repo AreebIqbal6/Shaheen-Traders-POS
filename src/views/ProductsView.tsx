@@ -38,6 +38,7 @@ const REFETCH_DEBOUNCE_MS = 250;
 
 import { forwardRef } from 'react';
 const TableComponent = forwardRef((props, ref) => <table {...props} ref={ref} className="w-full text-left text-[13px]" style={{...props.style, width: '100%'}} />);
+const virtuosoComponents = { Table: TableComponent };
 export default function ProductsView({ products = [], setProducts }: ProductsViewProps) {
   const searchContainerRef = useRef<HTMLDivElement>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -623,7 +624,7 @@ export default function ProductsView({ products = [], setProducts }: ProductsVie
                 className="custom-scrollbar overflow-y-scroll"
                 style={{ height: '100%', width: '100%' }}
               data={filteredProducts}
-              components={{ Table: TableComponent }}
+              components={virtuosoComponents}
               fixedHeaderContent={() => (
                 <tr>
                   <th className="bg-slate-50/90 dark:bg-[#0a0a0c]/90 px-5 py-3.5 font-semibold">Barcode</th>
