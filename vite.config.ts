@@ -122,7 +122,10 @@ export default defineConfig({
   build: {
     sourcemap: false, // Prevents generating original source code maps
     rollupOptions: {
-      input: ['index.html', 'admin.html']
+      input: {
+        main: 'index.html',
+        admin: 'admin.html'
+      }
     },
     minify: 'terser',
     chunkSizeWarningLimit: 3000,

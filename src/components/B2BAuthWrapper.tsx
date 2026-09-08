@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import B2BLoginView from '../views/B2BLoginView';
 import { supabase } from '../lib/supabase';
+import toast from 'react-hot-toast';
 
 export default function B2BAuthWrapper({ children }: { children: React.ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -9,18 +10,76 @@ export default function B2BAuthWrapper({ children }: { children: React.ReactNode
 
   useEffect(() => {
     const checkAuth = async () => {
-      // Check local storage for active booker session
-      const activeBooker = localStorage.getItem('shaheen_active_booker');
+      const activeBookerStr = localStorage.getItem('shaheen_active_booker');
       
-      if (activeBooker) {
-        setIsAuthenticated(true);
+      if (activeBookerStr) {
+        try {
+          const activeBooker = JSON.parse(activeBookerStr);
+          if (navigator.onLine && activeBooker?.id) {
+            // Verify if booker still exists and credentials match
+            const { data, error } = await supabase
+              .from('bookers')
+              .select('id')
+              .eq('id', activeBooker.id)
+              .maybeSingle();
+              
+            if (!data || error) {
+              // Booker was deleted or doesn't exist
+              localStorage.removeItem('shaheen_active_booker');
+              
+              // Remove from offline cache too
+              const profiles = JSON.parse(localStorage.getItem('booker_profiles') || '[]');
+              const filtered = profiles.filter((b: any) => b.id !== activeBooker.id);
+              localStorage.setItem('booker_profiles', JSON.stringify(filtered));
+              
+              setIsAuthenticated(false);
+              setIsLoading(false);
+              toast.error('Your access has been revoked by the admin.');
+              return;
+            }
+          }
+          setIsAuthenticated(true);
+        } catch (e) {
+          localStorage.removeItem('shaheen_active_booker');
+        }
       }
       setIsLoading(false);
     };
     checkAuth();
   }, []);
 
-  // If loading takes too long, show a retry option
+  // Realtime listener to kick out if removed while app is open
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    
+    const activeBookerStr = localStorage.getItem('shaheen_active_booker');
+    if (!activeBookerStr) return;
+    
+    try {
+      const activeBooker = JSON.parse(activeBookerStr);
+      const channel = supabase
+        .channel('bookers-delete')
+        .on(
+          'postgres_changes',
+          { event: 'DELETE', schema: 'public', table: 'bookers', filter: `id=eq.${activeBooker.id}` },
+          () => {
+            localStorage.removeItem('shaheen_active_booker');
+            const profiles = JSON.parse(localStorage.getItem('booker_profiles') || '[]');
+            const filtered = profiles.filter((b: any) => b.id !== activeBooker.id);
+            localStorage.setItem('booker_profiles', JSON.stringify(filtered));
+            
+            setIsAuthenticated(false);
+            toast.error('Your access has been revoked by the admin.', { duration: 6000 });
+          }
+        )
+        .subscribe();
+        
+      return () => {
+        supabase.removeChannel(channel);
+      };
+    } catch (e) {}
+  }, [isAuthenticated]);
+
   useEffect(() => {
     if (!isLoading) return;
     const timer = setTimeout(() => setLoadingTooLong(true), 6000);

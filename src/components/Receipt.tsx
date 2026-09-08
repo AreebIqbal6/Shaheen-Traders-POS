@@ -127,7 +127,7 @@ export default function Receipt({ data, className = '', isPrintable = true }: Re
                      <span>•</span>
                      <span>{outletLocation}</span>
                      <span>•</span>
-                     <span>0318 2345703</span>
+                     <span>0318 2345703 | 0335 1243494</span>
                   </div>
                 </div>
 
@@ -136,11 +136,11 @@ export default function Receipt({ data, className = '', isPrintable = true }: Re
                    <div className="grid grid-cols-2 gap-x-8 gap-y-0.5 text-[11px]">
                       <div className="flex gap-2">
                          <span className="font-bold text-slate-900 uppercase">SHOP NAME:</span>
-                         <span className="text-slate-700">{data.clientName || 'Walk-in'}</span>
+                         <span className="text-slate-700">{data.clientName || '-'}</span>
                       </div>
                       <div className="flex gap-2">
                          <span className="font-bold text-slate-900 uppercase">ADDRESS:</span>
-                         <span className="text-slate-700">{data.area || 'N/A'}</span>
+                         <span className="text-slate-700">{data.area || '-'}</span>
                       </div>
                       <div className="flex gap-2">
                          <span className="font-bold text-slate-900 uppercase">DATE OF DELIVERY:</span>
@@ -148,7 +148,7 @@ export default function Receipt({ data, className = '', isPrintable = true }: Re
                       </div>
                       <div className="flex gap-2">
                          <span className="font-bold text-slate-900 uppercase">BOOKER NAME:</span>
-                         <span className="text-slate-700">{data.bookerName || 'Self'}</span>
+                         <span className="text-slate-700">{data.bookerName || '-'}</span>
                       </div>
                       <div className="flex gap-2">
                          <span className="font-bold text-slate-900 uppercase">CONTACT NUMBER:</span>
@@ -197,7 +197,7 @@ export default function Receipt({ data, className = '', isPrintable = true }: Re
                      <span>•</span>
                      <span>{outletLocation}</span>
                      <span>•</span>
-                     <span>0318 2345703</span>
+                     <span>0318 2345703 | 0335 1243494</span>
                   </div>
                 </div>
 
@@ -205,11 +205,11 @@ export default function Receipt({ data, className = '', isPrintable = true }: Re
                    <div className="grid grid-cols-2 gap-x-8 gap-y-0.5 text-[11px]">
                       <div className="flex gap-2">
                          <span className="font-bold text-slate-900 uppercase">SHOP NAME:</span>
-                         <span className="text-slate-700">{data.clientName || 'Walk-in'}</span>
+                         <span className="text-slate-700">{data.clientName || '-'}</span>
                       </div>
                       <div className="flex gap-2">
                          <span className="font-bold text-slate-900 uppercase">ADDRESS:</span>
-                         <span className="text-slate-700">{data.area || 'N/A'}</span>
+                         <span className="text-slate-700">{data.area || '-'}</span>
                       </div>
                       <div className="flex gap-2">
                          <span className="font-bold text-slate-900 uppercase">DATE OF DELIVERY:</span>
@@ -217,7 +217,7 @@ export default function Receipt({ data, className = '', isPrintable = true }: Re
                       </div>
                       <div className="flex gap-2">
                          <span className="font-bold text-slate-900 uppercase">BOOKER NAME:</span>
-                         <span className="text-slate-700">{data.bookerName || 'Self'}</span>
+                         <span className="text-slate-700">{data.bookerName || '-'}</span>
                       </div>
                       <div className="flex gap-2">
                          <span className="font-bold text-slate-900 uppercase">CONTACT NUMBER:</span>

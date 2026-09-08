@@ -614,11 +614,11 @@ export default function ProductsView({ products = [], setProducts }: ProductsVie
         </div>
       </div>
 
-      <div className="flex-1 bg-white dark:bg-zinc-900/60 backdrop-blur-md border border-slate-200 dark:border-zinc-800/50 shadow-sm rounded-xl overflow-hidden flex flex-col">
-        <div className="overflow-y-auto overflow-x-hidden custom-scrollbar flex-1">
-          <table className="hidden md:table w-full text-left text-[13px] whitespace-nowrap">
+      <div className="flex-1 bg-white dark:bg-zinc-900/60 backdrop-blur-md border border-slate-200 dark:border-zinc-800/50 shadow-sm rounded-xl flex flex-col">
+        <div className="flex-1 w-full">
+          <table className="hidden md:table w-full text-left text-[13px]">
             <TableVirtuoso
-              style={{ height: 'calc(100vh - 250px)', width: '100%' }}
+              style={{ height: '100%', width: '100%' }}
               data={filteredProducts}
               fixedHeaderContent={() => (
                 <tr>
@@ -665,9 +665,9 @@ export default function ProductsView({ products = [], setProducts }: ProductsVie
             />
           </table>
 
-          <div className="md:hidden flex flex-col divide-y divide-slate-200 dark:divide-slate-700">
+          <div className="md:hidden flex flex-col h-full divide-y divide-slate-200 dark:divide-slate-700">
             <Virtuoso
-              style={{ height: 'calc(100vh - 250px)', width: '100%' }}
+              style={{ height: '100%', width: '100%' }}
               data={filteredProducts}
               itemContent={(index, product) => {
                 const mStock = minStockDict[product.id] ?? 5;

@@ -2067,10 +2067,12 @@ export default function AdminPOSView() {
             </div>
             
             {isCameraOpen && (
-              <CameraScanner 
-                onScan={handleScan}
-                onClose={() => setIsCameraOpen(false)}
-              />
+              <Suspense fallback={<div className="fixed inset-0 z-[9999] bg-black flex items-center justify-center text-white font-bold">Loading camera...</div>}>
+                <CameraScanner 
+                  onScan={handleScan}
+                  onClose={() => setIsCameraOpen(false)}
+                />
+              </Suspense>
             )}
           </div>
         );

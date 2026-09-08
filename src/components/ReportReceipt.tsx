@@ -125,7 +125,7 @@ export default function ReportReceipt({ data, className = '', isPrintable = true
                      <span>•</span>
                      <span>{outletLocation}</span>
                      <span>•</span>
-                     <span>0318 2345703</span>
+                     <span>0318 2345703 | 0335 1243494</span>
                   </div>
                 </div>
 
@@ -187,7 +187,7 @@ export default function ReportReceipt({ data, className = '', isPrintable = true
                      <span>•</span>
                      <span>{outletLocation}</span>
                      <span>•</span>
-                     <span>0318 2345703</span>
+                     <span>0318 2345703 | 0335 1243494</span>
                   </div>
                 </div>
 

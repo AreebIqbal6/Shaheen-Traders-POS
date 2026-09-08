@@ -10,6 +10,13 @@ export default function B2BLoginView({ onLoginSuccess }: { onLoginSuccess: () =>
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [deferredPrompt, setDeferredPrompt] = useState<any>((window as any).deferredPrompt || null);
+  const [isStandalone, setIsStandalone] = useState(false);
+
+  useEffect(() => {
+    if (window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone) {
+      setIsStandalone(true);
+    }
+  }, []);
 
   // We are storing the offline login explicitly since Bookers use weak network
   const handleOfflineLogin = async () => {
@@ -126,6 +133,7 @@ export default function B2BLoginView({ onLoginSuccess }: { onLoginSuccess: () =>
           Secure Field Agent Access
         </p>
 
+        {!isStandalone && (
         <button
           onClick={async () => {
             if (deferredPrompt) {
@@ -150,6 +158,7 @@ export default function B2BLoginView({ onLoginSuccess }: { onLoginSuccess: () =>
         >
           <Smartphone size={16} /> Install Booker App
         </button>
+        )}
       </div>
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">

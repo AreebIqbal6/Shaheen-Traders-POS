@@ -330,9 +330,7 @@ export default function App() {
             fontSize: '14px',
             padding: '12px 16px',
             maxWidth: '500px',
-            borderRadius: '8px',
-            background: 'inherit',
-            color: 'inherit'
+            borderRadius: '8px'
           }
         }}
       >
