@@ -238,26 +238,9 @@ export default function ShopsManagement() {
             {editingShop ? `Edit Shop: ${editingShop.name}` : 'Register New Shop'}
           </h3>
           <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1.5 mb-1.5">
-                <Store size={12} /> Shop Name *
-              </label>
-              <input required value={name} onChange={e => setName(e.target.value)} type="text" className="w-full bg-slate-50 dark:bg-[#0a0a0c]/50 border border-slate-200 dark:border-zinc-800/50 rounded-sm py-2 px-3 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all" placeholder="e.g. Al-Madina Super Store" />
-            </div>
             
-            <div>
-              <label className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1.5 mb-1.5">
-                <User size={12} /> Owner / Contact Person
-              </label>
-              <input value={ownerName} onChange={e => setOwnerName(e.target.value)} type="text" className="w-full bg-slate-50 dark:bg-[#0a0a0c]/50 border border-slate-200 dark:border-zinc-800/50 rounded-sm py-2 px-3 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all" placeholder="e.g. Haji Sahab" />
-            </div>
 
-            <div>
-              <label className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1.5 mb-1.5">
-                <Phone size={12} /> Contact Number
-              </label>
-              <input value={contactNumber} onChange={e => setContactNumber(e.target.value)} type="tel" className="w-full bg-slate-50 dark:bg-[#0a0a0c]/50 border border-slate-200 dark:border-zinc-800/50 rounded-sm py-2 px-3 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all" placeholder="0300-1234567" />
-            </div>
+            
 
             <div className="md:col-span-2">
               <label className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1.5 mb-1.5">
@@ -303,11 +286,7 @@ export default function ShopsManagement() {
                   <tr key={shop.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors">
                     <td className="p-4 align-top">
                       <div className="font-bold text-slate-900 dark:text-slate-50">{shop.name}</div>
-                      {shop.ownerName && (
-                        <div className="text-sm font-medium text-slate-500 dark:text-slate-400 flex items-center gap-1 mt-1">
-                          <User size={12} /> {shop.ownerName}
-                        </div>
-                      )}
+                      
                     </td>
                     <td className="p-4 align-top">
                       <div className="flex flex-col gap-1 text-sm text-slate-600 dark:text-slate-400">

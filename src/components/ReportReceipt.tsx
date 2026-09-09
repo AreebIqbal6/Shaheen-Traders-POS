@@ -120,13 +120,11 @@ export default function ReportReceipt({ data, className = '', isPrintable = true
                 {/* 2. Title */}
                 <div className="text-center mb-1 shrink-0">
                   <h1 className="text-2xl font-black text-[#1a202c] tracking-wider uppercase">{storeName}</h1>
-                  <div className="text-[9px] font-bold text-slate-500 mt-1 uppercase tracking-widest flex items-center justify-center gap-3">
-                     <span>{storeAddress}</span>
-                     <span>•</span>
-                     <span>{outletLocation}</span>
-                     <span>•</span>
-                     <span>0318 2345703 | 0335 1243494</span>
-                  </div>
+                  <div className="text-[10px] font-bold text-slate-500 mt-1 uppercase tracking-widest flex items-center justify-center gap-4">
+                     <span>Ammar: 0335 1243494</span>
+                     <span>&bull;</span>
+                     <span>Irfan: 0318 2345703</span>
+                    </div>
                 </div>
 
                 {/* 3. Grid Details */}
@@ -182,13 +180,11 @@ export default function ReportReceipt({ data, className = '', isPrintable = true
                 {/* 2. Title */}
                 <div className="text-center mb-1 border-b border-slate-200 pb-1 print:border-b shrink-0">
                   <h1 className="text-2xl font-black text-[#1a202c] tracking-wider uppercase">{storeName}</h1>
-                  <div className="text-[9px] font-bold text-slate-500 mt-1 uppercase tracking-widest flex items-center justify-center gap-3">
-                     <span>{storeAddress}</span>
-                     <span>•</span>
-                     <span>{outletLocation}</span>
-                     <span>•</span>
-                     <span>0318 2345703 | 0335 1243494</span>
-                  </div>
+                  <div className="text-[10px] font-bold text-slate-500 mt-1 uppercase tracking-widest flex items-center justify-center gap-4">
+                     <span>Ammar: 0335 1243494</span>
+                     <span>&bull;</span>
+                     <span>Irfan: 0318 2345703</span>
+                    </div>
                 </div>
 
                 <div className="border-t-2 border-b-2 border-slate-800 py-1 mb-1 print:border-t-2 print:border-b-2 shrink-0 bg-slate-100">

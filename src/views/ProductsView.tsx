@@ -374,7 +374,7 @@ export default function ProductsView({ products = [], setProducts }: ProductsVie
             const line = lines[i].trim();
             if (!line) continue;
             const [barcode, name, priceStr, stockStr] = line.split(',');
-            const sku = generateSKU(name?.trim() || 'Product', barcode?.trim() || '');
+            const sku = getNextSKU([...products, ...newProducts]);
             newProducts.push({
               id: generateUUID(),
               barcode: barcode?.trim() || '',
@@ -395,7 +395,7 @@ export default function ProductsView({ products = [], setProducts }: ProductsVie
             const name = String(row.Name || row['Product Name'] || row.name || '');
             const price = parseFloat(row.Price || row.price || '0');
             const stock = parseInt(row.Stock || row.stock || row.Qty || '0');
-            const sku = generateSKU(name || 'Product', barcode || '');
+            const sku = getNextSKU([...products, ...newProducts]);
             
             if (barcode && name) {
               newProducts.push({
@@ -722,14 +722,7 @@ export default function ProductsView({ products = [], setProducts }: ProductsVie
               <div className="relative">
                 <div className="flex justify-between items-center mb-1.5">
                   <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider block">Barcode Scanner / SKU</label>
-                  {!editingProduct && (
-                    <button 
-                      onClick={handleGenerateSKU}
-                      className="text-[10px] bg-slate-100 dark:bg-zinc-900/60 backdrop-blur-md hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-900 dark:text-slate-50 border border-slate-200 dark:border-zinc-800/50 px-2 py-0.5 rounded transition-colors font-medium"
-                    >
-                      Auto-Generate
-                    </button>
-                  )}
+                  
                 </div>
                 <div className="relative">
                   <input 

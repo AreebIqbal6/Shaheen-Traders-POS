@@ -67,7 +67,6 @@ export default function B2BCheckout({ cart, total, onSuccess, onBack }: B2BCheck
     businessName: '',
     areaName: '',
     bookerName: activeBooker.name || '',
-    contactNumber: '',
     paymentTerms: 'Cash on Delivery'
   });
 
@@ -77,7 +76,7 @@ export default function B2BCheckout({ cart, total, onSuccess, onBack }: B2BCheck
     setError(null);
 
     // Manual validation to prevent silent HTML5 validation failures on mobile
-    if (!formData.businessName || !formData.bookerName) {
+    if (!formData.businessName || !formData.bookerName || !formData.areaName) {
       setError('Please fill out all required fields.');
       setIsSubmitting(false);
       return;
@@ -95,7 +94,7 @@ export default function B2BCheckout({ cart, total, onSuccess, onBack }: B2BCheck
       client_name: formData.businessName,
       area: formData.areaName,
       booker_name: formData.bookerName,
-      contact_number: formData.contactNumber,
+      
       payment_terms: formData.paymentTerms,
       items: cart,
       total: total,
@@ -194,8 +193,8 @@ export default function B2BCheckout({ cart, total, onSuccess, onBack }: B2BCheck
                                  ...formData, 
                                  businessName: val,
                                  ...(exactShop ? {
-                                   areaName: exactShop.address || formData.areaName,
-                                   contactNumber: exactShop.contact_number || exactShop.contactNumber || formData.contactNumber
+                                   
+                                   
                                  } : {})
                                });
                             }}
@@ -216,8 +215,8 @@ export default function B2BCheckout({ cart, total, onSuccess, onBack }: B2BCheck
                                 setFormData({
                                   ...formData,
                                   businessName: shop.name,
-                                  areaName: shop.address || '',
-                                  contactNumber: shop.contact_number || shop.contactNumber || ''
+                                  
+                                  
                                 });
                                 setShopSearch('');
                                 setShowShopDropdown(false);
