@@ -200,6 +200,10 @@ export default function ProductsView({ products = [], setProducts }: ProductsVie
                         (currentFilter === 'local' && p.item_type !== 'Imported') ||
                         (currentFilter === 'imported' && p.item_type === 'Imported');
     return matchSearch && matchFilter;
+  }).sort((a, b) => {
+    const skuA = parseInt(a.sku || '0', 10) || 0;
+    const skuB = parseInt(b.sku || '0', 10) || 0;
+    return skuA - skuB;
   });
 
   const handleOpenModal = (product?: Product) => {
