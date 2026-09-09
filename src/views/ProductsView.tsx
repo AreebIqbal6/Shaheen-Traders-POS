@@ -12,19 +12,23 @@ import { generateUUID } from '../utils/uuid';
 
 
 export const generateSKU = (name: string, barcode: string) => {
-  const safeName = name || 'Product';
-  const words = safeName.split(' ').filter(w => w.length > 0);
-  let prefix = '';
-  
-  if (words.length >= 2) {
-    prefix = (words[0].substring(0, 3) + words[1].substring(0, 3)).toUpperCase().replace(/[^A-Z]/g, 'X');
-  } else if (words.length === 1) {
-    prefix = words[0].substring(0, 6).toUpperCase().replace(/[^A-Z]/g, 'X');
-  } else {
-    prefix = 'PRD';
+  return '-';
+};
+
+export const getNextSKU = (productsList: Product[]) => {
+  if (!productsList || productsList.length === 0) return '0001';
+  let max = 0;
+  for (const p of productsList) {
+    if (p.sku && /^\d+$/.test(p.sku.trim())) {
+      const num = parseInt(p.sku.trim(), 10);
+      if (num > max) max = num;
+    }
   }
-  const suffix = barcode ? barcode.slice(-4) : Math.floor(1000 + Math.random() * 9000).toString();
-  return `${prefix}-${suffix}`;
+  return (max + 1).toString().padStart(4, '0');
+};
+
+const generateBarcode = () => {
+  return 'BC-' + Date.now().toString(36).toUpperCase() + '-' + Math.floor(1000 + Math.random() * 9000);
 };
 
 interface ProductsViewProps {
@@ -204,7 +208,7 @@ export default function ProductsView({ products = [], setProducts }: ProductsVie
       setFormData({ ...product, minStock: minStockDict[product.id] ?? 5 });
     } else {
       setEditingProduct(null);
-      setFormData({ barcode: '', name: '', price: 0, stock: 0, sku: '', minStock: 5 });
+      setFormData({ barcode: '', name: '', price: 0, stock: 0, sku: getNextSKU(products), minStock: 5 });
     }
     setIsModalOpen(true);
   };
@@ -218,11 +222,14 @@ export default function ProductsView({ products = [], setProducts }: ProductsVie
   }, [isModalOpen]);
 
   const handleSave = async () => {
-    if (!formData.name || !formData.barcode) { toast.error('Name and Barcode are required'); return; }
+    if (!formData.name) { toast.error('Product Name is required'); return; }
 
     const finalFormData = { ...formData };
+    if (!finalFormData.barcode) {
+      finalFormData.barcode = generateBarcode();
+    }
     if (!finalFormData.sku) {
-      finalFormData.sku = generateSKU(finalFormData.name || '', finalFormData.barcode || '');
+      finalFormData.sku = getNextSKU(products);
     }
 
     const mStock = finalFormData.minStock ?? 5;
@@ -721,7 +728,7 @@ export default function ProductsView({ products = [], setProducts }: ProductsVie
               <div className="flex-1 flex flex-col gap-4">
               <div className="relative">
                 <div className="flex justify-between items-center mb-1.5">
-                  <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider block">Barcode Scanner / SKU</label>
+                  <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider block">Barcode</label>
                   
                 </div>
                 <div className="relative">
@@ -745,7 +752,7 @@ export default function ProductsView({ products = [], setProducts }: ProductsVie
                     }}
                     onBlur={() => { if (!editingProduct && formData.barcode) fetchProductDetails(formData.barcode); }}
                     className="w-full bg-white dark:bg-zinc-900/60 backdrop-blur-md border border-slate-200 dark:border-zinc-800/50 rounded-lg px-3 py-2.5 focus:outline-none focus:border-blue-500 transition-all font-mono text-[13px] pr-10 text-slate-900 dark:text-slate-50 placeholder:text-slate-400 dark:placeholder:text-slate-500"
-                    placeholder="Scan barcode..."
+                    placeholder="Scan or auto-generated"
                   />
                   {isLoadingApi ? (
                     <Loader2 size={16} className="absolute right-3 top-3 text-blue-600 dark:text-blue-400 animate-spin" />
@@ -797,13 +804,14 @@ export default function ProductsView({ products = [], setProducts }: ProductsVie
               </div>
 
               <div>
-                <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-1.5 block">SKU Code (Optional)</label>
+                <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-1.5 block">SKU Code</label>
                 <input 
                   type="text" 
+                  disabled
+                  readOnly
                   value={formData.sku || ''} 
-                  onChange={e => setFormData({...formData, sku: e.target.value.toUpperCase()})}
-                  className="w-full bg-white dark:bg-zinc-900/60 backdrop-blur-md border border-slate-200 dark:border-zinc-800/50 rounded-lg px-3 py-2.5 focus:outline-none focus:border-blue-500 transition-all font-mono font-bold text-[13px] text-slate-900 dark:text-slate-50 placeholder:text-slate-500 dark:text-slate-500"
-                  placeholder="Auto-generated if empty"
+                  className="w-full bg-slate-100 dark:bg-zinc-800/50 border border-slate-200 dark:border-zinc-800/50 rounded-lg px-3 py-2.5 font-mono font-bold text-[13px] text-slate-500 dark:text-slate-500 opacity-60 cursor-not-allowed"
+                  placeholder="Auto-generated"
                 />
               </div>
               </div>
