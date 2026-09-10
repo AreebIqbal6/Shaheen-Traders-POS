@@ -1162,7 +1162,7 @@ export default function AdminPOSView() {
     if (cart.length === 0) { toast.error('Cart is empty.'); return; }
     if (!clientName.trim()) { toast.error('Please enter Client / Business Name.'); return; }
     if (!area.trim()) { toast.error('Please enter Area Name.'); return; }
-    if (!contactNumber.trim()) { toast.error('Please enter Contact Number.'); return; }
+    if (!contactNumber.trim()) { setContactNumber('-'); }
     if (!bookerName.trim()) { toast.error('Please enter Booker Name.'); return; }
 
     if (!draftOrderId) {
@@ -2055,18 +2055,6 @@ export default function AdminPOSView() {
                             placeholder="e.g. Samnabad"
                           />
                         </div>
-                      </div>
-                      <div>
-                        <label className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide flex items-center gap-1.5 mb-1">
-                          Contact
-                        </label>
-                        <input 
-                          type="text" 
-                          value={contactNumber}
-                          onChange={e => setContactNumber(e.target.value)}
-                          className="w-full bg-slate-50 dark:bg-[#0a0a0c] border border-slate-200 dark:border-zinc-800/50 rounded-sm py-1.5 px-2 font-medium focus:outline-none focus:border-slate-400 transition-all text-xs"
-                          placeholder="Phone"
-                        />
                       </div>
                     </div>
 
