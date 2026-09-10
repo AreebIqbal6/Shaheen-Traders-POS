@@ -39,11 +39,20 @@ const ProductCard = React.memo(({ product, onAdd }: { product: Product, onAdd: (
           {!product.barcode && !product.sku && (<span>{generateSKU(product.name, '')}</span>)}
         </p> 
       </div> 
-      <div className="mt-auto w-full flex justify-between items-center"> 
-        <span className="font-bold text-slate-900 dark:text-slate-50 text-[14px]">Rs {product.price.toLocaleString()}</span> 
+      <div className="mt-auto w-full flex justify-between items-end pt-1 gap-2"> 
+        <div className="flex flex-col min-w-0">
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <span className="font-bold text-slate-900 dark:text-slate-50 text-[14px] leading-tight">Rs {product.price.toLocaleString()}</span> 
+            {Boolean(product.retail_price) && (
+              <span className="text-[10px] font-semibold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 px-1.5 py-0.5 rounded border border-emerald-200 dark:border-emerald-800/50 whitespace-nowrap">
+                Retail: Rs {Number(product.retail_price).toLocaleString()}
+              </span>
+            )}
+          </div>
+        </div>
         <button 
           onClick={(e) => { e.stopPropagation(); onAdd(product); }} 
-          className="bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-zinc-600 px-2 py-0.5 rounded-sm font-semibold hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors shrink-0 text-[11px] active:scale-95" 
+          className="bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-zinc-600 px-2 py-0.5 rounded-sm font-semibold hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors shrink-0 text-[11px] active:scale-95 mb-0.5" 
         > 
           + Add 
         </button> 
@@ -527,11 +536,13 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
            setProducts([]);
         }
       } else {
-        const mappedData = data.map((p: Product) => ({
+        const retailPrices = JSON.parse(localStorage.getItem('shaheen_retail_prices') || '{}');
+        const mappedData = data.map((p: any) => ({
           ...p,
           sku: p.sku || generateSKU(p.name, p.barcode),
           pcsPerBox: p.pcs_per_box || p.pcsPerBox || 12,
-          boxPerCtn: p.box_per_ctn || p.boxPerCtn || 6
+          boxPerCtn: p.box_per_ctn || p.boxPerCtn || 6,
+          retail_price: p.retail_price != null ? Number(p.retail_price) : (retailPrices[p.id] !== undefined ? Number(retailPrices[p.id]) : undefined)
         }));
         
         const newStr = JSON.stringify(mappedData);

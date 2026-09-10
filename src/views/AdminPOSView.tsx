@@ -496,7 +496,8 @@ export default function AdminPOSView() {
             name: cp.name || localProduct?.name || 'Unknown Product',
             sku: hasRealSku ? cp.sku : (localProduct?.sku && localProduct.sku !== localProduct.barcode ? localProduct.sku : generateSKU(cp.name || 'Product', cp.barcode)),
             pcsPerBox: cp.pcs_per_box || cp.pcsPerBox || localProduct?.pcsPerBox || 12,
-            boxPerCtn: cp.box_per_ctn || cp.boxPerCtn || localProduct?.boxPerCtn || 6
+            boxPerCtn: cp.box_per_ctn || cp.boxPerCtn || localProduct?.boxPerCtn || 6,
+            retail_price: cp.retail_price != null ? Number(cp.retail_price) : localProduct?.retail_price
           };
           merged.push(mapped);
         }
