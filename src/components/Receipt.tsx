@@ -148,11 +148,11 @@ export default function Receipt({ data, className = '', isPrintable = true }: Re
                          <span className="font-bold text-slate-900 uppercase">BOOKER NAME:</span>
                          <span className="text-slate-700">{data.bookerName || '-'}</span>
                       </div>
-                      <div></div>
                       <div className="flex gap-2">
                          <span className="font-bold text-slate-900 uppercase">ORDER ID:</span>
                          <span className="text-slate-700 font-mono font-bold text-xs self-center">{displayId}</span>
                       </div>
+                      <div></div>
                    </div>
                 </div>
               </>
@@ -212,11 +212,11 @@ export default function Receipt({ data, className = '', isPrintable = true }: Re
                          <span className="font-bold text-slate-900 uppercase">BOOKER NAME:</span>
                          <span className="text-slate-700">{data.bookerName || '-'}</span>
                       </div>
-                      <div></div>
                       <div className="flex gap-2">
                          <span className="font-bold text-slate-900 uppercase">ORDER ID:</span>
                          <span className="text-slate-700 font-mono font-bold text-xs self-center">{displayId}</span>
                       </div>
+                      <div></div>
                    </div>
                 </div>
               </>
