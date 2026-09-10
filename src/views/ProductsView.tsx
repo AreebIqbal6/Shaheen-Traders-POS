@@ -16,9 +16,17 @@ export const generateSKU = (name: string, barcode: string) => {
 };
 
 export const getNextSKU = (productsList: Product[]) => {
-  if (!productsList || productsList.length === 0) return '0001';
+  let allProducts = productsList || [];
+  try {
+    const cached = JSON.parse(localStorage.getItem('shaheen_products') || '[]');
+    if (Array.isArray(cached)) {
+      allProducts = [...allProducts, ...cached];
+    }
+  } catch {}
+
+  if (allProducts.length === 0) return '0001';
   let max = 0;
-  for (const p of productsList) {
+  for (const p of allProducts) {
     if (p.sku && /^\d+$/.test(p.sku.trim())) {
       const num = parseInt(p.sku.trim(), 10);
       if (num > max) max = num;
@@ -249,7 +257,7 @@ export default function ProductsView({ products = [], setProducts }: ProductsVie
     if (!finalFormData.barcode) {
       finalFormData.barcode = generateBarcode();
     }
-    if (!finalFormData.sku) {
+    if (!editingProduct || !finalFormData.sku) {
       finalFormData.sku = getNextSKU(products);
     }
 
