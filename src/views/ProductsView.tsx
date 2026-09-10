@@ -657,13 +657,14 @@ export default function ProductsView({ products = [], setProducts }: ProductsVie
                 <table className="w-full text-left text-[13px] border-collapse">
                   <thead className="sticky top-0 z-10 shadow-sm">
                     <tr>
-                      <th className="bg-slate-50 dark:bg-[#0a0a0c] px-5 py-3.5 font-semibold border-b border-slate-200 dark:border-slate-800">Barcode</th>
-                      <th className="bg-slate-50 dark:bg-[#0a0a0c] px-5 py-3.5 font-semibold border-b border-slate-200 dark:border-slate-800">SKU</th>
-                      <th className="bg-slate-50 dark:bg-[#0a0a0c] px-5 py-3.5 font-semibold border-b border-slate-200 dark:border-slate-800">Product Name</th>
-                      <th className="bg-slate-50 dark:bg-[#0a0a0c] px-5 py-3.5 font-semibold border-b border-slate-200 dark:border-slate-800">Price</th>
-                      <th className="bg-slate-50 dark:bg-[#0a0a0c] px-5 py-3.5 font-semibold border-b border-slate-200 dark:border-slate-800">Stock</th>
-                      <th className="bg-slate-50 dark:bg-[#0a0a0c] px-5 py-3.5 font-semibold text-right border-b border-slate-200 dark:border-slate-800">Total</th>
-                      <th className="bg-slate-50 dark:bg-[#0a0a0c] px-5 py-3.5 font-semibold text-right border-b border-slate-200 dark:border-slate-800">Actions</th>
+                      <th className="bg-slate-50 dark:bg-[#0a0a0c] px-3.5 py-3 font-semibold border-b border-slate-200 dark:border-slate-800 whitespace-nowrap">Barcode</th>
+                      <th className="bg-slate-50 dark:bg-[#0a0a0c] px-3.5 py-3 font-semibold border-b border-slate-200 dark:border-slate-800 whitespace-nowrap">SKU</th>
+                      <th className="bg-slate-50 dark:bg-[#0a0a0c] px-3.5 py-3 font-semibold border-b border-slate-200 dark:border-slate-800">Product Name</th>
+                      <th className="bg-slate-50 dark:bg-[#0a0a0c] px-3.5 py-3 font-semibold border-b border-slate-200 dark:border-slate-800 whitespace-nowrap">Price</th>
+                      <th className="bg-slate-50 dark:bg-[#0a0a0c] px-3.5 py-3 font-semibold border-b border-slate-200 dark:border-slate-800 whitespace-nowrap">Retail Price</th>
+                      <th className="bg-slate-50 dark:bg-[#0a0a0c] px-3.5 py-3 font-semibold border-b border-slate-200 dark:border-slate-800 whitespace-nowrap">Stock</th>
+                      <th className="bg-slate-50 dark:bg-[#0a0a0c] px-3.5 py-3 font-semibold text-right border-b border-slate-200 dark:border-slate-800 whitespace-nowrap">Total</th>
+                      <th className="bg-slate-50 dark:bg-[#0a0a0c] px-3.5 py-3 font-semibold text-right border-b border-slate-200 dark:border-slate-800 whitespace-nowrap">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -671,15 +672,19 @@ export default function ProductsView({ products = [], setProducts }: ProductsVie
                       const mStock = minStockDict[product.id] ?? 5;
                       const isCrit = product.stock <= mStock;
                       const isWarn = product.stock > mStock && product.stock <= mStock + 5;
+                      const rPrice = product.retail_price ?? retailPriceDict[product.id];
                       return (
                         <tr key={product.id || index} className="border-b border-slate-100 dark:border-zinc-800/50 hover:bg-slate-50/50 dark:hover:bg-zinc-800/20 transition-colors">
-                          <td className="px-5 py-3 font-mono text-slate-600 dark:text-slate-400">{product.barcode}</td>
-                          <td className="px-5 py-3 font-mono font-bold text-slate-900 dark:text-slate-50">{product.sku || '-'}</td>
-                          <td className="px-5 py-3 font-medium text-slate-900 dark:text-slate-50 whitespace-normal break-words">
+                          <td className="px-3.5 py-2.5 font-mono text-slate-600 dark:text-slate-400 whitespace-nowrap text-xs">{product.barcode}</td>
+                          <td className="px-3.5 py-2.5 font-mono font-bold text-slate-900 dark:text-slate-50 whitespace-nowrap text-xs">{product.sku || '-'}</td>
+                          <td className="px-3.5 py-2.5 font-medium text-slate-900 dark:text-slate-50 whitespace-normal break-words min-w-[140px]">
                             {product.name}
                           </td>
-                          <td className="px-5 py-3 text-slate-900 dark:text-slate-50 font-medium">Rs {product.price.toFixed(2)}</td>
-                          <td className="px-5 py-3">
+                          <td className="px-3.5 py-2.5 text-slate-900 dark:text-slate-50 font-semibold whitespace-nowrap">Rs {product.price.toFixed(2)}</td>
+                          <td className="px-3.5 py-2.5 font-semibold text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
+                            {rPrice ? `Rs ${Number(rPrice).toFixed(2)}` : '-'}
+                          </td>
+                          <td className="px-3.5 py-2.5 whitespace-nowrap">
                             <span className={`px-2 py-0.5 rounded-sm text-[11px] font-bold inline-flex items-center gap-1.5 ${
                               isCrit ? 'bg-[var(--color-crit-dim)] text-red-600 dark:text-red-400 border border-[var(--color-crit)]/30' : 
                               isWarn ? 'bg-[var(--color-warn-dim)] text-amber-600 dark:text-amber-400 border border-[var(--color-warn)]/30' : 
@@ -689,8 +694,8 @@ export default function ProductsView({ products = [], setProducts }: ProductsVie
                               {product.stock}
                             </span>
                           </td>
-                          <td className="px-5 py-3 text-slate-900 dark:text-slate-50 font-bold text-right">Rs {(product.price * product.stock).toFixed(2)}</td>
-                          <td className="px-5 py-3 text-right">
+                          <td className="px-3.5 py-2.5 text-slate-900 dark:text-slate-50 font-bold text-right whitespace-nowrap">Rs {(product.price * product.stock).toFixed(2)}</td>
+                          <td className="px-3.5 py-2.5 text-right whitespace-nowrap">
                             <button onClick={() => handleOpenModal(product)} className="text-slate-600 dark:text-slate-400 hover:text-black dark:hover:text-white p-1.5 transition-colors"><Edit2 size={14} /></button>
                             <button onClick={() => handleDelete(product.id)} className="text-slate-600 dark:text-slate-400 hover:text-red-600 dark:text-red-400 p-1.5 ml-1 transition-colors"><Trash2 size={14} /></button>
                           </td>
@@ -707,6 +712,7 @@ export default function ProductsView({ products = [], setProducts }: ProductsVie
                   const mStock = minStockDict[product.id] ?? 5;
                   const isCrit = product.stock <= mStock;
                   const isWarn = product.stock > mStock && product.stock <= mStock + 5;
+                  const rPrice = product.retail_price ?? retailPriceDict[product.id];
                   return (
                     <div key={product.id || index} className="p-4 flex flex-col gap-2 hover:bg-[rgba(255,255,255,0.03)] transition-colors border-b border-slate-200 dark:border-slate-700">
                        <div className="flex justify-between items-start gap-2">
@@ -723,8 +729,15 @@ export default function ProductsView({ products = [], setProducts }: ProductsVie
                           </div>
                        </div>
                        <div className="flex justify-between items-center mt-2">
-                          <span className="text-blue-600 dark:text-blue-400 font-bold text-sm">Rs {product.price.toFixed(2)}</span>
-                          <span className={`px-2 py-0.5 rounded-sm text-[11px] font-bold flex items-center gap-1.5 ${
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className="text-blue-600 dark:text-blue-400 font-bold text-sm">Rs {product.price.toFixed(2)}</span>
+                            {Boolean(rPrice) && (
+                              <span className="text-[10px] font-semibold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 px-1.5 py-0.5 rounded border border-emerald-200 dark:border-emerald-800/50 whitespace-nowrap leading-tight">
+                                Retail: Rs {Number(rPrice).toLocaleString()}
+                              </span>
+                            )}
+                          </div>
+                          <span className={`px-2 py-0.5 rounded-sm text-[11px] font-bold flex items-center gap-1.5 shrink-0 ${
                             isCrit ? 'bg-[var(--color-crit-dim)] text-red-600 dark:text-red-400 border border-[var(--color-crit)]/30' : 
                             isWarn ? 'bg-[var(--color-warn-dim)] text-amber-600 dark:text-amber-400 border border-[var(--color-warn)]/30' : 
                             'text-slate-600 dark:text-slate-400'
@@ -848,8 +861,8 @@ export default function ProductsView({ products = [], setProducts }: ProductsVie
 
               {/* Right Column */}
               <div className="flex-1 flex flex-col gap-4">
-                <div className="flex gap-4">
-                  <div className="flex-1">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+                  <div>
                     <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-1.5 block">Price (PKR) / Pc</label>
                     <input 
                       type="number" 
@@ -859,7 +872,7 @@ export default function ProductsView({ products = [], setProducts }: ProductsVie
                       className="w-full bg-white dark:bg-zinc-900/60 backdrop-blur-md border border-slate-200 dark:border-zinc-800/50 rounded-lg px-3 py-2.5 focus:outline-none focus:border-blue-500 transition-all font-mono font-bold text-[13px] text-blue-600 dark:text-blue-400 placeholder:text-blue-600/40 dark:placeholder:text-blue-400/40"
                     />
                   </div>
-                  <div className="flex-1">
+                  <div>
                     <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-1.5 block">Total Stock (Pcs)</label>
                     <input 
                       type="number" 
@@ -869,7 +882,7 @@ export default function ProductsView({ products = [], setProducts }: ProductsVie
                       className="w-full bg-white dark:bg-zinc-900/60 backdrop-blur-md border border-slate-200 dark:border-zinc-800/50 rounded-lg px-3 py-2.5 focus:outline-none focus:border-blue-500 transition-all font-mono font-bold text-[13px] text-slate-900 dark:text-slate-50 placeholder:text-slate-400 dark:placeholder:text-slate-600"
                     />
                   </div>
-                  <div className="flex-1">
+                  <div>
                     <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-1.5 block">Min Stock (Alert)</label>
                     <input 
                       type="number" 
@@ -882,8 +895,8 @@ export default function ProductsView({ products = [], setProducts }: ProductsVie
                 </div>
 
                 {/* UOM Conversions & Retail Price */}
-                <div className="flex gap-4 mt-4">
-                  <div className="flex-1">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mt-1 sm:mt-2">
+                  <div>
                     <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-1.5 block">Retail Price (PKR) *</label>
                     <input 
                       type="number" 
@@ -893,7 +906,7 @@ export default function ProductsView({ products = [], setProducts }: ProductsVie
                       className="w-full bg-white dark:bg-zinc-900/60 backdrop-blur-md border border-slate-200 dark:border-zinc-800/50 rounded-lg px-3 py-2.5 focus:outline-none focus:border-blue-500 transition-all font-mono font-bold text-[13px] text-slate-900 dark:text-slate-50 placeholder:text-slate-400 dark:placeholder:text-slate-600"
                     />
                   </div>
-                  <div className="flex-1">
+                  <div>
                     <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-1.5 block">Pcs per Box</label>
                     <input 
                       type="number" 
@@ -903,7 +916,7 @@ export default function ProductsView({ products = [], setProducts }: ProductsVie
                       className="w-full bg-white dark:bg-zinc-900/60 backdrop-blur-md border border-slate-200 dark:border-zinc-800/50 rounded-lg px-3 py-2.5 focus:outline-none focus:border-blue-500 transition-all font-mono font-bold text-[13px] text-slate-900 dark:text-slate-50 placeholder:text-slate-400 dark:placeholder:text-slate-600"
                     />
                   </div>
-                  <div className="flex-1">
+                  <div>
                     <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-1.5 block">Boxes per Ctn</label>
                     <input 
                       type="number" 

@@ -76,13 +76,15 @@ export default function AdminPOSView() {
   const [products, setProducts] = useState<Product[]>(() => {
     const saved = localStorage.getItem('shaheen_products');
     const parsed = saved ? JSON.parse(saved) : [];
+    const retailPrices = JSON.parse(localStorage.getItem('shaheen_retail_prices') || '{}');
     return parsed.map((p: Product) => {
       const needsNewSku = !p.sku || p.sku === p.barcode || p.sku.trim() === '';
       return {
         ...p,
         sku: needsNewSku ? generateSKU(p.name, p.barcode) : p.sku,
         pcsPerBox: p.pcsPerBox || 12,
-        boxPerCtn: p.boxPerCtn || 6
+        boxPerCtn: p.boxPerCtn || 6,
+        retail_price: p.retail_price != null ? Number(p.retail_price) : (retailPrices[p.id] !== undefined ? Number(retailPrices[p.id]) : undefined)
       };
     });
   });
@@ -1326,6 +1328,7 @@ export default function AdminPOSView() {
   }, [isSubmitting, total, cart, clientName, paymentTerms, area, bookerName, contactNumber, draftOrderId, products, activeSupabaseId]);
 
   const minStockDict = useMemo(() => JSON.parse(localStorage.getItem('shaheen_min_stock') || '{}'), []);
+  const retailPricesDict = useMemo(() => JSON.parse(localStorage.getItem('shaheen_retail_prices') || '{}'), []);
   const hasCriticalStock = useMemo(() => products.some(p => p.stock <= (minStockDict[p.id] ?? 5)), [products, minStockDict]);
 
   const sidebarItems = [
@@ -1665,7 +1668,7 @@ export default function AdminPOSView() {
                               hiddenScannerRef.current?.focus();
                             }
                           }}
-                          className="bg-white dark:bg-zinc-900/60 backdrop-blur-md border border-slate-200 dark:border-zinc-800/50 rounded-sm p-3.5 hover:border-slate-400 transition-all text-left w-full flex flex-row items-center justify-between gap-3 shadow-sm"
+                          className="bg-white dark:bg-zinc-900/60 backdrop-blur-md border border-slate-200 dark:border-zinc-800/50 rounded-sm p-3 sm:p-3.5 hover:border-slate-400 transition-all text-left w-full flex flex-row items-center justify-between gap-3 shadow-sm overflow-hidden"
                         >
                           <div className="flex flex-col items-start min-w-0 flex-1">
                             <h4 className="font-bold text-slate-800 dark:text-slate-200 leading-tight mb-1 text-[14px] truncate w-full">{p.name}</h4>
@@ -1679,9 +1682,16 @@ export default function AdminPOSView() {
                               )}
                             </p>
                           </div>
-                          <div className="flex flex-col sm:flex-row items-end sm:items-center gap-2 sm:gap-5 shrink-0">
-                            <span className="font-black text-slate-900 dark:text-slate-50 text-[15px]">Rs {p.price}</span>
-                            <span className="text-[11px] font-semibold bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 px-2 py-0.5 rounded-sm">Stock: {p.stock}</span>
+                          <div className="flex flex-col sm:flex-row items-end sm:items-center gap-1.5 sm:gap-4 shrink-0">
+                            <div className="flex items-center gap-1.5 flex-wrap justify-end">
+                              <span className="font-black text-slate-900 dark:text-slate-50 text-[15px] leading-tight">Rs {p.price}</span>
+                              {(Boolean(p.retail_price) || (retailPricesDict[p.id] !== undefined && Number(retailPricesDict[p.id]) > 0)) && (
+                                <span className="text-[10px] font-semibold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 px-1.5 py-0.5 rounded border border-emerald-200 dark:border-emerald-800/50 whitespace-nowrap leading-tight">
+                                  Retail: Rs {Number(p.retail_price || retailPricesDict[p.id]).toLocaleString()}
+                                </span>
+                              )}
+                            </div>
+                            <span className="text-[11px] font-semibold bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 px-2 py-0.5 rounded-sm shrink-0">Stock: {p.stock}</span>
                           </div>
                         </button>
                       )}
