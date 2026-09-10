@@ -144,12 +144,36 @@ export default function ProductsView({ products = [], setProducts }: ProductsVie
       
       const mappedData = (data || []).map(mapRowToProduct);
       
+      // Strict runtime deduplication: guarantee no two products ever have the same SKU
+      const seenSkus = new Set<string>();
+      let maxSkuNum = 0;
+      for (const p of mappedData) {
+        if (p.sku && /^\d+$/.test(p.sku.trim())) {
+          const num = parseInt(p.sku.trim(), 10);
+          if (num > maxSkuNum) maxSkuNum = num;
+        }
+      }
+
+      const deduplicatedData = mappedData.map(p => {
+        if (p.sku && /^\d+$/.test(p.sku.trim())) {
+          const cleanSku = p.sku.trim();
+          if (seenSkus.has(cleanSku)) {
+            maxSkuNum++;
+            const newSku = maxSkuNum.toString().padStart(4, '0');
+            seenSkus.add(newSku);
+            return { ...p, sku: newSku };
+          }
+          seenSkus.add(cleanSku);
+        }
+        return p;
+      });
+
       // Update local storage directly so mobile/offline modes get the latest truth
-      localStorage.setItem('shaheen_products', JSON.stringify(mappedData));
+      localStorage.setItem('shaheen_products', JSON.stringify(deduplicatedData));
 
       // ONLY update state if the parent component actually passed the function
       if (typeof setProducts === 'function') {
-        setProducts(mappedData);
+        setProducts(deduplicatedData);
       }
     } catch (err: unknown) {
       console.error('Failed to fetch products from Supabase:', err);

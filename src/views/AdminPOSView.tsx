@@ -503,7 +503,32 @@ export default function AdminPOSView() {
           };
           merged.push(mapped);
         }
-        return merged;
+
+        // Strict SKU deduplication guarantee
+        const seenSkus = new Set<string>();
+        let maxSkuNum = 0;
+        for (const p of merged) {
+          if (p.sku && /^\d+$/.test(p.sku.trim())) {
+            const num = parseInt(p.sku.trim(), 10);
+            if (num > maxSkuNum) maxSkuNum = num;
+          }
+        }
+
+        const cleanMerged = merged.map(p => {
+          if (p.sku && /^\d+$/.test(p.sku.trim())) {
+            const cleanSku = p.sku.trim();
+            if (seenSkus.has(cleanSku)) {
+              maxSkuNum++;
+              const newSku = maxSkuNum.toString().padStart(4, '0');
+              seenSkus.add(newSku);
+              return { ...p, sku: newSku };
+            }
+            seenSkus.add(cleanSku);
+          }
+          return p;
+        });
+
+        return cleanMerged;
       });
     } catch (err) {
       console.warn('Failed to pull products from cloud:', err);
