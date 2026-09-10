@@ -1073,9 +1073,15 @@ export default function AdminPOSView() {
     if (registerItemTypeFilter !== 'All') {
       result = result.filter(p => registerItemTypeFilter === 'Imported' ? p.item_type === 'Imported' : p.item_type !== 'Imported');
     }
-    if (!registerSearchQuery.trim()) return result;
-    const lowerQ = registerSearchQuery.toLowerCase();
-    return result.filter(p => (p.name || '').toLowerCase().includes(lowerQ) || (p.barcode || '').toLowerCase().includes(lowerQ) || (p.sku || '').toLowerCase().includes(lowerQ));
+    if (registerSearchQuery.trim()) {
+      const lowerQ = registerSearchQuery.toLowerCase();
+      result = result.filter(p => (p.name || '').toLowerCase().includes(lowerQ) || (p.barcode || '').toLowerCase().includes(lowerQ) || (p.sku || '').toLowerCase().includes(lowerQ));
+    }
+    return [...result].sort((a, b) => {
+      const skuA = parseInt(a.sku || '0', 10) || 0;
+      const skuB = parseInt(b.sku || '0', 10) || 0;
+      return skuA - skuB;
+    });
   }, [products, registerSearchQuery, registerItemTypeFilter]);
 
   const removeFromCart = useCallback((cartId: string) => {
