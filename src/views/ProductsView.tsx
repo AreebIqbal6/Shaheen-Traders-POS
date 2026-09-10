@@ -59,15 +59,23 @@ export default function ProductsView({ products = [], setProducts }: ProductsVie
   const inventoryValue = products.reduce((acc, p) => acc + (p.price * p.stock), 0);
 
   const [minStockDict, setMinStockDict] = useState<Record<string, number>>({});
+  const [retailPriceDict, setRetailPriceDict] = useState<Record<string, number>>({});
 
   useEffect(() => {
     setMinStockDict(JSON.parse(localStorage.getItem('shaheen_min_stock') || '{}'));
+    setRetailPriceDict(JSON.parse(localStorage.getItem('shaheen_retail_prices') || '{}'));
   }, []);
 
   const saveMinStock = (id: string, minStock: number) => {
     const newDict = { ...minStockDict, [id]: minStock };
     setMinStockDict(newDict);
     localStorage.setItem('shaheen_min_stock', JSON.stringify(newDict));
+  };
+
+  const saveRetailPrice = (id: string, price: number) => {
+    const newDict = { ...retailPriceDict, [id]: price };
+    setRetailPriceDict(newDict);
+    localStorage.setItem('shaheen_retail_prices', JSON.stringify(newDict));
   };
 
   const pendingOpsRef = useRef<Map<string, number>>(new Map());
@@ -107,6 +115,7 @@ export default function ProductsView({ products = [], setProducts }: ProductsVie
       category: row.category != null ? String(row.category) : undefined,
       pcsPerBox: toOptionalNumber(row.pcs_per_box ?? row.pcsPerBox),
       boxPerCtn: toOptionalNumber(row.box_per_ctn ?? row.boxPerCtn),
+      retail_price: toOptionalNumber(row.retail_price ?? row.retailPrice) ?? (retailPriceDict[String(row.id)] !== undefined ? Number(retailPriceDict[String(row.id)]) : undefined),
     };
   };
 
@@ -209,10 +218,14 @@ export default function ProductsView({ products = [], setProducts }: ProductsVie
   const handleOpenModal = (product?: Product) => {
     if (product) {
       setEditingProduct(product);
-      setFormData({ ...product, minStock: minStockDict[product.id] ?? 5 });
+      setFormData({ 
+        ...product, 
+        minStock: minStockDict[product.id] ?? 5,
+        retail_price: product.retail_price ?? retailPriceDict[product.id]
+      });
     } else {
       setEditingProduct(null);
-      setFormData({ barcode: '', name: '', price: 0, stock: 0, sku: getNextSKU(products), minStock: 5 });
+      setFormData({ barcode: '', name: '', price: 0, stock: 0, retail_price: undefined, sku: getNextSKU(products), minStock: 5 });
     }
     setIsModalOpen(true);
   };
@@ -227,6 +240,10 @@ export default function ProductsView({ products = [], setProducts }: ProductsVie
 
   const handleSave = async () => {
     if (!formData.name) { toast.error('Product Name is required'); return; }
+    if (formData.retail_price === undefined || formData.retail_price === null || formData.retail_price <= 0 || isNaN(formData.retail_price)) {
+      toast.error('Retail Price is required and must be filled manually');
+      return;
+    }
 
     const finalFormData = { ...formData };
     if (!finalFormData.barcode) {
@@ -247,6 +264,9 @@ export default function ProductsView({ products = [], setProducts }: ProductsVie
          setProducts((prev = []) => prev.map(p => p.id === editingProduct.id ? updatedProduct : p));
       }
       saveMinStock(editingProduct.id, mStock);
+      if (finalFormData.retail_price) {
+        saveRetailPrice(editingProduct.id, finalFormData.retail_price);
+      }
       setIsModalOpen(false);
 
       try {
@@ -267,6 +287,9 @@ export default function ProductsView({ products = [], setProducts }: ProductsVie
       if (typeof setProducts === 'function') {
          setProducts((prev = []) => [tempProduct, ...prev]);
       }
+      if (finalFormData.retail_price) {
+        saveRetailPrice(tempId, finalFormData.retail_price);
+      }
       setIsModalOpen(false);
 
       try {
@@ -278,6 +301,9 @@ export default function ProductsView({ products = [], setProducts }: ProductsVie
         const savedProduct = mapRowToProduct(data);
         markPending(savedProduct.id);
         saveMinStock(savedProduct.id, mStock);
+        if (finalFormData.retail_price) {
+          saveRetailPrice(savedProduct.id, finalFormData.retail_price);
+        }
 
         if (typeof setProducts === 'function') {
            setProducts((prev = []) => prev.map(p => p.id === tempId ? savedProduct : p));
@@ -855,8 +881,18 @@ export default function ProductsView({ products = [], setProducts }: ProductsVie
                   </div>
                 </div>
 
-                {/* UOM Conversions */}
+                {/* UOM Conversions & Retail Price */}
                 <div className="flex gap-4 mt-4">
+                  <div className="flex-1">
+                    <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-1.5 block">Retail Price (PKR) *</label>
+                    <input 
+                      type="number" 
+                      placeholder="0"
+                      value={formData.retail_price === undefined || formData.retail_price === null ? '' : formData.retail_price} 
+                      onChange={e => setFormData({...formData, retail_price: e.target.value === '' ? undefined : parseFloat(e.target.value) || 0})}
+                      className="w-full bg-white dark:bg-zinc-900/60 backdrop-blur-md border border-slate-200 dark:border-zinc-800/50 rounded-lg px-3 py-2.5 focus:outline-none focus:border-blue-500 transition-all font-mono font-bold text-[13px] text-slate-900 dark:text-slate-50 placeholder:text-slate-400 dark:placeholder:text-slate-600"
+                    />
+                  </div>
                   <div className="flex-1">
                     <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-1.5 block">Pcs per Box</label>
                     <input 

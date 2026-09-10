@@ -1085,6 +1085,7 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
           bookerName={previewOrder.booker_name || JSON.parse(localStorage.getItem('shaheen_active_booker') || '{}')?.name || 'Self'}
           contactNumber={previewOrder.client_phone || previewOrder.contact_number || previewOrder.contactNumber || 'N/A'}
           subTotal={previewOrder.subTotal || previewOrder.total || previewOrder.total_amount || 0}
+          createdAt={previewOrder.created_at || previewOrder.createdAt || previewOrder.date}
         />
       )}
 

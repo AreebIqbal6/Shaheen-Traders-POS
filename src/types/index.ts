@@ -5,6 +5,10 @@ export interface Product {
   stock: number;
   barcode: string;
   item_type?: 'Local' | 'Imported';
+  sku?: string;
+  pcsPerBox?: number;
+  boxPerCtn?: number;
+  retail_price?: number;
 }
 
 export interface CartItem extends Product {

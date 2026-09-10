@@ -531,6 +531,7 @@ export default function DashboardView({ pastOrders, products, onRestoreOrder }: 
           bookerName={previewOrder.bookerName || previewOrder.booker_name || 'Self'}
           contactNumber={previewOrder.contactNumber || previewOrder.client_phone || previewOrder.contact_number || 'N/A'}
           subTotal={previewOrder.subTotal || previewOrder.total || previewOrder.total_amount || 0}
+          createdAt={previewOrder.created_at || previewOrder.createdAt || previewOrder.date}
         />
       )}
 

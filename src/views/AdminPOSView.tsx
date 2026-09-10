@@ -2549,6 +2549,7 @@ export default function AdminPOSView() {
             bookerName={receiptOrderDetails.booker_name || receiptOrderDetails.bookerName || 'Self'}
             contactNumber={receiptOrderDetails.client_phone || receiptOrderDetails.contact_number || receiptOrderDetails.contactNumber || 'N/A'}
             subTotal={receiptOrderDetails.subTotal || receiptOrderDetails.total || receiptOrderDetails.total_amount || 0}
+            createdAt={receiptOrderDetails.created_at || receiptOrderDetails.createdAt || receiptOrderDetails.date}
           />
         )}
       </div>

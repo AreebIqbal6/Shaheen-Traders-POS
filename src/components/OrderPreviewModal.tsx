@@ -24,6 +24,7 @@ interface OrderPreviewModalProps {
   bookerName?: string;
   contactNumber?: string;
   draftOrderId: string;
+  createdAt?: string | Date;
   isSubmitting?: boolean;
   isDispatched?: boolean;
 }
@@ -42,6 +43,7 @@ export default function OrderPreviewModal({
   bookerName,
   contactNumber,
   draftOrderId,
+  createdAt,
   isSubmitting,
   isDispatched
 }: OrderPreviewModalProps) {
@@ -93,7 +95,7 @@ export default function OrderPreviewModal({
                      area: area || 'Samnabad',
                      contactNumber: contactNumber || '-',
                      bookerName: bookerName || 'Irfan',
-                     createdAt: new Date().toISOString(),
+                     createdAt: createdAt ? (typeof createdAt === 'string' ? createdAt : createdAt.toISOString()) : new Date().toISOString(),
                      items: cart,
                      total: total
                    }} 
