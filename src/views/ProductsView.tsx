@@ -897,7 +897,7 @@ export default function ProductsView({ products = [], setProducts }: ProductsVie
                 {/* UOM Conversions & Retail Price */}
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mt-1 sm:mt-2">
                   <div>
-                    <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-1.5 block">Retail Price (PKR) *</label>
+                    <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-1.5 block whitespace-nowrap">Retail Price (PKR)</label>
                     <input 
                       type="number" 
                       placeholder="0"
