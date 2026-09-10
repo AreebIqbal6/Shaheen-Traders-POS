@@ -595,6 +595,10 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
                         (itemTypeFilter === 'Local' && p.item_type !== 'Imported') || 
                         (itemTypeFilter === 'Imported' && p.item_type === 'Imported');
       return matchSearch && matchType;
+    }).sort((a, b) => {
+      const skuA = parseInt(a.sku || '0', 10) || 0;
+      const skuB = parseInt(b.sku || '0', 10) || 0;
+      return skuA - skuB;
     });
   }, [products, searchQuery, itemTypeFilter]);
 

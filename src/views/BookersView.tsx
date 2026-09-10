@@ -9,11 +9,12 @@ import { hashPassword } from '../utils/cryptoUtils';
 import TrackingMap from '../components/TrackingMap';
 import B2BShopView from './B2BShopView';
 import ShopsManagement from '../components/ShopsManagement';
+import AreasManagement from '../components/AreasManagement';
 
 
 
 export default function BookersView() {
-  const [activeTab, setActiveTab] = useState<'bookers' | 'shops'>('bookers');
+  const [activeTab, setActiveTab] = useState<'bookers' | 'shops' | 'areas'>('bookers');
   const [bookers, setBookers] = useState<Booker[]>(() => {
     const saved = localStorage.getItem('shaheen_bookers');
     return saved ? JSON.parse(saved) : [];
@@ -384,10 +385,18 @@ export default function BookersView() {
           >
             Shops Management
           </button>
+          <button 
+            onClick={() => setActiveTab('areas')}
+            className={`px-6 py-3 font-bold text-sm transition-colors border-b-2 ${activeTab === 'areas' ? 'border-blue-600 text-blue-600 dark:text-blue-400' : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-300'}`}
+          >
+            Area Management
+          </button>
         </div>
 
         {activeTab === 'shops' ? (
           <ShopsManagement />
+        ) : activeTab === 'areas' ? (
+          <AreasManagement />
         ) : (
           <>
             <div className="flex justify-between items-center mb-8">

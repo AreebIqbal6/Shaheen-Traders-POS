@@ -188,13 +188,25 @@ export default function AdminPOSView() {
   const [isAuthChecking, setIsAuthChecking] = useState(true);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setIsAuthenticated(!!session);
+    const checkAuth = async () => {
+      try {
+        const result = await Promise.race([
+          supabase.auth.getSession(),
+          new Promise<never>((_, reject) => setTimeout(() => reject(new Error('timeout')), 5000))
+        ]);
+        setIsAuthenticated(!!result.data?.session);
+      } catch {
+        // Offline or timed out — check if we were previously authenticated
+        const cachedAuth = localStorage.getItem('shaheen_admin_auth');
+        setIsAuthenticated(cachedAuth === 'true');
+      }
       setIsAuthChecking(false);
-    });
+    };
+    checkAuth();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setIsAuthenticated(!!session);
+      localStorage.setItem('shaheen_admin_auth', session ? 'true' : 'false');
       setIsAuthChecking(false);
     });
 

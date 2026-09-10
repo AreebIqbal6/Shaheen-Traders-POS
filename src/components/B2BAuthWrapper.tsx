@@ -16,26 +16,29 @@ export default function B2BAuthWrapper({ children }: { children: React.ReactNode
         try {
           const activeBooker = JSON.parse(activeBookerStr);
           if (navigator.onLine && activeBooker?.id) {
-            // Verify if booker still exists and credentials match
-            const { data, error } = await supabase
-              .from('bookers')
-              .select('id')
-              .eq('id', activeBooker.id)
-              .maybeSingle();
-              
-            if (!data || error) {
-              // Booker was deleted or doesn't exist
-              localStorage.removeItem('shaheen_active_booker');
-              
-              // Remove from offline cache too
-              const profiles = JSON.parse(localStorage.getItem('booker_profiles') || '[]');
-              const filtered = profiles.filter((b: any) => b.id !== activeBooker.id);
-              localStorage.setItem('booker_profiles', JSON.stringify(filtered));
-              
-              setIsAuthenticated(false);
-              setIsLoading(false);
-              toast.error('Your access has been revoked by the admin.');
-              return;
+            try {
+              // Verify if booker still exists — with a 5s timeout
+              const result = await Promise.race([
+                supabase
+                  .from('bookers')
+                  .select('id')
+                  .eq('id', activeBooker.id)
+                  .maybeSingle(),
+                new Promise<never>((_, reject) => setTimeout(() => reject(new Error('timeout')), 5000))
+              ]);
+
+              if (!result.data || result.error) {
+                localStorage.removeItem('shaheen_active_booker');
+                const profiles = JSON.parse(localStorage.getItem('booker_profiles') || '[]');
+                const filtered = profiles.filter((b: any) => b.id !== activeBooker.id);
+                localStorage.setItem('booker_profiles', JSON.stringify(filtered));
+                setIsAuthenticated(false);
+                setIsLoading(false);
+                toast.error('Your access has been revoked by the admin.');
+                return;
+              }
+            } catch {
+              // Timeout or network error — allow offline access
             }
           }
           setIsAuthenticated(true);

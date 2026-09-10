@@ -29,12 +29,18 @@ export default function B2BCheckout({ cart, total, onSuccess, onBack }: B2BCheck
   const [isCustomPayment, setIsCustomPayment] = useState(false);
   const [showShopDropdown, setShowShopDropdown] = useState(false);
   const [shopSearch, setShopSearch] = useState('');
+  const [showAreaDropdown, setShowAreaDropdown] = useState(false);
+  const [areaSearch, setAreaSearch] = useState('');
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const areaDropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setShowShopDropdown(false);
+      }
+      if (areaDropdownRef.current && !areaDropdownRef.current.contains(event.target as Node)) {
+        setShowAreaDropdown(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -43,6 +49,11 @@ export default function B2BCheckout({ cart, total, onSuccess, onBack }: B2BCheck
 
   const [shops, setShops] = useState<any[]>(() => {
     const saved = localStorage.getItem('shaheen_shops');
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  const [areas, setAreas] = useState<any[]>(() => {
+    const saved = localStorage.getItem('shaheen_areas');
     return saved ? JSON.parse(saved) : [];
   });
 
@@ -59,7 +70,20 @@ export default function B2BCheckout({ cart, total, onSuccess, onBack }: B2BCheck
         console.error('Error fetching shops:', err);
       }
     };
+    const fetchAreas = async () => {
+      try {
+        const { data, error } = await supabase.from('areas').select('*').order('name', { ascending: true });
+        if (error) throw error;
+        if (data) {
+          setAreas(data);
+          localStorage.setItem('shaheen_areas', JSON.stringify(data));
+        }
+      } catch (err) {
+        console.error('Error fetching areas:', err);
+      }
+    };
     fetchShops();
+    fetchAreas();
   }, []);
 
   const activeBooker = JSON.parse(localStorage.getItem('shaheen_active_booker') || '{}');
@@ -166,7 +190,7 @@ export default function B2BCheckout({ cart, total, onSuccess, onBack }: B2BCheck
            <form id="checkout-form" onSubmit={handleSubmit} className="flex flex-col gap-4">
               <div>
                 <label className="text-sm font-bold text-slate-500 uppercase tracking-wide flex items-center gap-1.5 mb-1.5">
-                  <Building size={12} className="text-blue-600 dark:text-blue-400" /> Business / Shop Name
+                  <Building size={12} className="text-blue-600 dark:text-blue-400" /> Shop Name
                 </label>
                                 <div className="relative" ref={dropdownRef}>
                   <div 
@@ -237,7 +261,7 @@ export default function B2BCheckout({ cart, total, onSuccess, onBack }: B2BCheck
 
               <div>
                 <label className="text-sm font-bold text-slate-500 uppercase tracking-wide flex items-center gap-1.5 mb-1.5">
-                  <User size={12} className="text-blue-600 dark:text-blue-400" /> Booker / Contact Name
+                  <User size={12} className="text-blue-600 dark:text-blue-400" /> Booker
                 </label>
                 <input 
                   type="text" 
@@ -248,7 +272,56 @@ export default function B2BCheckout({ cart, total, onSuccess, onBack }: B2BCheck
                 />
               </div>
 
-
+              <div>
+                <label className="text-sm font-bold text-slate-500 uppercase tracking-wide flex items-center gap-1.5 mb-1.5">
+                  <MapPin size={12} className="text-blue-600 dark:text-blue-400" /> Area
+                </label>
+                <div className="relative" ref={areaDropdownRef}>
+                  <div 
+                    onClick={() => setShowAreaDropdown(true)}
+                    className="w-full h-11 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-sm px-3 flex items-center justify-between text-[14px] text-slate-900 dark:text-slate-50 cursor-pointer"
+                  >
+                    <span>{formData.areaName || 'Select or type area...'}</span>
+                    <Search size={16} className="text-slate-400" />
+                  </div>
+                  
+                  {showAreaDropdown && (
+                    <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-xl z-50 max-h-64 flex flex-col overflow-hidden">
+                      <div className="p-2 border-b border-slate-100 dark:border-slate-700">
+                        <input
+                          type="text"
+                          autoFocus
+                          placeholder="Search or type new area..."
+                          value={areaSearch}
+                          onChange={e => {
+                            const val = e.target.value;
+                            setAreaSearch(val);
+                            setFormData({ ...formData, areaName: val });
+                          }}
+                          className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-500"
+                        />
+                      </div>
+                      <div className="overflow-y-auto">
+                        {areas
+                          .filter(a => (a.name || '').toLowerCase().includes(areaSearch.toLowerCase()))
+                          .map((area, i) => (
+                            <div
+                              key={i}
+                              onClick={() => {
+                                setFormData({ ...formData, areaName: area.name });
+                                setAreaSearch('');
+                                setShowAreaDropdown(false);
+                              }}
+                              className="px-3 py-2.5 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700/50 border-b border-slate-50 dark:border-slate-700/50 last:border-0"
+                            >
+                              <div className="font-semibold text-sm text-slate-800 dark:text-slate-200">{area.name}</div>
+                            </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
 
               <div>
                 <label className="text-sm font-bold text-slate-500 uppercase tracking-wide flex items-center gap-1.5 mb-1.5">
