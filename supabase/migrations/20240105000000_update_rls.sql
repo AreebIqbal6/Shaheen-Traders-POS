@@ -1,0 +1,1 @@
+CREATE POLICY Bookers can update own orders ON public.orders FOR UPDATE USING ( auth.uid() = booker_id );
