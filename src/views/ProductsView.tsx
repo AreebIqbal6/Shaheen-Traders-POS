@@ -763,7 +763,7 @@ export default function ProductsView({ products = [], setProducts }: ProductsVie
                        <div className="flex justify-between items-center mt-2">
                           <div className="flex items-center gap-1.5 flex-wrap">
                             <span className="text-blue-600 dark:text-blue-400 font-bold text-sm">Rs {product.price.toFixed(2)}</span>
-                            {Boolean(rPrice) ? (
+                            {rPrice ? (
                               <span className="text-[10px] font-semibold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 px-1.5 py-0.5 rounded border border-emerald-200 dark:border-emerald-800/50 whitespace-nowrap leading-tight">
                                 Retail: Rs {Number(rPrice).toLocaleString()}
                               </span>

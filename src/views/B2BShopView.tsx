@@ -45,7 +45,7 @@ const ProductCard = React.memo(({ product, onAdd }: { product: Product, onAdd: (
             <span className="font-bold text-slate-900 dark:text-slate-50 text-[13px] sm:text-[14px] leading-tight shrink-0">
               Rs {product.price.toLocaleString()}
             </span> 
-            {Boolean(product.retail_price) ? (
+            {product.retail_price ? (
               <span className="text-[10px] font-semibold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 px-1.5 py-0.5 rounded border border-emerald-200 dark:border-emerald-800/50 whitespace-nowrap leading-tight">
                 Retail: Rs {Number(product.retail_price).toLocaleString()}
               </span>
@@ -276,6 +276,7 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
           const { isOffline, contact_number, b2b_user_id, idempotency_key, source, receipt_number, payment_terms, area, booker_name, ...supabasePayload } = order;
           const finalPayload = {
             ...supabasePayload,
+            total_amount: supabasePayload.total || supabasePayload.total_amount,
             id: supabasePayload.id || generateUUID(),
             idempotency_key: idempotency_key,
             receipt_number: receipt_number,
