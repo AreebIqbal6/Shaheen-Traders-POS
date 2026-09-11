@@ -32,6 +32,7 @@ import toast from 'react-hot-toast';
 import packageJson from '../../package.json';
 import { toWords } from 'number-to-words';
 import { supabase } from '../lib/supabase';
+import { safeSupabaseUpdate } from '../utils/safeSync';
 import { CloudUpload } from 'lucide-react';
 import { generateSKU } from './ProductsView';
 
@@ -366,10 +367,12 @@ export default function AdminPOSView() {
         const failedDeductions = [];
         for (const [pId, deductQty] of Object.entries(aggregated)) {
           try {
-            const { data: p, error: fetchErr } = await supabase.from('products').select('stock').eq('id', pId).single();
-            if (fetchErr) throw fetchErr;
+            const { data: p, error: fetchErr } = await supabase.from('products').select('*').eq('id', pId).single();
+            if (fetchErr && fetchErr.code !== 'PGRST116') throw fetchErr;
             if (p) {
-              const { error: updateErr } = await supabase.from('products').update({ stock: Math.max(0, p.stock - deductQty) }).eq('id', pId);
+              const currentStock = p.total_base_pieces ?? p.stock ?? 0;
+              const newStock = Math.max(0, currentStock - deductQty);
+              const { error: updateErr } = await safeSupabaseUpdate('products', pId, { stock: newStock, total_base_pieces: newStock });
               if (updateErr) throw updateErr;
             }
           } catch (e) {
@@ -496,6 +499,7 @@ export default function AdminPOSView() {
           const mapped = {
             ...cp,
             name: cp.name || localProduct?.name || 'Unknown Product',
+            stock: cp.total_base_pieces ?? cp.stock ?? localProduct?.stock ?? 0,
             sku: hasRealSku ? cp.sku : (localProduct?.sku && localProduct.sku !== localProduct.barcode ? localProduct.sku : generateSKU(cp.name || 'Product', cp.barcode)),
             pcsPerBox: cp.pcs_per_box || cp.pcsPerBox || localProduct?.pcsPerBox || 12,
             boxPerCtn: cp.box_per_ctn || cp.boxPerCtn || localProduct?.boxPerCtn || 6,
@@ -576,13 +580,14 @@ export default function AdminPOSView() {
           if (!existingIds.has(id)) {
             newOrders.push({
               receiptNumber: id,
+              id: remote.id,
               date: new Date(remote.created_at || remote.date || new Date()),
               items: remote.items || [],
               clientName: remote.client_name || remote.clientName || 'Unknown',
               area: remote.area,
-              contactNumber: remote.contact_number,
-              bookerName: remote.booker_name,
-              total: remote.total || remote.total_amount,
+              contactNumber: remote.contact_number || remote.contactNumber,
+              bookerName: remote.booker_name || remote.bookerName,
+              total: remote.total_amount || remote.total || 0,
               status: remote.status
             });
             existingIds.add(id);
@@ -730,8 +735,14 @@ export default function AdminPOSView() {
       
       let allOrders = data || [];
       
-      allOrders = allOrders.map((o: Order) => ({
+      allOrders = allOrders.map((o: any) => ({
         ...o,
+        receiptNumber: o.receipt_number || o.id,
+        date: new Date(o.created_at || o.date || new Date()),
+        clientName: o.client_name || o.clientName || 'Unknown',
+        bookerName: o.booker_name || o.bookerName,
+        contactNumber: o.contact_number || o.contactNumber,
+        total: o.total_amount || o.total || 0,
         items: (o.items || []).map((i: CartItem) => ({ ...i, sku: i.sku || generateSKU(i.name, i.barcode) }))
       }));
         

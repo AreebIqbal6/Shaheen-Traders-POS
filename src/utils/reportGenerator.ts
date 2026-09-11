@@ -20,7 +20,7 @@ export async function generateMonthlyReport(year: number, month: number) {
   // Query database for orders in this month
   const { data: orders, error } = await supabase
     .from('orders')
-    .select('items, total')
+    .select('items, total_amount')
     .eq('status', 'COMPLETED')
     .gte('created_at', startDate)
     .lte('created_at', endDate);
@@ -32,7 +32,7 @@ export async function generateMonthlyReport(year: number, month: number) {
 
   const actualOrders = orders || [];
   const aggregatedItems = aggregateItems(actualOrders);
-  const totalAmount = actualOrders.reduce((sum, order) => sum + (order.total || 0), 0);
+  const totalAmount = actualOrders.reduce((sum, order) => sum + (order.total_amount || order.total || 0), 0);
 
   const reportId = `MONTHLY-${year}-${month.toString().padStart(2, '0')}`;
   
@@ -105,7 +105,7 @@ export async function generateBiYearlyReport(year: number, half: 1 | 2) {
   // Query database for orders in this period
   const { data: orders, error } = await supabase
     .from('orders')
-    .select('items, total')
+    .select('items, total_amount')
     .eq('status', 'COMPLETED')
     .gte('created_at', startDate)
     .lte('created_at', endDate);
@@ -117,7 +117,7 @@ export async function generateBiYearlyReport(year: number, half: 1 | 2) {
 
   const actualOrders = orders || [];
   const aggregatedItems = aggregateItems(actualOrders);
-  const totalAmount = actualOrders.reduce((sum, order) => sum + (order.total || 0), 0);
+  const totalAmount = actualOrders.reduce((sum, order) => sum + (order.total_amount || order.total || 0), 0);
 
   const reportId = `BIYEARLY-${year}-H${half}`;
   

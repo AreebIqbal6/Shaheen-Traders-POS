@@ -148,6 +148,7 @@ export default function B2BCheckout({ cart, total, onSuccess, onBack }: B2BCheck
 
       const finalPayload = {
         ...supabasePayload,
+        total_amount: supabasePayload.total,
         idempotency_key: idempotency_key,
         receipt_number: receipt_number,
         client_phone: contact_number,

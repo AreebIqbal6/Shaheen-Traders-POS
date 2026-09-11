@@ -70,7 +70,7 @@ export default function ReportView() {
 
         const { data: orders, error: supabaseError } = await supabase
           .from('orders')
-          .select('items, total')
+          .select('items, total_amount')
           .eq('status', 'COMPLETED')
           .gte('created_at', startDateStr)
           .lte('created_at', endDateStr);
@@ -116,7 +116,7 @@ export default function ReportView() {
           };
         }).sort((a, b) => b.quantity - a.quantity);
 
-        const totalAmount = actualOrders.reduce((sum, order) => sum + (order.total || 0), 0);
+        const totalAmount = actualOrders.reduce((sum, order) => sum + (order.total_amount || order.total || 0), 0);
 
         setReportData({
           id: reportId,

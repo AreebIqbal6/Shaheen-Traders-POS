@@ -118,7 +118,7 @@ export default function ProductsView({ products = [], setProducts }: ProductsVie
       barcode: row.barcode != null ? String(row.barcode) : '',
       name: row.name != null ? String(row.name) : '',
       price: Number(row.price) || 0,
-      stock: Number(row.stock) || 0,
+      stock: Number(row.stock ?? row.total_base_pieces) || 0,
       sku: row.sku != null ? String(row.sku) : undefined,
       category: row.category != null ? String(row.category) : undefined,
       item_type: row.item_type === 'Imported' ? 'Imported' : 'Local',
@@ -134,9 +134,13 @@ export default function ProductsView({ products = [], setProducts }: ProductsVie
     name: product.name,
     price: product.price,
     stock: product.stock,
+    total_base_pieces: product.stock,
     sku: product.sku ?? null,
     category: product.category ?? null,
     item_type: product.item_type || 'Local',
+    retail_price: product.retail_price ?? null,
+    pcs_per_box: product.pcsPerBox ?? null,
+    box_per_ctn: product.boxPerCtn ?? null,
   });
 
   const fetchProducts = async () => {
