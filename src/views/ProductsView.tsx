@@ -121,6 +121,7 @@ export default function ProductsView({ products = [], setProducts }: ProductsVie
       stock: Number(row.stock) || 0,
       sku: row.sku != null ? String(row.sku) : undefined,
       category: row.category != null ? String(row.category) : undefined,
+      item_type: row.item_type === 'Imported' ? 'Imported' : 'Local',
       pcsPerBox: toOptionalNumber(row.pcs_per_box ?? row.pcsPerBox),
       boxPerCtn: toOptionalNumber(row.box_per_ctn ?? row.boxPerCtn),
       retail_price: toOptionalNumber(row.retail_price ?? row.retailPrice) ?? (retailPriceDict[String(row.id)] !== undefined ? Number(retailPriceDict[String(row.id)]) : undefined),
@@ -272,11 +273,6 @@ export default function ProductsView({ products = [], setProducts }: ProductsVie
 
   const handleSave = async () => {
     if (!formData.name) { toast.error('Product Name is required'); return; }
-    if (formData.retail_price === undefined || formData.retail_price === null || formData.retail_price <= 0 || isNaN(formData.retail_price)) {
-      toast.error('Retail Price is required and must be filled manually');
-      return;
-    }
-
     const finalFormData = { ...formData };
     if (!finalFormData.barcode) {
       finalFormData.barcode = generateBarcode();
@@ -763,9 +759,13 @@ export default function ProductsView({ products = [], setProducts }: ProductsVie
                        <div className="flex justify-between items-center mt-2">
                           <div className="flex items-center gap-1.5 flex-wrap">
                             <span className="text-blue-600 dark:text-blue-400 font-bold text-sm">Rs {product.price.toFixed(2)}</span>
-                            {Boolean(rPrice) && (
+                            {Boolean(rPrice) ? (
                               <span className="text-[10px] font-semibold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 px-1.5 py-0.5 rounded border border-emerald-200 dark:border-emerald-800/50 whitespace-nowrap leading-tight">
                                 Retail: Rs {Number(rPrice).toLocaleString()}
+                              </span>
+                            ) : (
+                              <span className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-zinc-800/50 px-1.5 py-0.5 rounded border border-slate-200 dark:border-slate-700/50 whitespace-nowrap leading-tight opacity-70">
+                                Retail: -
                               </span>
                             )}
                           </div>

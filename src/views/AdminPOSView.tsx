@@ -499,7 +499,8 @@ export default function AdminPOSView() {
             sku: hasRealSku ? cp.sku : (localProduct?.sku && localProduct.sku !== localProduct.barcode ? localProduct.sku : generateSKU(cp.name || 'Product', cp.barcode)),
             pcsPerBox: cp.pcs_per_box || cp.pcsPerBox || localProduct?.pcsPerBox || 12,
             boxPerCtn: cp.box_per_ctn || cp.boxPerCtn || localProduct?.boxPerCtn || 6,
-            retail_price: cp.retail_price != null ? Number(cp.retail_price) : localProduct?.retail_price
+            retail_price: cp.retail_price != null ? Number(cp.retail_price) : localProduct?.retail_price,
+            item_type: cp.item_type === 'Imported' ? 'Imported' : 'Local'
           };
           merged.push(mapped);
         }
@@ -1710,9 +1711,13 @@ export default function AdminPOSView() {
                           <div className="flex flex-col sm:flex-row items-end sm:items-center gap-1.5 sm:gap-4 shrink-0">
                             <div className="flex items-center gap-1.5 flex-wrap justify-end">
                               <span className="font-black text-slate-900 dark:text-slate-50 text-[15px] leading-tight">Rs {p.price}</span>
-                              {(Boolean(p.retail_price) || (retailPricesDict[p.id] !== undefined && Number(retailPricesDict[p.id]) > 0)) && (
+                              {Boolean(p.retail_price) || (retailPricesDict[p.id] !== undefined && Number(retailPricesDict[p.id]) > 0) ? (
                                 <span className="text-[10px] font-semibold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 px-1.5 py-0.5 rounded border border-emerald-200 dark:border-emerald-800/50 whitespace-nowrap leading-tight">
                                   Retail: Rs {Number(p.retail_price || retailPricesDict[p.id]).toLocaleString()}
+                                </span>
+                              ) : (
+                                <span className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-zinc-800/50 px-1.5 py-0.5 rounded border border-slate-200 dark:border-slate-700/50 whitespace-nowrap leading-tight opacity-70">
+                                  Retail: -
                                 </span>
                               )}
                             </div>

@@ -45,9 +45,13 @@ const ProductCard = React.memo(({ product, onAdd }: { product: Product, onAdd: (
             <span className="font-bold text-slate-900 dark:text-slate-50 text-[13px] sm:text-[14px] leading-tight shrink-0">
               Rs {product.price.toLocaleString()}
             </span> 
-            {Boolean(product.retail_price) && (
+            {Boolean(product.retail_price) ? (
               <span className="text-[10px] font-semibold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 px-1.5 py-0.5 rounded border border-emerald-200 dark:border-emerald-800/50 whitespace-nowrap leading-tight">
                 Retail: Rs {Number(product.retail_price).toLocaleString()}
+              </span>
+            ) : (
+              <span className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-zinc-800/50 px-1.5 py-0.5 rounded border border-slate-200 dark:border-slate-700/50 whitespace-nowrap leading-tight opacity-70">
+                Retail: -
               </span>
             )}
           </div>
@@ -544,7 +548,8 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
           sku: p.sku || generateSKU(p.name, p.barcode),
           pcsPerBox: p.pcs_per_box || p.pcsPerBox || 12,
           boxPerCtn: p.box_per_ctn || p.boxPerCtn || 6,
-          retail_price: p.retail_price != null ? Number(p.retail_price) : (retailPrices[p.id] !== undefined ? Number(retailPrices[p.id]) : undefined)
+          retail_price: p.retail_price != null ? Number(p.retail_price) : (retailPrices[p.id] !== undefined ? Number(retailPrices[p.id]) : undefined),
+          item_type: p.item_type === 'Imported' ? 'Imported' : 'Local'
         }));
         
         const newStr = JSON.stringify(mappedData);
