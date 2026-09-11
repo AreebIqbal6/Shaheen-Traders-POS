@@ -42,8 +42,8 @@ jobs:
           $tauri | ConvertTo-Json -Depth 10 | Set-Content src-tauri/tauri.conf.json -Encoding UTF8
           Write-Host "Updated tauri.conf.json -> $ver"
 
-          # Update Cargo.toml
-          (Get-Content src-tauri/Cargo.toml -Raw) -replace 'version\s*=\s*"[^"]*"', "version = `"$ver`"" | Set-Content src-tauri/Cargo.toml -Encoding UTF8
+          # Update Cargo.toml (only the top-level package version)
+          (Get-Content src-tauri/Cargo.toml -Raw) -replace '(?m)^version\s*=\s*"[^"]*"', "version = `"$ver`"" | Set-Content src-tauri/Cargo.toml -Encoding UTF8
           Write-Host "Updated Cargo.toml -> $ver"
 
       - name: Install Node.js

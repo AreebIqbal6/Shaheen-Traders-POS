@@ -46,7 +46,7 @@ jobs:
         # Analyzes database schema for missing indexes, open RLS policies, etc.
         run: |
           supabase start
-          supabase db lint || true
+          supabase db lint
 
       - name: Run pgTAP RLS Security Tests
         # Executes the pgTAP unit tests located in supabase/tests/
@@ -64,4 +64,4 @@ jobs:
           
           # Fail the step if it actually failed
           cat test_output.txt
-          # TEMPORARILY DISABLED: grep -q "not ok" test_output.txt && exit 1 || exit 0
+          grep -q "not ok" test_output.txt && exit 1 || exit 0
