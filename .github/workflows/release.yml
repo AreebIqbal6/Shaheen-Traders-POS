@@ -18,6 +18,34 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Sync version from Git tag
+        shell: pwsh
+        run: |
+          # Extract version from tag (e.g. v5.30 -> 0.5.30, v0.5.30 -> 0.5.30)
+          $tag = "${{ github.ref_name }}"
+          $ver = $tag -replace '^v',''
+          # If tag is like "5.30" (no leading 0.), prefix with "0."
+          if ($ver -match '^\d+\.\d+$' -and -not ($ver -match '^\d+\.\d+\.\d+')) {
+            $ver = "0.$ver"
+          }
+          Write-Host "Syncing version to: $ver"
+
+          # Update package.json
+          $pkg = Get-Content package.json -Raw | ConvertFrom-Json
+          $pkg.version = $ver
+          $pkg | ConvertTo-Json -Depth 10 | Set-Content package.json -Encoding UTF8
+          Write-Host "Updated package.json -> $ver"
+
+          # Update tauri.conf.json
+          $tauri = Get-Content src-tauri/tauri.conf.json -Raw | ConvertFrom-Json
+          $tauri.version = $ver
+          $tauri | ConvertTo-Json -Depth 10 | Set-Content src-tauri/tauri.conf.json -Encoding UTF8
+          Write-Host "Updated tauri.conf.json -> $ver"
+
+          # Update Cargo.toml
+          (Get-Content src-tauri/Cargo.toml -Raw) -replace 'version\s*=\s*"[^"]*"', "version = `"$ver`"" | Set-Content src-tauri/Cargo.toml -Encoding UTF8
+          Write-Host "Updated Cargo.toml -> $ver"
+
       - name: Install Node.js
         uses: actions/setup-node@v4
         with:
