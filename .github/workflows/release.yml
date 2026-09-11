@@ -45,6 +45,10 @@ jobs:
           # Update Cargo.toml
           (Get-Content src-tauri/Cargo.toml -Raw) -replace 'version\s*=\s*"[^"]*"', "version = `"$ver`"" | Set-Content src-tauri/Cargo.toml -Encoding UTF8
           Write-Host "Updated Cargo.toml -> $ver"
+          
+          cd src-tauri
+          cargo update -p shaheen-pos
+          cd ..
 
       - name: Install Node.js
         uses: actions/setup-node@v4
