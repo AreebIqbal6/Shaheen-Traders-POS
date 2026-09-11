@@ -57,7 +57,7 @@ jobs:
       - name: Sync Cargo.lock
         run: |
           cd src-tauri
-          cargo update -p shaheen-pos
+          cargo generate-lockfile
 
       - name: Install dependencies
         run: npm install --legacy-peer-deps
