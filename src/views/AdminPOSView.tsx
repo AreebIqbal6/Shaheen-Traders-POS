@@ -1089,7 +1089,7 @@ export default function AdminPOSView() {
           handleScan(barcodeBuffer.current);
           barcodeBuffer.current = '';
         }
-      } else if (e.key.length === 1) {
+      } else if (e.key && e.key.length === 1) {
         barcodeBuffer.current += e.key;
         if (timeoutRef.current) clearTimeout(timeoutRef.current);
         timeoutRef.current = setTimeout(() => { barcodeBuffer.current = ''; }, 100);
