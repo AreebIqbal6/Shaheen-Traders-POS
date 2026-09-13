@@ -2,7 +2,7 @@
 
 A modern, offline-first Point of Sale (POS) and B2B ordering system designed specifically for wholesale and retail trading. Built with performance, reliability, and ease of use in mind.
 
-![Shaheen POS](https://img.shields.io/badge/Version-0.5.39-blue)
+![Shaheen POS](https://img.shields.io/badge/Version-0.5.40-blue)
 ![React](https://img.shields.io/badge/React-19-61dafb?logo=react&logoColor=black)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.0-3178c6?logo=typescript&logoColor=white)
 ![Supabase](https://img.shields.io/badge/Supabase-Database-3ecf8e?logo=supabase&logoColor=white)
