@@ -4,6 +4,7 @@ import toast from 'react-hot-toast';
 
 import { supabase } from '../lib/supabase';
 import { ensureBackupFolder } from '../utils/backupValidator';
+import ProductListDemo from '../components/admin/ProductListDemo';
 
 export default function SettingsView() {
   const [backupPath, setBackupPath] = useState('');
@@ -356,7 +357,9 @@ export default function SettingsView() {
       <div className="max-w-4xl mx-auto">
         <h1 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-50 tracking-tight mb-6">System Settings</h1>
 
-        <div className="flex flex-col gap-4">
+        <ProductListDemo />
+
+        <div className="flex flex-col gap-4 mt-6">
           
           {/* Branding Settings */}
           <div className="bg-white dark:bg-zinc-900/60 backdrop-blur-md border border-zinc-200 dark:border-zinc-700 rounded-sm shadow-sm overflow-hidden mb-4">

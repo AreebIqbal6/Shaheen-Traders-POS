@@ -12,6 +12,16 @@ import { Toaster, ToastBar, toast } from 'react-hot-toast';
 import { X } from 'lucide-react';
 import { supabase } from './lib/supabase';
 import { saveOrderBackup } from './utils/exportManager';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 5, // 5 minutes
+      retry: 2,
+    },
+  },
+});
 
 
 const RootRedirect = () => {
@@ -320,7 +330,7 @@ export default function App() {
   }, [location]);
 
   return (
-    <>
+    <QueryClientProvider client={queryClient}>
       <Toaster 
         position="top-center" 
         containerClassName="print:hidden"
@@ -364,6 +374,6 @@ export default function App() {
           <Route path="/report/:reportId" element={<ReportAuthWrapper><ReportView /></ReportAuthWrapper>} />
         </Routes>
       </React.Suspense>
-    </>
+    </QueryClientProvider>
   );
 }
