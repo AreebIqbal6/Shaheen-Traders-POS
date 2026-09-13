@@ -80,8 +80,13 @@ export default function ProductsView({ products = [], setProducts }: ProductsVie
     localStorage.setItem('shaheen_min_stock', JSON.stringify(newDict));
   };
 
-  const saveRetailPrice = (id: string, price: number) => {
-    const newDict = { ...retailPriceDict, [id]: price };
+  const saveRetailPrice = (id: string, price: number | undefined | null) => {
+    const newDict = { ...retailPriceDict };
+    if (price === undefined || price === null) {
+      delete newDict[id];
+    } else {
+      newDict[id] = price;
+    }
     setRetailPriceDict(newDict);
     localStorage.setItem('shaheen_retail_prices', JSON.stringify(newDict));
   };
@@ -936,9 +941,9 @@ export default function ProductsView({ products = [], setProducts }: ProductsVie
                     <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-1.5 block whitespace-nowrap">Retail Price (PKR)</label>
                     <input 
                       type="number" 
-                      placeholder="0"
+                      placeholder="Optional"
                       value={formData.retail_price === undefined || formData.retail_price === null ? '' : formData.retail_price} 
-                      onChange={e => setFormData({...formData, retail_price: e.target.value === '' ? undefined : parseFloat(e.target.value) || 0})}
+                      onChange={e => setFormData({...formData, retail_price: e.target.value === '' ? undefined : parseFloat(e.target.value)})}
                       className="w-full bg-white dark:bg-zinc-900/60 backdrop-blur-md border border-slate-200 dark:border-zinc-800/50 rounded-lg px-3 py-2.5 focus:outline-none focus:border-blue-500 transition-all font-mono font-bold text-[13px] text-slate-900 dark:text-slate-50 placeholder:text-slate-400 dark:placeholder:text-slate-600"
                     />
                   </div>

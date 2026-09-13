@@ -798,15 +798,23 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
                 <div className="flex flex-col gap-3 pb-8">
                  {cart.map(item => (
                    <div key={item.cartId} className="bg-white dark:bg-zinc-900/60 backdrop-blur-md border border-slate-200 dark:border-zinc-800/50 rounded-xl p-3 flex flex-col gap-2 relative">
-                     <div className="flex justify-between items-start pr-8">
-                        <h3 className="font-semibold text-slate-900 dark:text-slate-50 text-[13px] leading-tight">{item.name}</h3>
+                     <div className="flex justify-between items-start">
+                        <div className="flex-1 pr-8">
+                           <h3 className="font-semibold text-slate-800 dark:text-slate-200 text-sm leading-tight">{item.name}</h3>
+                           {item.barcode && <p className="text-[11px] text-slate-400 font-mono mt-0.5">{item.barcode}</p>}
+                        </div>
                         <button 
                            onClick={() => setCart(prev => prev.filter(i => i.cartId !== item.cartId))}
                            className="absolute top-2 right-2 p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-colors"
                         >
                            <Trash2 size={16} />
                         </button>
-                        <span className="font-bold text-blue-500 dark:text-blue-400 font-mono text-[13px] shrink-0 ml-2">Rs {(item.price * item.quantity).toLocaleString()}</span>
+                        <div className="flex flex-col items-end shrink-0 ml-2">
+                           <span className="font-bold text-blue-500 dark:text-blue-400 font-mono text-[13px]">Rs {(item.price * item.quantity).toLocaleString()}</span>
+                           {item.retail_price != null && (
+                              <span className="text-[10px] text-slate-500 font-medium mt-0.5">Retail: Rs {item.retail_price}</span>
+                           )}
+                        </div>
                      </div>
                      {(() => {
                         const currentProduct = products.find(p => p.id === item.id);
@@ -857,6 +865,7 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
               name: c.name, 
               price: c.price, 
               basePrice: c.basePrice || c.price,
+              retail_price: c.retail_price,
               quantity: c.quantity,
               uom: c.uom || 'Pcs',
               barcode: c.barcode,

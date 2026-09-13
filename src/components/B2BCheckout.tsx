@@ -10,6 +10,7 @@ interface CartItem {
   name: string;
   price: number;
   basePrice?: number;
+  retail_price?: number;
   quantity: number;
   uom?: string;
   barcode?: string;
@@ -380,14 +381,19 @@ export default function B2BCheckout({ cart, total, onSuccess, onBack }: B2BCheck
         {/* Order Summary */}
         <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-200 dark:border-slate-700 rounded-xl p-5">
            <h2 className="text-base font-bold text-slate-900 dark:text-slate-50 mb-3 tracking-tight">Order Summary</h2>
-           <div className="flex flex-col gap-2 mb-3">
-             {cart.map(item => (
-               <div key={item.id} className="flex justify-between text-sm">
-                 <span className="text-slate-400 font-medium truncate pr-4">{item.quantity} {item.uom || 'Pcs'} {item.name}</span>
-                 <span className="text-slate-900 dark:text-slate-50 font-mono font-semibold shrink-0">Rs {(item.quantity * item.price).toFixed(2)}</span>
-               </div>
-             ))}
-           </div>
+             <div className="flex flex-col gap-2 mb-3">
+               {cart.map(item => (
+                 <div key={item.id} className="flex justify-between items-start text-sm">
+                   <div className="flex flex-col pr-4">
+                     <span className="text-slate-400 font-medium truncate">{item.quantity} {item.uom || 'Pcs'} {item.name}</span>
+                     {item.retail_price != null && (
+                       <span className="text-[10px] text-slate-500 font-medium mt-0.5">Retail: Rs {item.retail_price}</span>
+                     )}
+                   </div>
+                   <span className="text-slate-900 dark:text-slate-50 font-mono font-semibold shrink-0">Rs {(item.quantity * item.price).toFixed(2)}</span>
+                 </div>
+               ))}
+             </div>
            <div className="border-t border-slate-200 dark:border-slate-700 pt-3 flex justify-between items-center mt-2">
               <span className="font-bold text-slate-700 dark:text-slate-300">Total</span>
               <span className="font-black font-mono text-lg text-blue-600 dark:text-blue-400">Rs {total.toFixed(2)}</span>

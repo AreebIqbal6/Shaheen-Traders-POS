@@ -1840,7 +1840,12 @@ export default function AdminPOSView() {
                                   </button>
                                 </div>
                               </div>
-                              <span className="font-semibold text-slate-900 dark:text-slate-50 text-[13px] ml-auto">Rs {calculateItemPrice(item).toFixed(2)}</span>
+                              <div className="flex flex-col items-end justify-center ml-auto leading-tight">
+                                <span className="font-semibold text-slate-900 dark:text-slate-50 text-[13px]">Rs {calculateItemPrice(item).toFixed(2)}</span>
+                                {currentProduct?.retail_price != null && (
+                                  <span className="text-[10px] text-slate-500 font-medium mt-0.5">Retail: Rs {currentProduct.retail_price}</span>
+                                )}
+                              </div>
                           </div>
                           
                           {isOutOfStock && (
