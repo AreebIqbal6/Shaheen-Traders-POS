@@ -92,7 +92,16 @@ export default function AdminPOSView() {
     });
   });
 
-  const [cart, setCart] = useState<CartItem[]>([]);
+  const [cart, setCart] = useState<CartItem[]>(() => {
+    try {
+      return JSON.parse(localStorage.getItem('shaheen_admin_cart') || '[]');
+    } catch { return []; }
+  });
+
+  useEffect(() => {
+    localStorage.setItem('shaheen_admin_cart', JSON.stringify(cart));
+  }, [cart]);
+
   const [pastOrders, setPastOrders] = useState<Order[]>(() => {
     const saved = localStorage.getItem('shaheen_orders');
     if (saved) {
@@ -148,11 +157,18 @@ export default function AdminPOSView() {
   const [receiptOrderDetails, setReceiptOrderDetails] = useState<any>(null);
   
   // B2B Wholesale Fields
-  const [clientName, setClientName] = useState('');
-  const [paymentTerms, setPaymentTerms] = useState('Bank Transfer');
-  const [area, setArea] = useState('');
+  const [clientName, setClientName] = useState(() => localStorage.getItem('shaheen_admin_clientName') || '');
+  const [paymentTerms, setPaymentTerms] = useState(() => localStorage.getItem('shaheen_admin_paymentTerms') || 'Bank Transfer');
+  const [area, setArea] = useState(() => localStorage.getItem('shaheen_admin_area') || '');
   const [bookerName, setBookerName] = useState(() => { const n = localStorage.getItem('shaheen_bookerName'); return (n && n.includes('@')) ? 'Admin' : (n || 'Admin'); });
-  const [contactNumber, setContactNumber] = useState('');
+  const [contactNumber, setContactNumber] = useState(() => localStorage.getItem('shaheen_admin_contactNumber') || '');
+
+  useEffect(() => {
+    localStorage.setItem('shaheen_admin_clientName', clientName);
+    localStorage.setItem('shaheen_admin_paymentTerms', paymentTerms);
+    localStorage.setItem('shaheen_admin_area', area);
+    localStorage.setItem('shaheen_admin_contactNumber', contactNumber);
+  }, [clientName, paymentTerms, area, contactNumber]);
   
   const [showShopDropdown, setShowShopDropdown] = useState(false);
   const [shopSearch, setShopSearch] = useState('');
