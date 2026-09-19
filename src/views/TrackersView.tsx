@@ -1,4 +1,4 @@
-﻿import type { BookerLocation } from '../types/index';
+import type { BookerLocation } from '../types/index';
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
@@ -15,11 +15,11 @@ L.Icon.Default.mergeOptions({
 });
 
 const customIcon = () => new L.DivIcon({
-  html: <div style="position:relative;display:flex;flex-direction:column;align-items:center;">
+  html: `<div style="position:relative;display:flex;flex-direction:column;align-items:center;">
            <div style="color:#2563eb;filter:drop-shadow(0 4px 3px rgb(0 0 0 / 0.3));">
              <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></svg>
            </div>
-         </div>,
+         </div>`,
   className: 'custom-leaflet-icon',
   iconSize: [32, 32],
   iconAnchor: [16, 32],

@@ -1,4 +1,4 @@
-﻿import type { Booker } from '../types/index';
+import type { Booker } from '../types/index';
 import React, { useEffect, useRef } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -43,11 +43,11 @@ function LocateControl({ lat, lng }: { lat: number; lng: number }) {
 }
 
 const customIcon = (isOffline: boolean) => new L.DivIcon({
-  html: <div style="position:relative;display:flex;flex-direction:column;align-items:center;">
-           <div style="color:;filter:drop-shadow(0 4px 3px rgb(0 0 0 / 0.3));">
+  html: `<div style="position:relative;display:flex;flex-direction:column;align-items:center;">
+           <div style="color:${isOffline ? '#ef4444' : '#2563eb'};filter:drop-shadow(0 4px 3px rgb(0 0 0 / 0.3));">
              <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></svg>
            </div>
-         </div>,
+         </div>`,
   className: 'custom-leaflet-icon',
   iconSize: [32, 32],
   iconAnchor: [16, 32],
