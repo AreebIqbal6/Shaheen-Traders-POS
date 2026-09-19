@@ -107,7 +107,7 @@ export default function AreasManagement() {
   };
 
   const filteredAreas = areas.filter(a => 
-    (a.name || '').toLowerCase().includes(searchQuery.toLowerCase())
+    String(a.name || '').toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (

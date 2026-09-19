@@ -200,9 +200,9 @@ export default function ShopsManagement() {
   };
 
   const filteredShops = shops.filter(s => {
-    const safeName = (s.name || '').toLowerCase();
-    const safeAddress = (s.address || '').toLowerCase();
-    const safeContact = (s.contactNumber || '').toLowerCase();
+    const safeName = String(s.name || '').toLowerCase();
+    const safeAddress = String(s.address || '').toLowerCase();
+    const safeContact = String(s.contactNumber || '').toLowerCase();
     const query = searchQuery.toLowerCase();
     return safeName.includes(query) || safeAddress.includes(query) || safeContact.includes(query);
   });

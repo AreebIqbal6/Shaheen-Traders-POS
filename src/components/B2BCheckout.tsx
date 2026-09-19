@@ -228,13 +228,14 @@ export default function B2BCheckout({ cart, total, onSuccess, onBack }: B2BCheck
                         />
                       </div>
                       <div className="overflow-y-auto">
-                        {shops
-                          .filter(s => 
-                            (s.name || '').toLowerCase().includes(shopSearch.toLowerCase()) || 
-                            (s.contactNumber || s.contact_number || '').includes(shopSearch) || 
-                            (s.address || '').toLowerCase().includes(shopSearch.toLowerCase())
-                          )
-                          .map((shop, i) => (
+                          {shops
+                            .filter(s => {
+                              const searchLower = shopSearch.toLowerCase();
+                              return String(s.name || '').toLowerCase().includes(searchLower) || 
+                                     String(s.contactNumber || s.contact_number || '').includes(shopSearch) || 
+                                     String(s.address || '').toLowerCase().includes(searchLower);
+                            })
+                            .map((shop, i) => (
                             <div
                               key={i}
                               onClick={() => {

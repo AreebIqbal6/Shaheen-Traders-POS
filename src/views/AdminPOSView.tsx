@@ -1769,7 +1769,7 @@ export default function AdminPOSView() {
                                   setClientName(val);
                                   setShowShopDropdown(true);
                                   
-                                  const exactShop = shops.find(s => (s.name || '').toLowerCase() === val.toLowerCase());
+                                  const exactShop = shops.find(s => String(s.name || '').toLowerCase() === val.toLowerCase());
                                   if (exactShop) {
                                     if (!area) setArea(exactShop.address || exactShop.area || '');
                                     if (!contactNumber) setContactNumber(exactShop.contact_number || exactShop.contactNumber || exactShop.phone || '');
@@ -1789,9 +1789,9 @@ export default function AdminPOSView() {
                           {showShopDropdown && (
                             <div className="absolute top-full left-0 w-full mt-1 bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-md shadow-xl overflow-hidden max-h-60 overflow-y-auto z-50">
                               {shops.filter(s => 
-                                (s.name || '').toLowerCase().includes(clientName.toLowerCase()) ||
-                                (s.contactNumber || s.contact_number || '').includes(clientName) ||
-                                (s.address || '').toLowerCase().includes(clientName.toLowerCase())
+                                String(s.name || '').toLowerCase().includes(clientName.toLowerCase()) ||
+                                String(s.contactNumber || s.contact_number || '').includes(clientName) ||
+                                String(s.address || '').toLowerCase().includes(clientName.toLowerCase())
                               ).length === 0 ? (
                                 <div className="p-3 text-center text-xs text-slate-500 dark:text-slate-400">
                                   No shops found. Type to enter a new one.
@@ -1800,9 +1800,9 @@ export default function AdminPOSView() {
                                 <div className="py-1">
                                   {shops
                                     .filter(s => 
-                                      (s.name || '').toLowerCase().includes(clientName.toLowerCase()) ||
-                                      (s.contactNumber || s.contact_number || '').includes(clientName) ||
-                                      (s.address || '').toLowerCase().includes(clientName.toLowerCase())
+                                      String(s.name || '').toLowerCase().includes(clientName.toLowerCase()) ||
+                                      String(s.contactNumber || s.contact_number || '').includes(clientName) ||
+                                      String(s.address || '').toLowerCase().includes(clientName.toLowerCase())
                                     )
                                     .map((shop, i) => (
                                       <div 

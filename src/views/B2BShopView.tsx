@@ -325,7 +325,7 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
     }
   }, [activeTab]);
 
-  const startLocationTracking = useCallback(() => {
+  const startLocationTracking = useCallback(async (forcePrompt = false) => {
     const activeBookerStr = localStorage.getItem('shaheen_active_booker');
     if (!activeBookerStr) return;
     const activeBooker = JSON.parse(activeBookerStr);
@@ -337,6 +337,17 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
       console.warn('Geolocation is not supported by this browser.');
       setLocationStatus('unsupported');
       return;
+    }
+
+    // Prevent aggressive auto-prompting on Android which causes overlay errors
+    if (!forcePrompt && navigator.permissions) {
+      try {
+        const perm = await navigator.permissions.query({ name: 'geolocation' });
+        if (perm.state === 'prompt') {
+          setLocationStatus('error');
+          return;
+        }
+      } catch (e) {}
     }
     
     setLocationStatus('pending');
@@ -413,9 +424,14 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
 
   // --- Background Location Tracker ---
   useEffect(() => {
-    const cleanup = startLocationTracking();
+    let cleanupFn: (() => void) | undefined;
+    
+    startLocationTracking(false).then(fn => {
+      if (typeof fn === 'function') cleanupFn = fn;
+    });
+    
     return () => {
-      if (cleanup) cleanup();
+      if (cleanupFn) cleanupFn();
     };
   }, [startLocationTracking]); 
 
@@ -973,7 +989,7 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
                     <LogOut size={16} /> Sign Out
                   </button>
                   {locationStatus === 'error' && (
-                    <button onClick={startLocationTracking} className="w-full py-2.5 mt-2 bg-yellow-500/10 text-yellow-600 border border-yellow-500/20 rounded-lg font-bold text-sm flex justify-center items-center gap-2 hover:bg-yellow-500/20 transition-colors">
+                    <button onClick={() => startLocationTracking(true)} className="w-full py-2.5 mt-2 bg-yellow-500/10 text-yellow-600 border border-yellow-500/20 rounded-lg font-bold text-sm flex justify-center items-center gap-2 hover:bg-yellow-500/20 transition-colors">
                       <MapPin size={16} /> Enable Location
                     </button>
                   )}
