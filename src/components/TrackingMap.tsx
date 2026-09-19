@@ -1,8 +1,17 @@
-import type { Booker } from '../types/index';
+﻿import type { Booker } from '../types/index';
 import React, { useEffect, useRef } from 'react';
-import Map, { Marker, Popup, useMap } from 'react-map-gl/maplibre';
-import 'maplibre-gl/dist/maplibre-gl.css';
+import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
+import L from 'leaflet';
 import { MapPin, Navigation } from 'lucide-react';
+
+// Fix leaflet default icons issue in react
+delete (L.Icon.Default.prototype as any)._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
+  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+});
 
 interface TrackingMapProps {
   lat: number;
@@ -13,7 +22,7 @@ interface TrackingMapProps {
 }
 
 function LocateControl({ lat, lng }: { lat: number; lng: number }) {
-  const { current: map } = useMap();
+  const map = useMap();
   
   return (
     <div className="absolute top-4 right-4 z-[1000]">
@@ -21,9 +30,7 @@ function LocateControl({ lat, lng }: { lat: number; lng: number }) {
         onClick={(e) => {
           e.preventDefault();
           e.stopPropagation();
-          if (map) {
-             map.flyTo({ center: [lng, lat], zoom: 18, duration: 1000 });
-          }
+          map.flyTo([lat, lng], 18, { duration: 1 });
         }}
         className="bg-white hover:bg-slate-100 text-slate-800 px-3 py-2 rounded-md shadow-md border border-slate-200 flex items-center gap-2 font-bold text-sm pointer-events-auto transition-colors"
         title="Locate Booker"
@@ -35,31 +42,20 @@ function LocateControl({ lat, lng }: { lat: number; lng: number }) {
   );
 }
 
+const customIcon = (isOffline: boolean) => new L.DivIcon({
+  html: <div style="position:relative;display:flex;flex-direction:column;align-items:center;">
+           <div style="color:;filter:drop-shadow(0 4px 3px rgb(0 0 0 / 0.3));">
+             <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></svg>
+           </div>
+         </div>,
+  className: 'custom-leaflet-icon',
+  iconSize: [32, 32],
+  iconAnchor: [16, 32],
+  popupAnchor: [0, -32],
+});
+
 export default function TrackingMap({ lat, lng, bookerName, lastSeen, isOffline }: TrackingMapProps) {
   
-  const mapStyle = {
-    version: 8,
-    sources: {
-      'raster-tiles': {
-        type: 'raster',
-        tiles: [
-          'https://tile.openstreetmap.org/{z}/{x}/{y}.png'
-        ],
-        tileSize: 256,
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-      }
-    },
-    layers: [
-      {
-        id: 'simple-tiles',
-        type: 'raster',
-        source: 'raster-tiles',
-        minzoom: 0,
-        maxzoom: 22
-      }
-    ]
-  } as any;
-
   return (
     <div className="w-full h-full rounded-md overflow-hidden relative border border-slate-200 dark:border-zinc-800 bg-slate-200 dark:bg-zinc-800">
       {isOffline && (
@@ -75,34 +71,23 @@ export default function TrackingMap({ lat, lng, bookerName, lastSeen, isOffline 
         </div>
       )}
       
-      <Map
-        initialViewState={{
-          longitude: lng,
-          latitude: lat,
-          zoom: 15
-        }}
-        mapStyle={mapStyle}
-        style={{width: '100%', height: '100%', position: 'absolute', inset: 0}}
+      <MapContainer 
+        center={[lat, lng]} 
+        zoom={15} 
+        style={{ height: '100%', width: '100%', zIndex: 0 }}
       >
+        <TileLayer
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
+        />
         <LocateControl lat={lat} lng={lng} />
         
-        <Marker 
-          longitude={lng} 
-          latitude={lat}
-          anchor="bottom"
-        >
-          <div className="relative flex flex-col items-center group">
-            <div className="bg-slate-900 text-white text-xs font-bold px-2 py-0.5 rounded shadow-sm border border-slate-700 whitespace-nowrap mb-0.5">
-              {bookerName}
-              {isOffline && <div className="text-red-400 text-[10px] mt-0.5">Offline</div>}
-            </div>
-            <div className={`drop-shadow-md relative ${isOffline ? 'text-red-500' : 'text-blue-600'}`}>
-               <MapPin size={32} weight="fill" style={{ fill: 'currentColor' }} />
-               <div className="absolute top-2 left-1/2 -translate-x-1/2 w-2 h-2 rounded-full bg-white"></div>
-            </div>
-          </div>
+        <Marker position={[lat, lng]} icon={customIcon(isOffline || false)}>
+          <Popup>
+            <div className="text-center font-bold">{bookerName}</div>
+          </Popup>
         </Marker>
-      </Map>
+      </MapContainer>
     </div>
   );
 }

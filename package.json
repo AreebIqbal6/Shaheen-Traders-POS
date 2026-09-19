@@ -1,7 +1,7 @@
 {
   "name": "shaheen-pos",
   "private": true,
-  "version": "0.5.52",
+  "version": "0.5.53",
   "type": "module",
   "main": "main.cjs",
   "scripts": {
@@ -40,8 +40,8 @@
     "jspdf": "^4.2.1",
     "jspdf-autotable": "^5.0.8",
     "jsqr": "^1.4.0",
+    "leaflet": "^1.9.4",
     "lucide-react": "^1.18.0",
-    "maplibre-gl": "^6.4.0",
     "number-to-words": "^1.2.4",
     "qrcode": "^1.5.4",
     "qrcode.react": "^4.2.0",
@@ -50,7 +50,7 @@
     "react-dom": "^19.2.6",
     "react-hook-form": "^7.88.0",
     "react-hot-toast": "^2.6.0",
-    "react-map-gl": "^8.1.2",
+    "react-leaflet": "^5.0.0",
     "react-router-dom": "^7.18.0",
     "react-virtuoso": "^4.18.11",
     "react-zoom-pan-pinch": "^4.0.3",
