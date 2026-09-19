@@ -6,6 +6,7 @@ const RoleSelectionView = React.lazy(() => import('./views/RoleSelectionView'));
 const B2BAuthWrapper = React.lazy(() => import('./components/B2BAuthWrapper'));
 const ReceiptView = React.lazy(() => import('./views/ReceiptView'));
 const ReportView = React.lazy(() => import('./views/ReportView'));
+const NotFoundView = React.lazy(() => import('./views/NotFoundView'));
 const ReportAuthWrapper = React.lazy(() => import('./components/ReportAuthWrapper'));
 import OfflineIndicator from './components/OfflineIndicator';
 import { Toaster, ToastBar, toast } from 'react-hot-toast';
@@ -135,10 +136,20 @@ export default function App() {
         }
       } catch(e) {}
       
-      // Update HTML Title (handled dynamically by route now, this just sets default)
-      if (document.title === 'Shaheen Traders' || document.title === '') {
-        document.title = storeName;
+      // Dynamic Page Titles
+      let pageTitle = storeName;
+      if (location.pathname.startsWith('/admin')) {
+        pageTitle = 'Admin Dashboard | ' + storeName;
+      } else if (location.pathname === '/booker') {
+        pageTitle = 'Shop | ' + storeName;
+      } else if (location.pathname.startsWith('/receipt')) {
+        pageTitle = 'Receipt | ' + storeName;
+      } else if (location.pathname.startsWith('/report')) {
+        pageTitle = 'Report | ' + storeName;
+      } else if (location.pathname === '/select-role') {
+        pageTitle = 'Login | ' + storeName;
       }
+      document.title = pageTitle;
       
       // Update Favicon
       const icon = document.querySelector('link[rel="icon"]') || document.querySelector('link[rel="apple-touch-icon"]');
@@ -372,6 +383,7 @@ export default function App() {
           <Route path="/booker" element={<B2BAuthWrapper><B2BShopView /></B2BAuthWrapper>} />
           <Route path="/receipt/:orderId" element={<ReceiptView />} />
           <Route path="/report/:reportId" element={<ReportAuthWrapper><ReportView /></ReportAuthWrapper>} />
+          <Route path="*" element={<NotFoundView />} />
         </Routes>
       </React.Suspense>
     </QueryClientProvider>
