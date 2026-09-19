@@ -411,6 +411,13 @@ export default function AdminPOSView() {
          }
          localStorage.removeItem('shaheen_deleted_products');
       }
+
+      const skuUpdates = JSON.parse(localStorage.getItem('shaheen_sku_updates') || '[]');
+      if (skuUpdates.length > 0) {
+         const { resequenceSkusBackground } = await import('../utils/resequenceSkus');
+         await resequenceSkusBackground(skuUpdates);
+         localStorage.removeItem('shaheen_sku_updates');
+      }
       
       // 4. Handle Deleted Bookers
       const deletedBookers = JSON.parse(localStorage.getItem('shaheen_deleted_bookers') || '[]');

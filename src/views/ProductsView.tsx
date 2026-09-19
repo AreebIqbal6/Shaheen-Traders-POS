@@ -377,8 +377,21 @@ export default function ProductsView({ products = [], setProducts }: ProductsVie
               toast.dismiss(t.id);
               markPending(id);
 
+              let changedSkus: { id: string, newSku: string }[] = [];
               if (typeof setProducts === 'function') {
-                 setProducts((prev = []) => prev.filter(p => p.id !== id));
+                 setProducts((prev = []) => {
+                    const filtered = prev.filter(p => p.id !== id);
+                    const sorted = [...filtered].sort((a, b) => parseInt(a.sku || '0', 10) - parseInt(b.sku || '0', 10));
+                    const updated = sorted.map((p, idx) => {
+                       const expectedSku = (idx + 1).toString().padStart(4, '0');
+                       if (p.sku !== expectedSku) {
+                          changedSkus.push({ id: p.id, newSku: expectedSku });
+                          return { ...p, sku: expectedSku };
+                       }
+                       return p;
+                    });
+                    return updated;
+                 });
               }
 
               try {
@@ -399,6 +412,20 @@ export default function ProductsView({ products = [], setProducts }: ProductsVie
                 setMinStockDict(newMinStockDict);
                 localStorage.setItem('shaheen_min_stock', JSON.stringify(newMinStockDict));
                 toast.success('Product deleted.');
+
+                // Background re-sequence of shifted SKUs
+                if (changedSkus.length > 0) {
+                   if (navigator.onLine) {
+                      const { resequenceSkusBackground } = await import('../utils/resequenceSkus');
+                      resequenceSkusBackground(changedSkus).catch(console.error);
+                   } else {
+                      const existingQueue = JSON.parse(localStorage.getItem('shaheen_sku_updates') || '[]');
+                      const mergedQueue = [...existingQueue, ...changedSkus];
+                      const deduped = Array.from(new Map(mergedQueue.map(item => [item.id, item])).values());
+                      localStorage.setItem('shaheen_sku_updates', JSON.stringify(deduped));
+                   }
+                }
+
               } catch (err: unknown) {
                 clearPending(id);
                 toast.error('Failed to delete product: ' + (err instanceof Error ? err.message : String(err)));
