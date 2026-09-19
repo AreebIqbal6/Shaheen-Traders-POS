@@ -126,56 +126,8 @@ export default function OrderPreviewModal({
                         const result = await m.exportReceiptToPDF(draftOrderId, false);
                         if (result) {
                           try {
-                            if ('__TAURI_INTERNALS__' in window || '__TAURI__' in window) {
-                              const { BaseDirectory } = await import('@tauri-apps/api/path');
-                              const { writeBinaryFile, mkdir, exists } = await import('@tauri-apps/plugin-fs');
-                              
-                              const date = new Date();
-                              const dateFolder = `Shaheen Receipts/${String(date.getDate()).padStart(2, '0')}-${String(date.getMonth() + 1).padStart(2, '0')}-${date.getFullYear()}`;
-                              
-                              if (!(await exists('Shaheen Receipts', { baseDir: BaseDirectory.Document }))) {
-                                await mkdir('Shaheen Receipts', { baseDir: BaseDirectory.Document });
-                              }
-                              
-                              if (!(await exists(dateFolder, { baseDir: BaseDirectory.Document }))) {
-                                await mkdir(dateFolder, { baseDir: BaseDirectory.Document });
-                              }
-                              
-                              const filePath = `${dateFolder}/${result.filename}`;
-                              const arrayBuffer = await result.blob.arrayBuffer();
-                              const buffer = new Uint8Array(arrayBuffer);
-                              
-                              await writeBinaryFile(filePath, buffer, { baseDir: BaseDirectory.Document });
-                              toast.success(`Saved to Documents/${dateFolder}`);
-                            }
-                            // @ts-ignore
-                            else if (typeof window !== 'undefined' && window.require) {
-                              // @ts-ignore
-                              const fs = window.require('fs');
-                              // @ts-ignore
-                              const path = window.require('path');
-                              // @ts-ignore
-                              const os = window.require('os');
-                              
-                              const date = new Date();
-                              const dateFolder = `${String(date.getDate()).padStart(2, '0')}-${String(date.getMonth() + 1).padStart(2, '0')}-${date.getFullYear()}`;
-                              const baseDir = path.join(os.homedir(), 'Documents', 'Shaheen Receipts');
-                              const fullDir = path.join(baseDir, dateFolder);
-                              
-                              if (!fs.existsSync(fullDir)) {
-                                fs.mkdirSync(fullDir, { recursive: true });
-                              }
-                              
-                              const filePath = path.join(fullDir, result.filename);
-                              const arrayBuffer = await result.blob.arrayBuffer();
-                              const buffer = new Uint8Array(arrayBuffer);
-                              
-                              fs.writeFileSync(filePath, buffer);
-                              import('react-hot-toast').then(t => t.default.success(`Saved securely to Documents/Shaheen Receipts/${dateFolder}`));
-                            } else {
-                              const { saveAs } = await import('file-saver');
-                              saveAs(result.blob, result.filename);
-                            }
+                            const { saveBlobAsFile } = await import('../utils/saveFile');
+                            await saveBlobAsFile(result.blob, result.filename);
                           } catch (e) {
                             console.error('FS Write Error:', e);
                             const { saveAs } = await import('file-saver');
@@ -209,15 +161,11 @@ export default function OrderPreviewModal({
                <button 
                 onClick={async () => {
                   const { exportReceiptToPDF } = await import('../utils/exportPdf');
-                  const result = await exportReceiptToPDF(draftOrderId, true);
-                  if (result) {
-                    const fileSaver = await import('file-saver');
-                    if (fileSaver && fileSaver.saveAs) {
-                      fileSaver.saveAs(result.blob, result.filename);
-                    } else if (fileSaver && fileSaver.default && fileSaver.default.saveAs) {
-                      fileSaver.default.saveAs(result.blob, result.filename);
-                    }
-                  }
+                   const result = await exportReceiptToPDF(draftOrderId, true);
+                   if (result) {
+                     const { saveBlobAsFile } = await import('../utils/saveFile');
+                     await saveBlobAsFile(result.blob, result.filename);
+                   }
                 }}
                 className="px-4 py-2.5 rounded-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 shadow-sm"
               >
