@@ -5,7 +5,7 @@ import { supabase } from '../lib/supabase';
 import { safeSupabaseInsert, safeSupabaseUpdate } from '../utils/safeSync';
 import { Users, Plus, Save, X, Phone, Mail, MapPin, User, Key, Hash, Edit2, AlertTriangle, Navigation, LogIn, ArrowLeft, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { hashPassword } from '../utils/cryptoUtils';
+import { hashPassword, decodePassword } from '../utils/cryptoUtils';
 import TrackingMap from '../components/TrackingMap';
 import B2BShopView from './B2BShopView';
 import ShopsManagement from '../components/ShopsManagement';
@@ -500,6 +500,7 @@ export default function BookersView() {
                       <th className="p-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Booker #</th>
                       <th className="p-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Details</th>
                       <th className="p-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Contact</th>
+                      <th className="p-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Password</th>
                       <th className="p-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Address</th>
                       <th className="p-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider text-right">Actions</th>
                     </tr>
@@ -523,6 +524,12 @@ export default function BookersView() {
                             {bkr.phone && <span className="flex items-center gap-1.5"><Phone size={12} /> {bkr.phone}</span>}
                             {bkr.email && <span className="flex items-center gap-1.5"><Mail size={12} /> {bkr.email}</span>}
                             {!bkr.phone && !bkr.email && <span className="text-slate-400 italic">No contact info</span>}
+                          </div>
+                        </td>
+                        <td className="p-4 align-top">
+                          <div className="flex items-center gap-1.5 font-mono text-sm font-semibold bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 px-2 py-1 rounded-sm w-fit">
+                            <Key size={12} />
+                            {decodePassword(bkr.auth_token)}
                           </div>
                         </td>
                         <td className="p-4 align-top text-sm text-slate-600 dark:text-slate-400 max-w-xs truncate">
@@ -617,11 +624,14 @@ export default function BookersView() {
                         </button>
                       </div>
                     </div>
-                    <div className="flex flex-col gap-1 text-xs text-slate-500 dark:text-slate-400">
-                      {bkr.phone && <span className="flex items-center gap-1.5"><Phone size={11} /> {bkr.phone}</span>}
-                      {bkr.email && <span className="flex items-center gap-1.5"><Mail size={11} /> {bkr.email}</span>}
-                      {bkr.address && <span className="flex items-center gap-1.5"><MapPin size={11} /> <span className="truncate">{bkr.address}</span></span>}
-                    </div>
+                      <div className="flex flex-col gap-1 text-xs text-slate-500 dark:text-slate-400">
+                        {bkr.phone && <span className="flex items-center gap-1.5"><Phone size={11} /> {bkr.phone}</span>}
+                        {bkr.email && <span className="flex items-center gap-1.5"><Mail size={11} /> {bkr.email}</span>}
+                        <span className="flex items-center gap-1.5 font-mono font-semibold text-amber-600 dark:text-amber-500">
+                          <Key size={11} /> {decodePassword(bkr.auth_token)}
+                        </span>
+                        {bkr.address && <span className="flex items-center gap-1.5"><MapPin size={11} /> <span className="truncate">{bkr.address}</span></span>}
+                      </div>
                   </div>
                 ))}
               </div>

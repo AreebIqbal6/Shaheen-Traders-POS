@@ -50,6 +50,7 @@ export interface Booker {
   target?: number;
   target_start_date?: string;
   target_end_date?: string;
+  auth_token?: string;
 }
 
 export interface LedgerPayment {

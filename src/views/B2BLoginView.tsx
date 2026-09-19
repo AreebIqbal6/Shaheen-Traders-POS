@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { Shield, ArrowRight, User, Key, WifiOff, Smartphone } from 'lucide-react';
 import { verifyPassword } from '../utils/cryptoUtils';
+import toast from 'react-hot-toast';
 
 export default function B2BLoginView({ onLoginSuccess }: { onLoginSuccess: () => void }) {
   const [username, setUsername] = useState('');
