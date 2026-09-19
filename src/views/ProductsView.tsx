@@ -238,7 +238,7 @@ export default function ProductsView({ products = [], setProducts }: ProductsVie
   }, []);
 
   const [formData, setFormData] = useState<Partial<Product> & { minStock?: number }>({
-    barcode: '', name: '', price: 0, stock: 0, minStock: 5
+    barcode: '', name: '', price: 0, stock: 50, minStock: 5
   });
 
   const filteredProducts = products.filter(p => {
@@ -267,7 +267,7 @@ export default function ProductsView({ products = [], setProducts }: ProductsVie
       });
     } else {
       setEditingProduct(null);
-      setFormData({ barcode: '', name: '', price: 0, stock: 0, retail_price: undefined, sku: getNextSKU(products), minStock: 5 });
+      setFormData({ barcode: '', name: '', price: 0, stock: 50, retail_price: undefined, sku: getNextSKU(products), minStock: 5 });
     }
     setIsModalOpen(true);
   };

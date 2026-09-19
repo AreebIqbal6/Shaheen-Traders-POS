@@ -8,7 +8,7 @@ export const productSchema = z.object({
   basePrice: z.number().min(0).optional().nullable(),
   retail_price: z.number().min(0, 'Retail price must be a valid number').optional().nullable(),
   cost_price: z.number().min(0).optional().nullable(),
-  stock: z.number().int().default(0),
+  stock: z.number().int().default(50),
   category: z.string().optional().nullable(),
   image_url: z.string().url().optional().nullable(),
   sku: z.string().optional().nullable(),

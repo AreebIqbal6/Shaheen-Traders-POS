@@ -209,7 +209,15 @@ export default function OrderPreviewModal({
                <button 
                 onClick={async () => {
                   const { exportReceiptToPDF } = await import('../utils/exportPdf');
-                  await exportReceiptToPDF(draftOrderId, true);
+                  const result = await exportReceiptToPDF(draftOrderId, true);
+                  if (result) {
+                    const fileSaver = await import('file-saver');
+                    if (fileSaver && fileSaver.saveAs) {
+                      fileSaver.saveAs(result.blob, result.filename);
+                    } else if (fileSaver && fileSaver.default && fileSaver.default.saveAs) {
+                      fileSaver.default.saveAs(result.blob, result.filename);
+                    }
+                  }
                 }}
                 className="px-4 py-2.5 rounded-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 shadow-sm"
               >
