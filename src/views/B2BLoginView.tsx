@@ -1,13 +1,14 @@
 import type { Booker } from '../types/index';
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { Shield, ArrowRight, User, Key, WifiOff, Smartphone } from 'lucide-react';
+import { Shield, ArrowRight, User, Key, WifiOff, Smartphone, Eye, EyeOff } from 'lucide-react';
 import { verifyPassword } from '../utils/cryptoUtils';
 import toast from 'react-hot-toast';
 
 export default function B2BLoginView({ onLoginSuccess }: { onLoginSuccess: () => void }) {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [deferredPrompt, setDeferredPrompt] = useState<any>((window as any).deferredPrompt || null);
@@ -183,7 +184,7 @@ export default function B2BLoginView({ onLoginSuccess }: { onLoginSuccess: () =>
                   required
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  className="appearance-none block w-full pl-10 px-3 py-3 border border-slate-300 dark:border-slate-600 rounded-xl shadow-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-slate-50 dark:bg-[#0a0a0c] text-slate-900 dark:text-white font-medium transition-all"
+                  className="appearance-none block w-full pl-10 pr-10 py-3 border border-slate-300 dark:border-slate-600 rounded-xl shadow-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-slate-50 dark:bg-[#0a0a0c] text-slate-900 dark:text-white font-medium transition-all"
                   placeholder="Enter your username"
                 />
               </div>
@@ -202,7 +203,7 @@ export default function B2BLoginView({ onLoginSuccess }: { onLoginSuccess: () =>
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="appearance-none block w-full pl-10 px-3 py-3 border border-slate-300 dark:border-slate-600 rounded-xl shadow-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-slate-50 dark:bg-[#0a0a0c] text-slate-900 dark:text-white font-medium transition-all"
+                  className="appearance-none block w-full pl-10 pr-10 py-3 border border-slate-300 dark:border-slate-600 rounded-xl shadow-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-slate-50 dark:bg-[#0a0a0c] text-slate-900 dark:text-white font-medium transition-all"
                   placeholder="Enter your password"
                 />
               </div>

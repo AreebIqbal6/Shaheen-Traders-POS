@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Shield, Lock } from 'lucide-react';
+import { Shield, Lock, Eye, EyeOff } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import toast from 'react-hot-toast';
 
@@ -10,6 +10,7 @@ interface AuthViewProps {
 export default function AuthView({ onLogin }: AuthViewProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -96,16 +97,19 @@ export default function AuthView({ onLogin }: AuthViewProps) {
                 e.preventDefault();
                 toast.error("Pasting disabled for security reasons.");
               }}
-              className="w-full bg-white dark:bg-[#0a0a0c] border border-slate-200 dark:border-zinc-800/50 rounded-md px-3 py-2 text-sm text-slate-900 dark:text-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-transparent transition-all placeholder:text-slate-400"
+              className="w-full bg-white dark:bg-[#0a0a0c] border border-slate-200 dark:border-zinc-800/50 rounded-md px-3 pr-10 py-2 text-sm text-slate-900 dark:text-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-transparent transition-all placeholder:text-slate-400"
               autoFocus
               required
             />
+            <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-[34px] text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
+              {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+            </button>
           </div>
 
-          <div>
+          <div className="relative">
             <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5">Password</label>
             <input 
-              type="password" 
+              type={showPassword ? "text" : "password"} 
               placeholder="••••••••"
               value={password}
               onChange={e => setPassword(e.target.value)}
@@ -113,9 +117,12 @@ export default function AuthView({ onLogin }: AuthViewProps) {
                 e.preventDefault();
                 toast.error("Pasting disabled for security reasons.");
               }}
-              className="w-full bg-white dark:bg-[#0a0a0c] border border-slate-200 dark:border-zinc-800/50 rounded-md px-3 py-2 text-sm text-slate-900 dark:text-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all placeholder:text-slate-400"
+              className="w-full bg-white dark:bg-[#0a0a0c] border border-slate-200 dark:border-zinc-800/50 rounded-md px-3 pr-10 py-2 text-sm text-slate-900 dark:text-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all placeholder:text-slate-400"
               required
             />
+            <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-[34px] text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
+              {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+            </button>
           </div>
 
           {error && <p className="text-rose-500 text-xs font-semibold text-center mt-1 bg-rose-50 dark:bg-rose-900/20 p-2 rounded">{error}</p>}

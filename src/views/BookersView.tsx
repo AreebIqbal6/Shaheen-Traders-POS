@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { supabase } from '../lib/supabase';
 import { safeSupabaseInsert, safeSupabaseUpdate } from '../utils/safeSync';
-import { Users, Plus, Save, X, Phone, Mail, MapPin, User, Key, Hash, Edit2, AlertTriangle, Navigation, LogIn, ArrowLeft, Trash2 } from 'lucide-react';
+import { Users, Plus, Save, X, Phone, Mail, MapPin, User, Key, Hash, Edit2, AlertTriangle, Navigation, LogIn, ArrowLeft, Trash2, Eye, EyeOff } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { hashPassword, decodePassword } from '../utils/cryptoUtils';
 import TrackingMap from '../components/TrackingMap';
@@ -28,6 +28,8 @@ export default function BookersView() {
   const [name, setName] = useState('');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [showFormPassword, setShowFormPassword] = useState(false);
+  const [visiblePasswords, setVisiblePasswords] = useState<Set<string>>(new Set());
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
   const [address, setAddress] = useState('');
@@ -444,7 +446,12 @@ export default function BookersView() {
                 <label className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1.5 mb-1.5">
                   <Key size={12} /> {editingBooker ? 'Update Password (Leave blank to keep current)' : 'Password'}
                 </label>
-                <input required={!editingBooker} value={password} onChange={e => setPassword(e.target.value)} type="text" className="w-full bg-slate-50 dark:bg-[#0a0a0c]/50 border border-slate-200 dark:border-zinc-800/50 rounded-sm py-2 px-3 font-medium focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all" placeholder="Secure Password" />
+                <div className="relative">
+                  <input required={!editingBooker} value={password} onChange={e => setPassword(e.target.value)} type={showFormPassword ? "text" : "password"} className="w-full bg-slate-50 dark:bg-[#0a0a0c]/50 border border-slate-200 dark:border-zinc-800/50 rounded-sm py-2 pl-3 pr-10 font-medium focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all" placeholder="Secure Password" />
+                  <button type="button" onClick={() => setShowFormPassword(!showFormPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
+                    {showFormPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
               </div>
 
               <div>
@@ -526,12 +533,15 @@ export default function BookersView() {
                             {!bkr.phone && !bkr.email && <span className="text-slate-400 italic">No contact info</span>}
                           </div>
                         </td>
-                        <td className="p-4 align-top">
-                          <div className="flex items-center gap-1.5 font-mono text-sm font-semibold bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 px-2 py-1 rounded-sm w-fit">
-                            <Key size={12} />
-                            {decodePassword(bkr.auth_token)}
-                          </div>
-                        </td>
+                          <td className="p-4 align-top">
+                            <div className="flex items-center gap-1.5 font-mono text-sm font-semibold bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 px-2 py-1 rounded-sm w-fit">
+                              <Key size={12} />
+                              {visiblePasswords.has(bkr.id || bkr.username) ? decodePassword(bkr.auth_token) : '••••••••'}
+                              <button onClick={() => setVisiblePasswords(prev => { const n = new Set(prev); if (n.has(bkr.id || bkr.username)) n.delete(bkr.id || bkr.username); else n.add(bkr.id || bkr.username); return n; })} className="ml-1 opacity-60 hover:opacity-100 transition-opacity">
+                                {visiblePasswords.has(bkr.id || bkr.username) ? <EyeOff size={12} /> : <Eye size={12} />}
+                              </button>
+                            </div>
+                          </td>
                         <td className="p-4 align-top text-sm text-slate-600 dark:text-slate-400 max-w-xs truncate">
                           {bkr.address || <span className="italic opacity-50">Not provided</span>}
                         </td>
@@ -627,9 +637,13 @@ export default function BookersView() {
                       <div className="flex flex-col gap-1 text-xs text-slate-500 dark:text-slate-400">
                         {bkr.phone && <span className="flex items-center gap-1.5"><Phone size={11} /> {bkr.phone}</span>}
                         {bkr.email && <span className="flex items-center gap-1.5"><Mail size={11} /> {bkr.email}</span>}
-                        <span className="flex items-center gap-1.5 font-mono font-semibold text-amber-600 dark:text-amber-500">
-                          <Key size={11} /> {decodePassword(bkr.auth_token)}
-                        </span>
+                          <span className="flex items-center gap-1.5 font-mono font-semibold text-amber-600 dark:text-amber-500">
+                            <Key size={11} /> 
+                            {visiblePasswords.has(bkr.id || bkr.username) ? decodePassword(bkr.auth_token) : '••••••••'}
+                            <button onClick={() => setVisiblePasswords(prev => { const n = new Set(prev); if (n.has(bkr.id || bkr.username)) n.delete(bkr.id || bkr.username); else n.add(bkr.id || bkr.username); return n; })} className="ml-1 opacity-60 hover:opacity-100 transition-opacity">
+                              {visiblePasswords.has(bkr.id || bkr.username) ? <EyeOff size={11} /> : <Eye size={11} />}
+                            </button>
+                          </span>
                         {bkr.address && <span className="flex items-center gap-1.5"><MapPin size={11} /> <span className="truncate">{bkr.address}</span></span>}
                       </div>
                   </div>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Store, Receipt, Printer, Database, Download, Upload, FolderDown, FolderSearch, AlertTriangle, X, RefreshCw } from 'lucide-react';
+import { Store, Receipt, Printer, Database, Download, Upload, FolderDown, FolderSearch, AlertTriangle, X, RefreshCw, Eye, EyeOff } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 import { supabase } from '../lib/supabase';
@@ -69,6 +69,7 @@ export default function SettingsView() {
 
   const [adminEmail, setAdminEmail] = useState('');
   const [adminPassword, setAdminPassword] = useState('');
+  const [showAdminPassword, setShowAdminPassword] = useState(false);
   const [isUpdatingAuth, setIsUpdatingAuth] = useState(false);
 
   useEffect(() => {
@@ -509,11 +510,9 @@ export default function SettingsView() {
                   className="w-full bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-500" 
                 />
               </div>
-              <div>
-                <label className="text-xs font-semibold text-zinc-600 mb-1 block">New Password</label>
+              <div className="relative">`n                  <label className="text-xs font-semibold text-zinc-600 mb-1 block">New Password</label>
                 <input 
-                  type="password" 
-                  value={adminPassword} 
+                  type={showAdminPassword ? "text" : "password"} `n                    value={adminPassword} 
                   onChange={e => setAdminPassword(e.target.value)}
                   placeholder="Leave blank to keep unchanged"
                   className="w-full bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-500" 
