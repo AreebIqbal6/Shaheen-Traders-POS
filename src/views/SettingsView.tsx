@@ -510,13 +510,18 @@ export default function SettingsView() {
                   className="w-full bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-500" 
                 />
               </div>
-              <div className="relative">`n                  <label className="text-xs font-semibold text-zinc-600 mb-1 block">New Password</label>
+              <div className="relative">
+                <label className="text-xs font-semibold text-zinc-600 mb-1 block">New Password</label>
                 <input 
-                  type={showAdminPassword ? "text" : "password"} `n                    value={adminPassword} 
+                  type={showAdminPassword ? "text" : "password"}
+                  value={adminPassword} 
                   onChange={e => setAdminPassword(e.target.value)}
                   placeholder="Leave blank to keep unchanged"
-                  className="w-full bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-500" 
+                  className="w-full bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded px-3 pr-10 py-2 text-sm focus:outline-none focus:border-blue-500" 
                 />
+                <button type="button" onClick={() => setShowAdminPassword(!showAdminPassword)} className="absolute right-3 top-[28px] text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
+                  {showAdminPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
               </div>
               <button 
                 onClick={handleUpdateAuth}
