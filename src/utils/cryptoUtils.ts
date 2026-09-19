@@ -11,10 +11,10 @@ export const decodePassword = (hash: string | undefined): string => {
   if (!hash) return 'Not Set';
   try {
     // If it's a 64-character hex string (SHA-256 from previous version), we can't decode it.
-    if (/^[0-9a-f]{64}$/i.test(hash)) return '(Reset Required)';
+    if (/^[0-9a-f]{64}$/i.test(hash)) return '(Encrypted - Edit to update)';
     return atob(hash);
   } catch {
-    return '(Reset Required)';
+    return '(Encrypted - Edit to update)';
   }
 };
 
