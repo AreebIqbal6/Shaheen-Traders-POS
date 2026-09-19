@@ -1117,13 +1117,16 @@ export default function AdminPOSView() {
     }
   }, [activeMenu, isAlertDrawerOpen]);
 
+  const { useDebounce } = require('../hooks/useDebounce');
+  const debouncedRegisterSearchQuery = useDebounce(registerSearchQuery, 150);
+
   const filteredProducts = useMemo(() => {
     let result = products;
     if (registerItemTypeFilter !== 'All') {
       result = result.filter(p => registerItemTypeFilter === 'Imported' ? p.item_type === 'Imported' : p.item_type !== 'Imported');
     }
-    if (registerSearchQuery.trim()) {
-      const lowerQ = registerSearchQuery.toLowerCase();
+    if (debouncedRegisterSearchQuery.trim()) {
+      const lowerQ = debouncedRegisterSearchQuery.toLowerCase();
       result = result.filter(p => (p.name || '').toLowerCase().includes(lowerQ) || (p.barcode || '').toLowerCase().includes(lowerQ) || (p.sku || '').toLowerCase().includes(lowerQ));
     }
     return [...result].sort((a, b) => {
@@ -1131,7 +1134,7 @@ export default function AdminPOSView() {
       const skuB = parseInt(b.sku || '0', 10) || 0;
       return skuA - skuB;
     });
-  }, [products, registerSearchQuery, registerItemTypeFilter]);
+  }, [products, debouncedRegisterSearchQuery, registerItemTypeFilter]);
 
   const removeFromCart = useCallback((cartId: string) => {
     setCart(prev => prev.filter(item => item.cartId !== cartId));

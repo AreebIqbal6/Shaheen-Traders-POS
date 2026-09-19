@@ -59,6 +59,10 @@ export default function ProductsView({ products = [], setProducts }: ProductsVie
   const fileInputRef = useRef<HTMLInputElement>(null);
   const barcodeInputRef = useRef<HTMLInputElement>(null);
 
+  // Optimise UI rendering for old phones by debouncing text input
+  const { useDebounce } = require('../hooks/useDebounce');
+  const debouncedSearchQuery = useDebounce(searchQuery, 300);
+
   const formatLakhs = (val: number) => `Rs ${val.toLocaleString('en-PK')}`;
 
   const totalProducts = products.length;
@@ -244,7 +248,7 @@ export default function ProductsView({ products = [], setProducts }: ProductsVie
   const filteredProducts = products.filter(p => {
     const safeName = p.name || '';
     const safeBarcode = p.barcode || '';
-    const matchSearch = safeName.toLowerCase().includes(searchQuery.toLowerCase()) || safeBarcode.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchSearch = safeName.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) || safeBarcode.toLowerCase().includes(debouncedSearchQuery.toLowerCase());
     const matchFilter = currentFilter === 'all' || 
                         (currentFilter === 'critical' && p.stock <= 2) || 
                         (currentFilter === 'low' && p.stock <= 10) ||

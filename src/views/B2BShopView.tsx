@@ -603,23 +603,27 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
 
   const cartTotal = useMemo(() => cart.reduce((sum, item) => sum + (item.price * item.quantity), 0), [cart]);
 
+  const { useDebounce } = require('../hooks/useDebounce');
+  const debouncedSearchQuery = useDebounce(searchQuery, 150);
+
   const filteredProducts = useMemo(() => {
     return products.filter(p => {
-      const lowerQ = searchQuery.toLowerCase();
+      const lowerQ = debouncedSearchQuery.toLowerCase();
       const matchSearch = (p.name || '').toLowerCase().includes(lowerQ) || 
                           (p.category && p.category.toLowerCase().includes(lowerQ)) ||
                           (p.barcode || '').toLowerCase().includes(lowerQ) ||
                           (p.sku || '').toLowerCase().includes(lowerQ);
+      
       const matchType = itemTypeFilter === 'All' || 
-                        (itemTypeFilter === 'Local' && p.item_type !== 'Imported') || 
-                        (itemTypeFilter === 'Imported' && p.item_type === 'Imported');
+                        (itemTypeFilter === 'Imported' ? p.item_type === 'Imported' : p.item_type !== 'Imported');
+      
       return matchSearch && matchType;
     }).sort((a, b) => {
       const skuA = parseInt(a.sku || '0', 10) || 0;
       const skuB = parseInt(b.sku || '0', 10) || 0;
       return skuA - skuB;
     });
-  }, [products, searchQuery, itemTypeFilter]);
+  }, [products, debouncedSearchQuery, itemTypeFilter]);
 
   const handleCheckoutSuccess = useCallback(() => {
     playNotificationSound();
