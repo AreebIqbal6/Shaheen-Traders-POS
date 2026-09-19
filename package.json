@@ -1,7 +1,7 @@
 {
   "name": "shaheen-pos",
   "private": true,
-  "version": "0.5.49",
+  "version": "0.5.50",
   "type": "module",
   "main": "main.cjs",
   "scripts": {
@@ -16,7 +16,6 @@
     "@ericblade/quagga2": "^1.12.1",
     "@hookform/resolvers": "^5.9.1",
     "@supabase/supabase-js": "^2.108.2",
-    "@tanstack/react-query": "^5.102.8",
     "@tauri-apps/api": "^2.11.1",
     "@tauri-apps/plugin-cli": "^2.4.1",
     "@tauri-apps/plugin-dialog": "^2.7.1",
