@@ -7,6 +7,7 @@ import { LayoutDashboard, ShoppingBag, Package, Settings, Search, Trash2, Printe
 import { fetchAllProducts } from '../utils/fetchAllProducts';
 import { safeSupabaseUpsert, safeSupabaseInsert } from '../utils/safeSync';
 import { generateUUID } from '../utils/uuid';
+import { useDebounce } from '../hooks/useDebounce';
 
 const ProductsView = lazy(() => import('./ProductsView'));
 import type { Product } from './ProductsView';
@@ -1133,7 +1134,7 @@ export default function AdminPOSView() {
     }
   }, [activeMenu, isAlertDrawerOpen]);
 
-  const { useDebounce } = require('../hooks/useDebounce');
+  
   const debouncedRegisterSearchQuery = useDebounce(registerSearchQuery, 150);
 
   const filteredProducts = useMemo(() => {

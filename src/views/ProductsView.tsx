@@ -8,6 +8,7 @@ import { fetchAllProducts } from '../utils/fetchAllProducts';
 import { supabase } from '../lib/supabase';
 import { safeSupabaseInsert, safeSupabaseUpdate } from '../utils/safeSync';
 import { generateUUID } from '../utils/uuid';
+import { useDebounce } from '../hooks/useDebounce';
 
 
 
@@ -60,7 +61,6 @@ export default function ProductsView({ products = [], setProducts }: ProductsVie
   const barcodeInputRef = useRef<HTMLInputElement>(null);
 
   // Optimise UI rendering for old phones by debouncing text input
-  const { useDebounce } = require('../hooks/useDebounce');
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
   const formatLakhs = (val: number) => `Rs ${val.toLocaleString('en-PK')}`;

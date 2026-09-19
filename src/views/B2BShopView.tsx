@@ -2,6 +2,7 @@ import type { Product, Order, CartItem } from '../types/index';
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { VirtuosoGrid } from 'react-virtuoso';
 import { playNotificationSound } from '../utils/audio';
+import { useDebounce } from '../hooks/useDebounce';
 import { supabase } from '../lib/supabase';
 import { safeSupabaseInsert } from '../utils/safeSync';
 import { generateUUID } from '../utils/uuid';
@@ -603,7 +604,7 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
 
   const cartTotal = useMemo(() => cart.reduce((sum, item) => sum + (item.price * item.quantity), 0), [cart]);
 
-  const { useDebounce } = require('../hooks/useDebounce');
+  
   const debouncedSearchQuery = useDebounce(searchQuery, 150);
 
   const filteredProducts = useMemo(() => {
