@@ -513,7 +513,7 @@ export default function BookersView() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 dark:divide-slate-700/50">
-                    {bookers.map((bkr, idx) => (
+                    {[...bookers].sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''))).map((bkr, idx) => (
                       <tr key={idx} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors">
                         <td className="p-4 align-top">
                           <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-sm bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold font-mono">
@@ -589,7 +589,7 @@ export default function BookersView() {
 
               {/* Mobile Card View */}
               <div className="md:hidden divide-y divide-slate-100 dark:divide-slate-700/50">
-                {bookers.map((bkr, idx) => (
+                {[...bookers].sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''))).map((bkr, idx) => (
                   <div key={idx} className="p-4 flex flex-col gap-2">
                     <div className="flex justify-between items-start gap-2">
                       <div className="min-w-0 flex-1">

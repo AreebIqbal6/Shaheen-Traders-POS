@@ -106,9 +106,9 @@ export default function AreasManagement() {
     ));
   };
 
-  const filteredAreas = areas.filter(a => 
+  const filteredAreas = [...areas].filter(a => 
     String(a.name || '').toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  ).sort((a, b) => String(a.name || '').localeCompare(String(b.name || '')));
 
   return (
     <div className="flex flex-col gap-6">

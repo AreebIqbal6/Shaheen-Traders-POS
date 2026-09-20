@@ -199,13 +199,13 @@ export default function ShopsManagement() {
     ), { duration: 10000 });
   };
 
-  const filteredShops = shops.filter(s => {
+  const filteredShops = [...shops].filter(s => {
     const safeName = String(s.name || '').toLowerCase();
     const safeAddress = String(s.address || '').toLowerCase();
     const safeContact = String(s.contactNumber || '').toLowerCase();
     const query = searchQuery.toLowerCase();
     return safeName.includes(query) || safeAddress.includes(query) || safeContact.includes(query);
-  });
+  }).sort((a, b) => String(a.name || '').localeCompare(String(b.name || '')));
 
   return (
     <div className="flex flex-col gap-6 w-full animate-in fade-in duration-300">

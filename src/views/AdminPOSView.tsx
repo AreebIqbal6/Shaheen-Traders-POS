@@ -1804,6 +1804,7 @@ export default function AdminPOSView() {
                                       String(s.contactNumber || s.contact_number || '').includes(clientName) ||
                                       String(s.address || '').toLowerCase().includes(clientName.toLowerCase())
                                     )
+                                    .sort((a, b) => String(a.name || '').localeCompare(String(b.name || '')))
                                     .map((shop, i) => (
                                       <div 
                                         key={i}
@@ -1920,6 +1921,7 @@ export default function AdminPOSView() {
                                 <div className="py-1">
                                   {bookersList
                                     .filter(b => (b.name || '').toLowerCase().includes(bookerName.toLowerCase()))
+                                    .sort((a, b) => String(a.name || '').localeCompare(String(b.name || '')))
                                     .map((booker, i) => (
                                       <div 
                                         key={i}

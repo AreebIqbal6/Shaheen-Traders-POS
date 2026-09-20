@@ -235,6 +235,7 @@ export default function B2BCheckout({ cart, total, onSuccess, onBack }: B2BCheck
                                      String(s.contactNumber || s.contact_number || '').includes(shopSearch) || 
                                      String(s.address || '').toLowerCase().includes(searchLower);
                             })
+                            .sort((a, b) => String(a.name || '').localeCompare(String(b.name || '')))
                             .map((shop, i) => (
                             <div
                               key={i}
@@ -307,6 +308,7 @@ export default function B2BCheckout({ cart, total, onSuccess, onBack }: B2BCheck
                       <div className="overflow-y-auto">
                         {areas
                           .filter(a => (a.name || '').toLowerCase().includes(areaSearch.toLowerCase()))
+                          .sort((a, b) => String(a.name || '').localeCompare(String(b.name || '')))
                           .map((area, i) => (
                             <div
                               key={i}
