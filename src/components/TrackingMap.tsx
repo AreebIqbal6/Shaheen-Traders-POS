@@ -44,14 +44,16 @@ function LocateControl({ lat, lng }: { lat: number; lng: number }) {
 
 const customIcon = (isOffline: boolean) => new L.DivIcon({
   html: `<div style="position:relative;display:flex;flex-direction:column;align-items:center;">
-           <div style="color:${isOffline ? '#ef4444' : '#2563eb'};filter:drop-shadow(0 4px 3px rgb(0 0 0 / 0.3));">
-             <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></svg>
+           <div style="color:${isOffline ? '#9e9e9e' : '#EA4335'};filter:drop-shadow(0 4px 4px rgb(0 0 0 / 0.4)); transform: scale(1.1)">
+             <svg width="40" height="40" viewBox="0 0 24 24" fill="currentColor">
+               <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+             </svg>
            </div>
          </div>`,
   className: 'custom-leaflet-icon',
-  iconSize: [32, 32],
-  iconAnchor: [16, 32],
-  popupAnchor: [0, -32],
+  iconSize: [40, 40],
+  iconAnchor: [20, 38],
+  popupAnchor: [0, -40],
 });
 
 export default function TrackingMap({ lat, lng, bookerName, lastSeen, isOffline }: TrackingMapProps) {
