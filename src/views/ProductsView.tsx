@@ -245,17 +245,16 @@ export default function ProductsView({ products = [], setProducts }: ProductsVie
     barcode: '', name: '', price: 0, stock: 50, minStock: 5
   });
 
-  const filteredProducts = products.filter(p => {
-    const safeName = p.name || '';
-    const safeBarcode = p.barcode || '';
-    const matchSearch = safeName.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) || safeBarcode.toLowerCase().includes(debouncedSearchQuery.toLowerCase());
-    const matchFilter = currentFilter === 'all' || 
-                        (currentFilter === 'critical' && p.stock <= 2) || 
-                        (currentFilter === 'low' && p.stock <= 10) ||
-                        (currentFilter === 'local' && p.item_type !== 'Imported') ||
-                        (currentFilter === 'imported' && p.item_type === 'Imported');
-    return matchSearch && matchFilter;
-  }).sort((a, b) => {
+    const filteredProducts = products.filter(p => {
+      const lowerQ = debouncedSearchQuery.toLowerCase();
+      const matchSearch = (p.sku || '').toLowerCase() === lowerQ || (p.name || '').toLowerCase().includes(lowerQ);
+      const matchFilter = currentFilter === 'all' || 
+                          (currentFilter === 'critical' && p.stock <= 2) || 
+                          (currentFilter === 'low' && p.stock <= 10) ||
+                          (currentFilter === 'local' && p.item_type !== 'Imported') ||
+                          (currentFilter === 'imported' && p.item_type === 'Imported');
+      return matchSearch && matchFilter;
+    }).sort((a, b) => {
     const skuA = parseInt(a.sku || '0', 10) || 0;
     const skuB = parseInt(b.sku || '0', 10) || 0;
     return skuA - skuB;

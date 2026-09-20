@@ -1145,7 +1145,7 @@ export default function AdminPOSView() {
     }
     if (debouncedRegisterSearchQuery.trim()) {
       const lowerQ = debouncedRegisterSearchQuery.toLowerCase();
-      result = result.filter(p => (p.name || '').toLowerCase().includes(lowerQ) || (p.barcode || '').toLowerCase().includes(lowerQ) || (p.sku || '').toLowerCase().includes(lowerQ));
+      result = result.filter(p => (p.sku || '').toLowerCase() === lowerQ || (p.name || '').toLowerCase().includes(lowerQ));
     }
     return [...result].sort((a, b) => {
       const skuA = parseInt(a.sku || '0', 10) || 0;

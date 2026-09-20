@@ -626,10 +626,7 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
   const filteredProducts = useMemo(() => {
     return products.filter(p => {
       const lowerQ = debouncedSearchQuery.toLowerCase();
-      const matchSearch = (p.name || '').toLowerCase().includes(lowerQ) || 
-                          (p.category && p.category.toLowerCase().includes(lowerQ)) ||
-                          (p.barcode || '').toLowerCase().includes(lowerQ) ||
-                          (p.sku || '').toLowerCase().includes(lowerQ);
+      const matchSearch = (p.sku || '').toLowerCase() === lowerQ || (p.name || '').toLowerCase().includes(lowerQ);
       
       const matchType = itemTypeFilter === 'All' || 
                         (itemTypeFilter === 'Imported' ? p.item_type === 'Imported' : p.item_type !== 'Imported');
