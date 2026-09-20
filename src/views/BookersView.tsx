@@ -516,7 +516,7 @@ export default function BookersView() {
                     {[...bookers].sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''))).map((bkr, idx) => (
                       <tr key={idx} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors">
                         <td className="p-4 align-top">
-                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-sm bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold font-mono">
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-sm bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold font-mono whitespace-nowrap">
                             <Hash size={12} /> {bkr.booker_number}
                           </span>
                         </td>
@@ -595,7 +595,7 @@ export default function BookersView() {
                       <div className="min-w-0 flex-1">
                         <div className="font-bold text-slate-900 dark:text-slate-50 text-sm">{bkr.name}</div>
                         <div className="flex flex-wrap items-center gap-2 mt-1">
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-sm bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 text-[10px] font-bold font-mono">
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-sm bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 text-[10px] font-bold font-mono whitespace-nowrap">
                             <Hash size={10} /> {bkr.booker_number}
                           </span>
                           <span className="text-xs font-medium text-blue-600 dark:text-blue-400 flex items-center gap-1">
