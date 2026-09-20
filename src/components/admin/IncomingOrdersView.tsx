@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Package, MapPin, User, CreditCard, Phone } from 'lucide-react';
 import type { Order, CartItem } from '../../types/index';
+import { formatPakistaniPhone } from '../../utils/formatPhone';
 
 const CancelledOrdersView = React.lazy(() => import('../../views/CancelledOrdersView'));
 
@@ -111,8 +112,8 @@ export default function IncomingOrdersView({
                      <div className="flex flex-col gap-1 text-xs text-slate-500 dark:text-slate-400 font-medium mb-3">
                         <span className="flex items-center gap-1"><MapPin size={12} /> Area: {order.area || 'N/A'}</span>
                         <span className="flex items-center gap-1"><User size={12} /> Booker: {order.booker_name || 'N/A'}</span>
-                        <span className="flex items-center gap-1"><CreditCard size={12} /> Terms: {order.payment_terms || 'Cash'}</span>
-                         <span className="flex items-center gap-1"><Phone size={12} /> Phone: {order.client_phone || order.contact_number || order.contactNumber || 'N/A'}</span>
+                          <span className="flex items-center gap-1"><CreditCard size={12} /> Terms: {order.payment_terms || 'Cash'}</span>
+                          <span className="flex items-center gap-1 whitespace-nowrap"><Phone size={12} /> Phone: {order.client_phone || order.contact_number || order.contactNumber ? formatPakistaniPhone(order.client_phone || order.contact_number || order.contactNumber) : 'N/A'}</span>
                      </div>
                      <div className="flex justify-between items-center border-t border-blue-100/50 dark:border-zinc-800/50 pt-3 relative z-10">
                         <span className="text-slate-800 dark:text-slate-200 font-bold text-lg">Rs {(order.total || 0).toLocaleString()}</span>

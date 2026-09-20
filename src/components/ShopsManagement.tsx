@@ -3,6 +3,7 @@ import { Store, Plus, Save, X, Phone, MapPin, User, Search, Trash2, Edit2 } from
 import toast from 'react-hot-toast';
 import { supabase } from '../lib/supabase';
 import { safeSupabaseInsert, safeSupabaseUpdate } from '../utils/safeSync';
+import { formatPakistaniPhone } from '../utils/formatPhone';
 
 export interface Shop {
   id: string;
@@ -295,7 +296,7 @@ export default function ShopsManagement() {
                     <td className="p-4 align-top">
                       <div className="flex flex-col gap-1 text-sm text-slate-600 dark:text-slate-400">
                         {shop.contactNumber ? (
-                          <span className="flex items-center gap-1.5"><Phone size={12} /> {shop.contactNumber}</span>
+                          <span className="flex items-center gap-1.5 whitespace-nowrap"><Phone size={12} /> {formatPakistaniPhone(shop.contactNumber)}</span>
                         ) : (
                           <span className="text-slate-400 italic">No contact info</span>
                         )}

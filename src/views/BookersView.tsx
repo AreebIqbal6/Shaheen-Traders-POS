@@ -10,6 +10,7 @@ import TrackingMap from '../components/TrackingMap';
 import B2BShopView from './B2BShopView';
 import ShopsManagement from '../components/ShopsManagement';
 import AreasManagement from '../components/AreasManagement';
+import { formatPakistaniPhone } from '../utils/formatPhone';
 
 
 
@@ -527,9 +528,9 @@ export default function BookersView() {
                           </div>
                         </td>
                         <td className="p-4 align-top">
-                          <div className="flex flex-col gap-1 text-sm text-slate-600 dark:text-slate-400">
-                            {bkr.phone && <span className="flex items-center gap-1.5"><Phone size={12} /> {bkr.phone}</span>}
-                            {bkr.email && <span className="flex items-center gap-1.5"><Mail size={12} /> {bkr.email}</span>}
+                            <div className="flex flex-col gap-1 text-sm text-slate-600 dark:text-slate-400">
+                              {bkr.phone && <span className="flex items-center gap-1.5 whitespace-nowrap"><Phone size={12} /> {formatPakistaniPhone(bkr.phone)}</span>}
+                              {bkr.email && <span className="flex items-center gap-1.5"><Mail size={12} /> {bkr.email}</span>}
                             {!bkr.phone && !bkr.email && <span className="text-slate-400 italic">No contact info</span>}
                           </div>
                         </td>
@@ -635,8 +636,8 @@ export default function BookersView() {
                       </div>
                     </div>
                       <div className="flex flex-col gap-1 text-xs text-slate-500 dark:text-slate-400">
-                        {bkr.phone && <span className="flex items-center gap-1.5"><Phone size={11} /> {bkr.phone}</span>}
-                        {bkr.email && <span className="flex items-center gap-1.5"><Mail size={11} /> {bkr.email}</span>}
+                          {bkr.phone && <span className="flex items-center gap-1.5 whitespace-nowrap"><Phone size={11} /> {formatPakistaniPhone(bkr.phone)}</span>}
+                          {bkr.email && <span className="flex items-center gap-1.5"><Mail size={11} /> {bkr.email}</span>}
                           <span className="flex items-center gap-1.5 font-mono font-semibold text-amber-600 dark:text-amber-500">
                             <Key size={11} /> 
                             {visiblePasswords.has(bkr.id || bkr.username) ? decodePassword(bkr.auth_token) : '••••••••'}
