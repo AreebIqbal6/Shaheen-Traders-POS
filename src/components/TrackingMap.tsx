@@ -77,8 +77,8 @@ export default function TrackingMap({ lat, lng, bookerName, lastSeen, isOffline 
         style={{ height: '100%', width: '100%', zIndex: 0 }}
       >
         <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-          url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
+          attribution='&copy; Google Maps'
+          url="https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}"
         />
         <LocateControl lat={lat} lng={lng} />
         

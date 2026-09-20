@@ -260,8 +260,8 @@ export default function SettingsView() {
             <AlertTriangle className="h-8 w-8 text-red-600" />
           </div>
           <div className="flex-1 pt-0.5">
-            <p className="text-[15px] font-bold text-slate-900 dark:text-slate-100 mb-1">True Factory Reset (Cloud + Local)</p>
-            <p className="text-[13px] text-slate-500 dark:text-zinc-400">Are you absolutely sure? This will permanently delete ALL Products, Bookers, Orders, and Local Data from the entire cloud system and this device.</p>
+            <p className="text-[15px] font-bold text-slate-900 dark:text-slate-100 mb-1">Wipe History (Cloud + Local)</p>
+            <p className="text-[13px] text-slate-500 dark:text-zinc-400">Are you absolutely sure? This will permanently delete ALL Orders, History, and Local Cache from the cloud and this device. (Products, Bookers, Shops, and Areas will NOT be touched).</p>
             <input
               id={"wipe-password-" + t.id}
               type="password"
@@ -302,20 +302,17 @@ export default function SettingsView() {
                  return;
               }
 
-              toast.loading("Nuking cloud database & local system...", { id: "wipe-auth" });
+              toast.loading("Wiping order history & local cache...", { id: "wipe-auth" });
               try {
                 (window as any).__wiping = true;
 
                 // 1. WIPE THE CLOUD (Deletes all rows safely)
-                // Removed per user request: const { error: prodErr } = await supabase.from('products').delete().not('id', 'is', null);
-                const { error: bookErr } = await supabase.from('bookers').delete().not('id', 'is', null); 
                 const { error: orderErr } = await supabase.from('orders').delete().not('id', 'is', null);
-                const { error: shopErr } = await supabase.from('shops').delete().not('id', 'is', null);
+                const { error: locErr } = await supabase.from('booker_locations').delete().not('id', 'is', null);
 
-// Check if ANY cloud deletion failed — abort before wiping local
-                if (bookErr || orderErr || shopErr) {
-                  const failedTables = [bookErr && 'Bookers', orderErr && 'Orders', shopErr && 'Shops'].filter(Boolean).join(', ');
-                  throw new Error(`Cloud wipe failed for: ${failedTables}. Local data preserved.`);
+                // Check if ANY cloud deletion failed 
+                if (orderErr) {
+                  throw new Error(`Cloud wipe failed for Orders. Local data preserved.`);
                 }
 
                 // 2. WIPE LOCAL DATA CACHE

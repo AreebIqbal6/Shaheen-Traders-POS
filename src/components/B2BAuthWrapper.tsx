@@ -75,6 +75,24 @@ export default function B2BAuthWrapper({ children }: { children: React.ReactNode
             toast.error('Your access has been revoked by the admin.', { duration: 6000 });
           }
         )
+        .on(
+          'postgres_changes',
+          { event: 'UPDATE', schema: 'public', table: 'bookers', filter: `id=eq.${activeBooker.id}` },
+          (payload) => {
+            if (payload.new && payload.new.auth_token !== activeBooker.auth_token) {
+              localStorage.removeItem('shaheen_active_booker');
+              const profiles = JSON.parse(localStorage.getItem('booker_profiles') || '[]');
+              const filtered = profiles.filter((b: any) => b.id !== activeBooker.id);
+              localStorage.setItem('booker_profiles', JSON.stringify(filtered));
+              
+              setIsAuthenticated(false);
+              toast.error('Your password was changed, logging out.', { duration: 6000 });
+            } else if (payload.new) {
+              // Update local cache if something else changed (like name)
+              localStorage.setItem('shaheen_active_booker', JSON.stringify(payload.new));
+            }
+          }
+        )
         .subscribe();
         
       return () => {

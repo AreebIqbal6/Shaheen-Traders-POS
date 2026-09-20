@@ -118,8 +118,8 @@ export default function TrackersView() {
           style={{ height: '100%', width: '100%' }}
         >
           <TileLayer
-            attribution='Map tiles by Carto, under CC BY 3.0. Data by OpenStreetMap, under ODbL.'
-            url="https://a.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png"
+            attribution='&copy; Google Maps'
+            url="https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}"
           />
 
           {locations.map((loc) => (
