@@ -786,7 +786,7 @@ export default function ProductsView({ products = [], setProducts }: ProductsVie
                        <div className="flex justify-between items-start gap-2">
                              <div className="flex flex-col min-w-0 flex-1">
                                <h3 
-                                 className="font-semibold text-slate-900 dark:text-white leading-tight line-clamp-2"
+                                 className="font-semibold text-slate-900 dark:text-white leading-tight truncate"
                                  style={{ fontSize: getResponsiveFontSize(product.name, 14) }}
                                >
                                  {product.name}

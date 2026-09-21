@@ -33,7 +33,7 @@ const ProductCard = React.memo(({ product, onAdd }: { product: Product, onAdd: (
       > 
         <div className="w-full min-w-0"> 
           <h4 
-            className="font-semibold text-slate-800 dark:text-slate-200 leading-tight mb-1 line-clamp-2 w-full"
+            className="font-semibold text-slate-800 dark:text-slate-200 leading-tight mb-1 truncate w-full"
             style={{ fontSize: getResponsiveFontSize(product.name, 14) }}
           >
             {product.name}
@@ -828,7 +828,7 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
                      <div className="flex justify-between items-start">
                         <div className="flex-1 pr-2">
                            <h3 
-                             className="font-semibold text-slate-800 dark:text-slate-200 leading-tight line-clamp-2"
+                             className="font-semibold text-slate-800 dark:text-slate-200 leading-tight truncate"
                              style={{ fontSize: getResponsiveFontSize(item.name, 14) }}
                            >
                              {item.name}

@@ -126,7 +126,8 @@ export default defineConfig({
     sourcemap: false, // Prevents generating original source code maps
     rollupOptions: {
       input: {
-        main: 'index.html'
+        main: 'index.html',
+        admin: 'admin.html'
       }
     },
     minify: 'terser',

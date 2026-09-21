@@ -1553,7 +1553,7 @@ export default function AdminPOSView() {
                         >
                           <div className="flex flex-col items-start min-w-0 flex-1">
                             <h4 
-                              className="font-bold text-slate-800 dark:text-slate-200 leading-tight mb-1 line-clamp-2 w-full"
+                              className="font-bold text-slate-800 dark:text-slate-200 leading-tight mb-1 truncate w-full"
                               style={{ fontSize: getResponsiveFontSize(p.name, 14) }}
                             >
                               {p.name}
@@ -1643,7 +1643,7 @@ export default function AdminPOSView() {
                               <span className="text-slate-400 font-semibold text-xs w-4 shrink-0">{idx + 1}</span>
                               <div className="flex-1 min-w-0">
                                 <p 
-                                  className="font-semibold text-slate-800 dark:text-slate-200 leading-tight line-clamp-2"
+                                  className="font-semibold text-slate-800 dark:text-slate-200 leading-tight truncate"
                                   style={{ fontSize: getResponsiveFontSize(item.name, 13) }}
                                 >
                                   {item.name}

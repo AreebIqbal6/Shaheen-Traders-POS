@@ -396,7 +396,7 @@ export default function B2BCheckout({ cart, total, onSuccess, onBack }: B2BCheck
                  <div key={item.id} className="flex justify-between items-start text-sm">
                    <div className="flex flex-col pr-4">
                      <span 
-                       className="text-slate-400 font-medium line-clamp-2"
+                       className="text-slate-400 font-medium truncate"
                        style={{ fontSize: getResponsiveFontSize(item.name, 14) }}
                      >
                        {item.quantity} {item.uom || 'Pcs'} {item.name}
