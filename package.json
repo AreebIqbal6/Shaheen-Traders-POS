@@ -6,7 +6,7 @@
   "main": "main.cjs",
   "scripts": {
     "dev": "vite",
-    "build": "vite build && node -e \"const fs=require('fs'); fs.writeFileSync('dist/admin.html', fs.readFileSync('dist/admin.html', 'utf8').replace('manifest.webmanifest', 'manifest-admin.json')); const m=JSON.parse(fs.readFileSync('dist/manifest.webmanifest','utf8')); m.name='Shaheen Global Traders'; m.short_name='Shaheen POS'; m.start_url='/?mode=admin'; m.id='/?mode=admin'; fs.writeFileSync('dist/manifest-admin.json', JSON.stringify(m));\"",
+    "build": "vite build && node -e \"const fs=require('fs'); fs.writeFileSync('dist/admin.html', fs.readFileSync('dist/index.html', 'utf8').replace('manifest.webmanifest', 'manifest-admin.json')); const m=JSON.parse(fs.readFileSync('dist/manifest.webmanifest','utf8')); m.name='Shaheen Global Traders'; m.short_name='Shaheen POS'; m.start_url='/?mode=admin'; m.id='/?mode=admin'; fs.writeFileSync('dist/manifest-admin.json', JSON.stringify(m));\"",
     "lint": "eslint .",
     "preview": "vite preview",
     "test:e2e": "playwright test",
@@ -87,7 +87,7 @@
     "terser": "^5.48.0",
     "typescript": "~6.0.2",
     "typescript-eslint": "^8.59.2",
-    "vite": "^8.0.12",
+    "vite": "8.0.12",
     "vite-plugin-mkcert": "^2.1.0",
     "vite-plugin-pwa": "^1.3.0",
     "wait-on": "^9.0.10"
