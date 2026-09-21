@@ -789,11 +789,12 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
                  ))}
                </div>
              ) : (
-                 <div className="flex-1 w-full h-[calc(100vh-200px)]">
+                  <div className="flex-1 w-full min-h-0">
                    {filteredProducts.length === 0 ? (
                      <div className="col-span-full text-center py-10 text-slate-400 font-medium">No products found.</div>
                    ) : (
                      <VirtuosoGrid
+                       className="custom-scrollbar"
                        style={{ height: '100%', width: '100%' }}
                        data={filteredProducts}
                        overscan={200}

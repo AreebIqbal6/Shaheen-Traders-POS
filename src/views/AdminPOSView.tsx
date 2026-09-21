@@ -1534,8 +1534,9 @@ export default function AdminPOSView() {
                   </div>
 
                   {/* Filtered Product Grid (Virtualized) */}
-                  <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
+                  <div className="flex-1 min-h-0 p-4">
                     <VirtuosoGrid
+                      className="custom-scrollbar"
                       style={{ height: '100%', width: '100%' }}
                       data={filteredProducts}
                       overscan={200}
