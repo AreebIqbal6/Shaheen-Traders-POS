@@ -124,7 +124,11 @@ export default defineConfig({
   base: '/',
   build: {
     sourcemap: false, // Prevents generating original source code maps
-    rollupOptions: {},
+    rollupOptions: {
+      input: {
+        main: 'index.html'
+      }
+    },
     minify: 'terser',
     chunkSizeWarningLimit: 3000,
     terserOptions: {

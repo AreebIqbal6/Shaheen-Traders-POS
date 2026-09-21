@@ -13,6 +13,7 @@ import B2BCheckout from '../components/B2BCheckout';
 import Skeleton from 'react-loading-skeleton';
 import 'react-loading-skeleton/dist/skeleton.css';
 import { getResponsiveFontSize } from '../utils/textFit';
+import { formatPakistaniPhone } from '../utils/formatPhone';
 import OrderPreviewModal from '../components/OrderPreviewModal';
 import SimpleOrderViewModal from '../components/SimpleOrderViewModal';
 import { Skeleton as SkeletonComponent } from '../components/Skeleton';
@@ -980,8 +981,10 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
                     {localStorage.getItem('shaheen_bookerName') || 'Authenticated User'}
                   </p>
                   <p className="font-semibold text-slate-900 dark:text-slate-50">
-                    {JSON.parse(localStorage.getItem('shaheen_active_booker') || '{}')?.booker_number || 'Connected securely'}
-                    {JSON.parse(localStorage.getItem('shaheen_active_booker') || '{}')?.phone && ` • ${JSON.parse(localStorage.getItem('shaheen_active_booker') || '{}').phone}`}
+                    <div className="text-[10px] md:text-xs text-blue-200 mt-0.5 truncate whitespace-nowrap">
+                      ID: {JSON.parse(localStorage.getItem('shaheen_active_booker') || '{}')?.username || 'N/A'}
+                      {JSON.parse(localStorage.getItem('shaheen_active_booker') || '{}')?.phone && ` • ${formatPakistaniPhone(JSON.parse(localStorage.getItem('shaheen_active_booker') || '{}').phone)}`}
+                    </div>
                   </p>
                 </div>
               </div>
