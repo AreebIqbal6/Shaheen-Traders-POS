@@ -7,11 +7,28 @@ import ErrorBoundary from './components/ErrorBoundary.tsx'
 import { registerSW } from 'virtual:pwa-register'
 import toast from 'react-hot-toast';
 
-// Register PWA service worker with auto-update
+// Register PWA service worker with manual prompt
 const updateSW = registerSW({
   immediate: true,
   onNeedRefresh() {
-    updateSW(true);
+    toast(
+      (t) => (
+        <div 
+          onClick={() => updateSW(true)} 
+          style={{ cursor: 'pointer', fontWeight: 'bold' }}
+        >
+          🚀 New update available! Click here to reload.
+        </div>
+      ),
+      {
+        duration: Infinity,
+        position: 'top-center',
+        style: {
+          background: '#3b82f6',
+          color: '#fff',
+        }
+      }
+    );
   },
   onOfflineReady() {
     console.log("App ready to work offline");
