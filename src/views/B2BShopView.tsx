@@ -736,10 +736,10 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
           </div>
         </div>
 
-      {/* Main Content Area */}
-      <div className="flex-1 pb-32 overflow-y-auto w-full">
+      {/* Main Content Area - NO overflow-y-auto when shop tab is active (VirtuosoGrid handles its own scroll) */}
+      <div className={`flex-1 w-full ${activeTab === 'shop' ? 'min-h-0 flex flex-col pb-20' : 'pb-32 overflow-y-auto'}`}>
         {activeTab === 'shop' && (
-          <div className="p-4 md:p-8 w-full max-w-[1400px] mx-auto">
+          <div className="p-4 md:p-8 w-full max-w-[1400px] mx-auto flex-1 min-h-0 flex flex-col">
              {/* Search Bar & Filters */}
              <div className="flex flex-col md:flex-row gap-4 mb-6">
                <div className="flex items-center bg-white dark:bg-zinc-900/60 backdrop-blur-md border border-slate-200 dark:border-zinc-800/50 rounded-lg px-4 py-2.5 shadow-sm focus-within:border-blue-500 transition-all flex-1">
@@ -789,7 +789,7 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
                  ))}
                </div>
              ) : (
-                  <div className="w-full" style={{ height: 'calc(100dvh - 280px)' }}>
+                  <div className="flex-1 min-h-0 w-full">
                    {filteredProducts.length === 0 ? (
                      <div className="col-span-full text-center py-10 text-slate-400 font-medium">No products found.</div>
                    ) : (
