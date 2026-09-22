@@ -5,7 +5,7 @@ import { safeSupabaseInsert } from '../utils/safeSync';
 import { generateUUID } from '../utils/uuid';
 import { Package, MapPin, User, CreditCard, Send, Building, Phone, ChevronDown, Search } from 'lucide-react';
 import { formatPakistaniPhone } from '../utils/formatPhone';
-import { getResponsiveFontSize } from '../utils/textFit';
+import FitText from './FitText';
 
 interface CartItem {
   id: string;
@@ -394,13 +394,14 @@ export default function B2BCheckout({ cart, total, onSuccess, onBack }: B2BCheck
              <div className="flex flex-col gap-2 mb-3">
                {cart.map(item => (
                  <div key={item.id} className="flex justify-between items-start text-sm">
-                   <div className="flex flex-col pr-4">
-                     <span 
-                       className="text-slate-400 font-medium truncate"
-                       style={{ fontSize: getResponsiveFontSize(item.name, 14) }}
-                     >
-                       {item.quantity} {item.uom || 'Pcs'} {item.name}
-                     </span>
+                    <div className="flex flex-col pr-4 min-w-0 flex-1">
+                      <FitText
+                        as="span"
+                        className="text-slate-400 font-medium"
+                        baseSize={14} minSize={9}
+                      >
+                        {item.quantity} {item.uom || 'Pcs'} {item.name}
+                      </FitText>
                      {item.retail_price != null && (
                        <span className="text-[10px] text-slate-500 font-medium mt-0.5">Retail: Rs {item.retail_price}</span>
                      )}

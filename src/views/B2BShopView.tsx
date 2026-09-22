@@ -12,7 +12,7 @@ import toast from 'react-hot-toast';
 import B2BCheckout from '../components/B2BCheckout';
 import Skeleton from 'react-loading-skeleton';
 import 'react-loading-skeleton/dist/skeleton.css';
-import { getResponsiveFontSize } from '../utils/textFit';
+import FitText from '../components/FitText';
 import { formatPakistaniPhone } from '../utils/formatPhone';
 import OrderPreviewModal from '../components/OrderPreviewModal';
 import SimpleOrderViewModal from '../components/SimpleOrderViewModal';
@@ -32,12 +32,12 @@ const ProductCard = React.memo(({ product, onAdd }: { product: Product, onAdd: (
         className="bg-white dark:bg-zinc-900/60 backdrop-blur-md border border-slate-200 dark:border-zinc-800/50 rounded-sm p-3 flex flex-col justify-between cursor-pointer hover:border-slate-400 dark:hover:border-slate-500 transition-all active:scale-[0.98] group text-left overflow-hidden w-full min-h-[110px]"
       > 
         <div className="w-full min-w-0"> 
-          <h4 
-            className="font-semibold text-slate-800 dark:text-slate-200 leading-tight mb-1 truncate w-full"
-            style={{ fontSize: getResponsiveFontSize(product.name, 14) }}
+          <FitText
+            className="font-semibold text-slate-800 dark:text-slate-200 leading-tight mb-1"
+            baseSize={14} minSize={9}
           >
             {product.name}
-          </h4> 
+          </FitText> 
           <p className="text-xs text-slate-500 dark:text-slate-400 font-mono mb-2 flex items-center gap-1.5 flex-wrap">
           {product.barcode && <span className="break-all">{product.barcode}</span>}
           {product.sku && product.sku !== product.barcode && (
@@ -789,7 +789,7 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
                  ))}
                </div>
              ) : (
-                  <div className="flex-1 w-full min-h-0">
+                  <div className="w-full" style={{ height: 'calc(100dvh - 280px)' }}>
                    {filteredProducts.length === 0 ? (
                      <div className="col-span-full text-center py-10 text-slate-400 font-medium">No products found.</div>
                    ) : (
@@ -828,12 +828,13 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
                    <div key={item.cartId} className="bg-white dark:bg-zinc-900/60 backdrop-blur-md border border-slate-200 dark:border-zinc-800/50 rounded-xl p-3 flex flex-col gap-2 relative">
                      <div className="flex justify-between items-start">
                         <div className="flex-1 pr-2">
-                           <h3 
-                             className="font-semibold text-slate-800 dark:text-slate-200 leading-tight truncate"
-                             style={{ fontSize: getResponsiveFontSize(item.name, 14) }}
+                           <FitText
+                             as="h3"
+                             className="font-semibold text-slate-800 dark:text-slate-200 leading-tight"
+                             baseSize={14} minSize={9}
                            >
                              {item.name}
-                           </h3>
+                           </FitText>
                            {item.barcode && <p className="text-[11px] text-slate-400 font-mono mt-0.5">{item.barcode}</p>}
                         </div>
                         <div className="flex items-start gap-2 shrink-0">

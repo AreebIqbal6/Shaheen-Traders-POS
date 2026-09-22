@@ -39,7 +39,7 @@ import { safeSupabaseUpdate } from '../utils/safeSync';
 import { CloudUpload } from 'lucide-react';
 import { generateSKU } from './ProductsView';
 import { formatPakistaniPhone } from '../utils/formatPhone';
-import { getResponsiveFontSize } from '../utils/textFit';
+import FitText from '../components/FitText';
 
 
 
@@ -1553,12 +1553,12 @@ export default function AdminPOSView() {
                           className="bg-white dark:bg-zinc-900/60 backdrop-blur-md border border-slate-200 dark:border-zinc-800/50 rounded-sm p-3 sm:p-3.5 hover:border-slate-400 transition-all text-left w-full flex flex-row items-center justify-between gap-3 shadow-sm overflow-hidden"
                         >
                           <div className="flex flex-col items-start min-w-0 flex-1">
-                            <h4 
-                              className="font-bold text-slate-800 dark:text-slate-200 leading-tight mb-1 truncate w-full"
-                              style={{ fontSize: getResponsiveFontSize(p.name, 14) }}
+                            <FitText
+                              className="font-bold text-slate-800 dark:text-slate-200 leading-tight mb-1"
+                              baseSize={14} minSize={9}
                             >
                               {p.name}
-                            </h4>
+                            </FitText>
                             <p className="text-[11px] text-slate-500 dark:text-slate-400 font-mono flex items-center gap-1.5 flex-wrap">
                               <span>{p.barcode}</span>
                               {p.sku && p.sku !== p.barcode && (
@@ -1643,12 +1643,13 @@ export default function AdminPOSView() {
                           <div className="flex items-center gap-2">
                               <span className="text-slate-400 font-semibold text-xs w-4 shrink-0">{idx + 1}</span>
                               <div className="flex-1 min-w-0">
-                                <p 
-                                  className="font-semibold text-slate-800 dark:text-slate-200 leading-tight truncate"
-                                  style={{ fontSize: getResponsiveFontSize(item.name, 13) }}
+                                <FitText
+                                  as="p"
+                                  className="font-semibold text-slate-800 dark:text-slate-200 leading-tight"
+                                  baseSize={13} minSize={9}
                                 >
                                   {item.name}
-                                </p>
+                                </FitText>
                                 {item.barcode && <p className="text-[11px] text-slate-400 font-mono mt-0.5 truncate">{item.barcode}</p>}
                               </div>
                               <button 

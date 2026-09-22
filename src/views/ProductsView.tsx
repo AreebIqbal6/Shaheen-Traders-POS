@@ -7,7 +7,7 @@ import * as XLSX from 'xlsx';
 import { fetchAllProducts } from '../utils/fetchAllProducts';
 import { supabase } from '../lib/supabase';
 import { safeSupabaseInsert, safeSupabaseUpdate } from '../utils/safeSync';
-import { getResponsiveFontSize } from '../utils/textFit';
+import FitText from '../components/FitText';
 import { generateUUID } from '../utils/uuid';
 import { useDebounce } from '../hooks/useDebounce';
 
@@ -785,12 +785,13 @@ export default function ProductsView({ products = [], setProducts }: ProductsVie
                     <div key={product.id || index} className="p-4 flex flex-col gap-2 hover:bg-[rgba(255,255,255,0.03)] transition-colors border-b border-slate-200 dark:border-slate-700">
                        <div className="flex justify-between items-start gap-2">
                              <div className="flex flex-col min-w-0 flex-1">
-                               <h3 
-                                 className="font-semibold text-slate-900 dark:text-white leading-tight truncate"
-                                 style={{ fontSize: getResponsiveFontSize(product.name, 14) }}
+                               <FitText
+                                 as="h3"
+                                 className="font-semibold text-slate-900 dark:text-white leading-tight"
+                                 baseSize={14} minSize={9}
                                >
                                  {product.name}
-                               </h3>
+                               </FitText>
                                <div className="flex items-center gap-2 mt-1 truncate">
                                <span className="font-mono text-slate-600 dark:text-slate-400 text-xs truncate">{product.barcode}</span>
                                <span className="font-mono font-bold text-slate-900 dark:text-slate-50 text-[10px] bg-white dark:bg-zinc-900/60 backdrop-blur-md border border-slate-200 dark:border-zinc-800/50 px-1.5 py-0.5 rounded-sm shrink-0">{product.sku || '-'}</span>
