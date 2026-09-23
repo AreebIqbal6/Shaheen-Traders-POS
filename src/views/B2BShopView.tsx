@@ -78,19 +78,39 @@ const ProductCard = React.memo(({ product, onAdd }: { product: Product, onAdd: (
 });
 
 const UomSelector = ({ item, currentProduct, updateCartUom }: { item: CartItem, currentProduct: any, updateCartUom: (id: string, uom: string) => void }) => {
+  const [isOpen, setIsOpen] = useState(false);
   const pcsPerBox = item.pcsPerBox || currentProduct?.pcsPerBox;
   const boxPerCtn = item.boxPerCtn || currentProduct?.boxPerCtn;
   
+  const options = ['Pcs'];
+  if (pcsPerBox) options.push('Box');
+  if (pcsPerBox && boxPerCtn) options.push('Ctn');
+
   return (
-    <select
-      value={item.uom || 'Pcs'}
-      onChange={(e) => updateCartUom(item.cartId, e.target.value)}
-      className="bg-transparent text-[11px] font-semibold text-slate-700 dark:text-slate-300 ml-2 mr-1 pr-1 cursor-pointer select-none outline-none focus:outline-none"
-    >
-      <option value="Pcs">Pcs</option>
-      {pcsPerBox && <option value="Box">Box</option>}
-      {pcsPerBox && boxPerCtn && <option value="Ctn">Ctn</option>}
-    </select>
+    <div className="relative">
+      <div 
+        onClick={() => setIsOpen(!isOpen)}
+        className="flex items-center gap-1 bg-transparent text-[11px] font-semibold text-slate-700 dark:text-slate-300 ml-2 mr-1 pr-1 cursor-pointer select-none border-b border-transparent hover:border-slate-300 dark:hover:border-zinc-600 transition-colors"
+      >
+        {item.uom || 'Pcs'} <span className="text-[8px] opacity-70">▼</span>
+      </div>
+      {isOpen && (
+        <>
+          <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)}></div>
+          <div className="absolute bottom-full left-0 mb-1 bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded shadow-lg z-50 overflow-hidden flex flex-col min-w-[60px] animate-pop origin-bottom-left">
+            {options.map(opt => (
+              <div 
+                key={opt} 
+                onClick={() => { updateCartUom(item.cartId, opt as any); setIsOpen(false); }}
+                className={`px-3 py-2 text-[12px] font-semibold cursor-pointer ${item.uom === opt ? 'bg-blue-600 text-white' : 'hover:bg-slate-100 dark:hover:bg-zinc-700 text-slate-800 dark:text-slate-200'}`}
+              >
+                {opt}
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
   );
 };
 
