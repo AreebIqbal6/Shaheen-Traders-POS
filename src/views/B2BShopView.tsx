@@ -811,11 +811,42 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
 
         {activeTab === 'cart' && (
           <div className="p-4 md:p-8 flex flex-col w-full max-w-4xl mx-auto">
-             <div className="flex items-center gap-3 mb-4 shrink-0">
-               <button onClick={() => setActiveTab('shop')} className="text-slate-500 hover:text-slate-900 dark:hover:text-slate-50 transition-colors p-1 bg-white dark:bg-zinc-900/60 backdrop-blur-md rounded shadow-sm border border-slate-200 dark:border-zinc-800/50">
-                 <ArrowRight size={20} className="rotate-180" />
-               </button>
-               <h2 className="text-xl font-bold text-slate-900 dark:text-slate-50 tracking-tight">Your Cart</h2>
+             <div className="flex items-center justify-between mb-4 shrink-0 w-full">
+               <div className="flex items-center gap-3">
+                 <button onClick={() => setActiveTab('shop')} className="text-slate-500 hover:text-slate-900 dark:hover:text-slate-50 transition-colors p-1 bg-white dark:bg-zinc-900/60 backdrop-blur-md rounded shadow-sm border border-slate-200 dark:border-zinc-800/50">
+                   <ArrowRight size={20} className="rotate-180" />
+                 </button>
+                 <h2 className="text-xl font-bold text-slate-900 dark:text-slate-50 tracking-tight">Your Cart</h2>
+               </div>
+               
+               {cart.length > 0 && (
+                 <button 
+                   onClick={() => {
+                     toast((t) => (
+                       <div className="flex flex-col gap-3">
+                         <span className="font-semibold text-slate-900 dark:text-slate-50">Do you want to clear the cart?</span>
+                         <div className="flex justify-end gap-3 mt-1">
+                           <button onClick={() => toast.dismiss(t.id)} className="px-3 py-1.5 text-sm font-medium text-slate-500 hover:text-slate-700 dark:hover:text-slate-300">
+                             Cancel
+                           </button>
+                           <button 
+                             onClick={() => {
+                               setCart([]);
+                               toast.dismiss(t.id);
+                             }} 
+                             className="px-3 py-1.5 text-sm font-bold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300"
+                           >
+                             Yes, sure
+                           </button>
+                         </div>
+                       </div>
+                     ), { duration: Infinity });
+                   }}
+                   className="text-xs font-bold text-red-500 bg-red-50 hover:bg-red-100 dark:bg-red-500/10 dark:hover:bg-red-500/20 px-3 py-1.5 rounded-md transition-colors flex items-center gap-1.5"
+                 >
+                   <Trash2 size={14} /> Clear
+                 </button>
+               )}
              </div>
              {cart.length === 0 ? (
                <div className="flex-1 flex flex-col items-center justify-center text-slate-500 pb-20 mt-20">
@@ -1123,7 +1154,7 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
             </div>
 
              <div className="mt-4 text-center">
-               <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 tracking-wider">Powered by Areeb Iqbal • v{packageJson.version}</p>
+               <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 tracking-wider">Powered by <a href="https://www.linkedin.com/in/areeb-iqbal-63b444247/" target="_blank" rel="noopener noreferrer" className="hover:underline text-blue-500 hover:text-blue-600 transition-colors">Areeb Iqbal</a> • v{packageJson.version}</p>
              </div>
           </div>
         )}

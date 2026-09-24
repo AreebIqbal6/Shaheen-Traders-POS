@@ -166,7 +166,7 @@ export const exportReceiptToExcel = async (data: ReceiptData) => {
   sheet.getCell(`A${currentRow}`).alignment = { horizontal: 'center' };
 
   const footerSign = sheet.getCell(`E${currentRow}`);
-  footerSign.value = 'Software by Areeb Iqbal';
+  footerSign.value = { text: 'Software by Areeb Iqbal', hyperlink: 'https://www.linkedin.com/in/areeb-iqbal-63b444247/' };
   sheet.mergeCells(`E${currentRow}:G${currentRow}`);
   footerSign.alignment = { horizontal: 'right' };
 

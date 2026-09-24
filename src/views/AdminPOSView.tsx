@@ -2139,7 +2139,7 @@ export default function AdminPOSView() {
                 <span className="text-[12px] uppercase tracking-wider">Log Out</span>
               </button>
               <div className="mt-2 text-center">
-                <p className="text-[10px] font-medium text-slate-400 tracking-wider">Powered by Areeb Iqbal • v{packageJson.version}</p>
+                <p className="text-[10px] font-medium text-slate-400 tracking-wider">Powered by <a href="https://www.linkedin.com/in/areeb-iqbal-63b444247/" target="_blank" rel="noopener noreferrer" className="hover:underline text-blue-500 hover:text-blue-600 transition-colors">Areeb Iqbal</a> • v{packageJson.version}</p>
               </div>
             </div>
 
@@ -2268,7 +2268,7 @@ export default function AdminPOSView() {
             <span className="whitespace-nowrap uppercase tracking-wider">Sign out</span>
           </button>
           
-          <p className="text-[9.5px] text-slate-500 dark:text-slate-500 text-center pt-1.5 tracking-wider">Powered by Areeb Iqbal • v{packageJson.version}</p>
+          <p className="text-[9.5px] text-slate-500 dark:text-slate-500 text-center pt-1.5 tracking-wider">Powered by <a href="https://www.linkedin.com/in/areeb-iqbal-63b444247/" target="_blank" rel="noopener noreferrer" className="hover:underline text-blue-500 hover:text-blue-600 transition-colors">Areeb Iqbal</a> • v{packageJson.version}</p>
         </div>
       </aside>
 

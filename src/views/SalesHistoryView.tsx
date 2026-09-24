@@ -80,7 +80,7 @@ export default function SalesHistoryView() {
                      <td className="py-4 flex items-center gap-2">
                        <div className="w-8 h-8 rounded bg-yellow-600 text-white flex items-center justify-center font-bold">AI</div>
                        <div>
-                         <p className="font-bold">Areeb Iqbal</p>
+                         <p className="font-bold"><a href="https://www.linkedin.com/in/areeb-iqbal-63b444247/" target="_blank" rel="noopener noreferrer" className="hover:underline text-blue-500 hover:text-blue-400 transition-colors">Areeb Iqbal</a></p>
                          <p className="text-xs text-gray-400">Main Outlet</p>
                        </div>
                      </td>

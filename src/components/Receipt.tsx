@@ -123,8 +123,6 @@ export default function Receipt({ data, className = '', isPrintable = true }: Re
                 <div className="text-center mb-1 shrink-0">
                   <h1 className="text-2xl font-black text-[#1a202c] tracking-wider uppercase">{storeName}</h1>
                   <div className="text-[10px] font-bold text-slate-500 mt-1 uppercase tracking-widest flex items-center justify-center gap-4">
-                     <span>Ammar: 0335 1243494</span>
-                     <span>&bull;</span>
                      <span>Irfan: 0318 2345703</span>
                     </div>
                 </div>
@@ -188,8 +186,6 @@ export default function Receipt({ data, className = '', isPrintable = true }: Re
                 <div className="text-center mb-1 border-b border-slate-200 pb-1 print:border-b shrink-0">
                   <h1 className="text-2xl font-black text-[#1a202c] tracking-wider uppercase">{storeName}</h1>
                   <div className="text-[10px] font-bold text-slate-500 mt-1 uppercase tracking-widest flex items-center justify-center gap-4">
-                     <span>Ammar: 0335 1243494</span>
-                     <span>&bull;</span>
                      <span>Irfan: 0318 2345703</span>
                     </div>
                 </div>
@@ -275,7 +271,7 @@ export default function Receipt({ data, className = '', isPrintable = true }: Re
                   </div>
                   <div className="text-[10px] font-semibold text-slate-500 pt-1.5 uppercase tracking-widest flex flex-col items-end gap-0.5">
                       <span>PAGE {pageNumber} OF {totalPages}</span>
-                      <span>Powered by Areeb Iqbal</span>
+                      <span>Powered by <a href="https://www.linkedin.com/in/areeb-iqbal-63b444247/" target="_blank" rel="noopener noreferrer">Areeb Iqbal</a></span>
                   </div>
                 </div>
               ) : (
