@@ -717,6 +717,76 @@ export default function SettingsView() {
           </button>
         </div>
 
+        {/* Data Tools */}
+        <div className="mt-8 pt-6 border-t border-slate-200 dark:border-zinc-800/50">
+          <h3 className="text-[13px] font-bold text-slate-900 dark:text-slate-50 mb-2">
+            Data Tools
+          </h3>
+          <div className="bg-white dark:bg-[#1a1a1a] border border-slate-200 dark:border-zinc-800 rounded-sm p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm">
+            <div>
+              <h4 className="text-[13px] font-semibold text-slate-900 dark:text-slate-100">Fix & Resequence SKUs</h4>
+              <p className="text-[11px] text-slate-500 mt-1">Automatically resolves missing gaps in SKUs if products were deleted improperly. Ensures Total Products matches highest SKU exactly.</p>
+            </div>
+            
+            <button
+              onClick={async () => {
+                if (!navigator.onLine) {
+                  toast.error("You must be online to fix SKUs.");
+                  return;
+                }
+                const tid = toast.loading("Fetching all products...");
+                try {
+                  const { fetchAllProducts } = await import('../utils/fetchAllProducts');
+                  const { supabase } = await import('../lib/supabase');
+                  const allProducts = await fetchAllProducts();
+                  
+                  toast.loading(`Analyzing ${allProducts.length} products...`, { id: tid });
+                  
+                  allProducts.sort((a: any, b: any) => {
+                    const numA = parseInt(a.sku || '0', 10);
+                    const numB = parseInt(b.sku || '0', 10);
+                    if (numA === numB) return a.id.localeCompare(b.id);
+                    return numA - numB;
+                  });
+
+                  const changedSkus: { id: string, newSku: string }[] = [];
+                  allProducts.forEach((p: any, idx: number) => {
+                    const expected = (idx + 1).toString().padStart(4, '0');
+                    if (p.sku !== expected) {
+                      changedSkus.push({ id: p.id, newSku: expected });
+                    }
+                  });
+
+                  if (changedSkus.length === 0) {
+                    toast.success("SKUs are already perfectly sequenced!", { id: tid });
+                    return;
+                  }
+
+                  toast.loading(`Updating ${changedSkus.length} SKUs...`, { id: tid });
+                  
+                  for (let i = 0; i < changedSkus.length; i += 50) {
+                    const chunk = changedSkus.slice(i, i + 50);
+                    await Promise.allSettled(
+                      chunk.map(update => 
+                        supabase.from('products').update({ sku: update.newSku }).eq('id', update.id)
+                      )
+                    );
+                  }
+                  
+                  localStorage.removeItem('shaheen_products'); // force reload
+                  toast.success(`Successfully resequenced ${changedSkus.length} SKUs! Restart app to see changes.`, { id: tid, duration: 8000 });
+                } catch (err: any) {
+                  console.error(err);
+                  toast.error("Failed to resequence SKUs: " + err.message, { id: tid });
+                }
+              }}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-sm font-bold text-[12px] shadow-sm transition-colors whitespace-nowrap shrink-0"
+            >
+              Resequence SKUs
+            </button>
+          </div>
+        </div>
+
         {/* Danger Zone */}
         <div className="mt-8 pt-6 border-t border-red-200 dark:border-red-900/30">
           <h3 className="text-[13px] font-bold text-red-600 mb-2 flex items-center gap-2">
