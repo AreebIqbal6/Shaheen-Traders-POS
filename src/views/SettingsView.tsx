@@ -764,6 +764,17 @@ export default function SettingsView() {
 
                   toast.loading(`Updating ${changedSkus.length} SKUs...`, { id: tid });
                   
+                  // 1. Rename to TEMP to avoid unique constraints
+                  for (let i = 0; i < changedSkus.length; i += 50) {
+                    const chunk = changedSkus.slice(i, i + 50);
+                    await Promise.allSettled(
+                      chunk.map(update => 
+                        supabase.from('products').update({ sku: update.newSku + '-TEMP' }).eq('id', update.id)
+                      )
+                    );
+                  }
+
+                  // 2. Rename to final SKUs
                   for (let i = 0; i < changedSkus.length; i += 50) {
                     const chunk = changedSkus.slice(i, i + 50);
                     await Promise.allSettled(
