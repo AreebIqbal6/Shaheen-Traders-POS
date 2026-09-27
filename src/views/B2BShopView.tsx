@@ -1154,7 +1154,7 @@ export default function B2BShopView({ isImpersonating = false }: B2BShopViewProp
             </div>
 
              <div className="mt-4 text-center">
-               <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 tracking-wider">Powered by <a href="https://www.linkedin.com/in/areeb-iqbal-63b444247/" target="_blank" rel="noopener noreferrer" className="hover:underline text-blue-500 hover:text-blue-600 transition-colors">Areeb Iqbal</a> • v{packageJson.version}</p>
+               <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 tracking-wider">Powered by <a href="https://www.linkedin.com/in/areeb-iqbal-63b444247/" onClick={(e) => { if (window.__TAURI_INTERNALS__) { e.preventDefault(); import("@tauri-apps/plugin-shell").then(m => m.open("https://www.linkedin.com/in/areeb-iqbal-63b444247/")).catch(console.error); } }} target="_blank" rel="noopener noreferrer" className="hover:underline text-blue-500 hover:text-blue-600 transition-colors">Areeb Iqbal</a> • v{packageJson.version}</p>
              </div>
           </div>
         )}

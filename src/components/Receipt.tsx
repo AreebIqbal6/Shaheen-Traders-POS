@@ -271,7 +271,7 @@ export default function Receipt({ data, className = '', isPrintable = true }: Re
                   </div>
                   <div className="text-[10px] font-semibold text-slate-500 pt-1.5 uppercase tracking-widest flex flex-col items-end gap-0.5">
                       <span>PAGE {pageNumber} OF {totalPages}</span>
-                      <span>Powered by <a href="https://www.linkedin.com/in/areeb-iqbal-63b444247/" target="_blank" rel="noopener noreferrer">Areeb Iqbal</a></span>
+                      <span>Powered by <a href="https://www.linkedin.com/in/areeb-iqbal-63b444247/" onClick={(e) => { if (window.__TAURI_INTERNALS__) { e.preventDefault(); import("@tauri-apps/plugin-shell").then(m => m.open("https://www.linkedin.com/in/areeb-iqbal-63b444247/")).catch(console.error); } }} target="_blank" rel="noopener noreferrer">Areeb Iqbal</a></span>
                   </div>
                 </div>
               ) : (
