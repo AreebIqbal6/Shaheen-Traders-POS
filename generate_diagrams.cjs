@@ -99,7 +99,7 @@ fs.writeFileSync('diagrams.html', htmlContent);
     executablePath: 'C:\\Users\\ESHOP\\.cache\\puppeteer\\chrome\\win64-152.0.7977.54\\chrome-win64\\chrome.exe',
     defaultViewport: { width: 1200, height: 2000 }
   });
-  const page = await browser.newPage();
+  const page = await browser.newPage(); page.on('console', msg => console.log('PAGE LOG:', msg.text()));
   await page.goto('file://' + __dirname + '/diagrams.html', { waitUntil: 'networkidle0' });
   
   // Wait a bit extra for mermaid to render
