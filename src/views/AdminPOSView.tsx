@@ -8,6 +8,7 @@ import { fetchAllProducts } from '../utils/fetchAllProducts';
 import { safeSupabaseUpsert, safeSupabaseInsert } from '../utils/safeSync';
 import { generateUUID } from '../utils/uuid';
 import { useDebounce } from '../hooks/useDebounce';
+import { usePageTitle } from '../hooks/usePageTitle';
 
 const ProductsView = lazy(() => import('./ProductsView'));
 import type { Product } from './ProductsView';
@@ -125,7 +126,8 @@ export default function AdminPOSView() {
   });
   const [activeOrdersTab, setActiveOrdersTab] = useState<'incoming' | 'cancelled'>('incoming');
   
-  const setActiveMenu = (menu: string) => {
+  usePageTitle(activeMenu);
+    const setActiveMenu = (menu: string) => {
     setActiveMenuState(menu);
     localStorage.setItem('shaheen_admin_activeMenu', menu);
     window.history.pushState({ menu }, '', `#${menu.replace(/\s+/g, '')}`);
