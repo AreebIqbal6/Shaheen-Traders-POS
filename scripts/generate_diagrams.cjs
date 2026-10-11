@@ -477,20 +477,41 @@ const generateERDDiagram = () => {
   });
 
   svg += `
+    <!-- USERS 1 -> N ORDERS -->
     <path d="M 320 200 L 420 340" fill="none" stroke="#475569" stroke-width="2" marker-end="url(#arrow)"/>
-    <text x="360" y="260" font-size="10" font-weight="bold" fill="#1E293B">1:N</text>
+    <text x="360" y="260" font-size="10" font-weight="bold" fill="#1E293B">1:N (booker_id)</text>
 
+    <!-- USERS 1 -> N BOOKER_LOCATIONS -->
     <path d="M 190 280 L 190 340" fill="none" stroke="#0284C7" stroke-width="2" marker-end="url(#arrow)"/>
-    <text x="200" y="310" font-size="10" font-weight="bold" fill="#0284C7">1:N</text>
+    <text x="200" y="310" font-size="10" font-weight="bold" fill="#0284C7">1:N (booker_id)</text>
 
+    <!-- AREAS 1 -> N SHOPS -->
+    <path d="M 190 810 L 190 765" fill="none" stroke="#7C3AED" stroke-width="2" marker-end="url(#arrow)"/>
+    <text x="200" y="790" font-size="10" font-weight="bold" fill="#7C3AED">1:N (area_id)</text>
+
+    <!-- SHOPS 1 -> N ORDERS -->
     <path d="M 320 630 L 420 460" fill="none" stroke="#7C3AED" stroke-width="2" marker-end="url(#arrow)"/>
-    <text x="350" y="540" font-size="10" font-weight="bold" fill="#7C3AED">1:N</text>
+    <text x="350" y="540" font-size="10" font-weight="bold" fill="#7C3AED">1:N (shop_id)</text>
 
+    <!-- ORDERS 1 -> N ORDER_ITEMS -->
     <path d="M 700 390 L 770 390" fill="none" stroke="#D97706" stroke-width="2" marker-end="url(#arrowAmber)"/>
-    <text x="725" y="380" font-size="10" font-weight="bold" fill="#B45309">1:N</text>
+    <text x="725" y="380" font-size="10" font-weight="bold" fill="#B45309">1:N (order_id)</text>
 
+    <!-- PRODUCTS 1 -> N ORDER_ITEMS -->
     <path d="M 1090 390 L 1040 390" fill="none" stroke="#059669" stroke-width="2" marker-end="url(#arrow)"/>
-    <text x="1055" y="380" font-size="10" font-weight="bold" fill="#047857">1:N</text>
+    <text x="1055" y="380" font-size="10" font-weight="bold" fill="#047857">1:N (product_id)</text>
+
+    <!-- CATEGORIES 1 -> N PRODUCTS -->
+    <path d="M 1220 235 L 1220 300" fill="none" stroke="#059669" stroke-width="2" marker-end="url(#arrow)"/>
+    <text x="1230" y="270" font-size="10" font-weight="bold" fill="#047857">1:N (category_id)</text>
+
+    <!-- USERS 1 -> N EXPENSES -->
+    <path d="M 320 250 C 380 260, 420 680, 430 720" fill="none" stroke="#DC2626" stroke-width="2" marker-end="url(#arrow)"/>
+    <text x="365" y="700" font-size="10" font-weight="bold" fill="#DC2626">1:N (recorded_by)</text>
+
+    <!-- PRODUCTS 1 -> N OUR_ORDERS -->
+    <path d="M 1150 510 C 1140 640, 1070 750, 1040 770" fill="none" stroke="#0284C7" stroke-width="2" marker-end="url(#arrow)"/>
+    <text x="1075" y="670" font-size="10" font-weight="bold" fill="#0284C7">1:N (product_id)</text>
   `;
 
   svg += `</svg>`;
@@ -512,18 +533,18 @@ const generateSemanticNet = () => {
   `;
 
   const nodes = [
-    { id: 'SYS', label: 'Shaheen POS System', sub: 'Root Enterprise Entity', cx: 630, cy: 150, rx: 110, ry: 40, fill: '#FEF3C7', stroke: '#D97706' },
-    { id: 'USER', label: 'System User', sub: 'Authenticated Employee', cx: 240, cy: 260, rx: 90, ry: 35, fill: '#EFF6FF', stroke: '#3B82F6' },
-    { id: 'ADMIN', label: 'Store Administrator', sub: 'Role: Admin / Superuser', cx: 100, cy: 420, rx: 80, ry: 32, fill: '#EFF6FF', stroke: '#1E40AF' },
-    { id: 'BOOKER', label: 'Field Sales Booker', sub: 'Role: Mobile Agent', cx: 280, cy: 420, rx: 85, ry: 32, fill: '#EFF6FF', stroke: '#2563EB' },
-    { id: 'SHOP', label: 'Commercial Shop', sub: 'B2B Client Account', cx: 630, cy: 370, rx: 95, ry: 35, fill: '#FAF5FF', stroke: '#7C3AED' },
-    { id: 'GPS', label: 'GPS Coordinates', sub: 'Booker Route Tracking', cx: 1050, cy: 260, rx: 95, ry: 35, fill: '#EFF6FF', stroke: '#0284C7' },
-    { id: 'ORDER', label: 'Sales Order', sub: 'Transaction Document', cx: 630, cy: 550, rx: 100, ry: 38, fill: '#FEF3C7', stroke: '#B45309' },
-    { id: 'PROD', label: 'Catalog Product', sub: 'FMCG Wholesale SKU', cx: 1050, cy: 460, rx: 90, ry: 35, fill: '#F0FDF4', stroke: '#059669' },
-    { id: 'STOCK', label: 'Inventory Stock', sub: 'Physical Warehouse Qty', cx: 1050, cy: 660, rx: 90, ry: 35, fill: '#F0FDF4', stroke: '#047857' },
-    { id: 'DEBT', label: 'Receivable Balance', sub: 'Shop Credit Ledger', cx: 340, cy: 680, rx: 90, ry: 35, fill: '#FFF1F2', stroke: '#E11D48' },
-    { id: 'AUTOMAKE', label: 'Automake Action', sub: 'Instant POS Pre-Fill', cx: 630, cy: 750, rx: 85, ry: 32, fill: '#FEF3C7', stroke: '#D97706' },
-    { id: 'RECEIPT', label: 'ESC/POS Receipt', sub: 'Thermal Print Document', cx: 900, cy: 780, rx: 85, ry: 32, fill: '#F8FAFC', stroke: '#475569' },
+    { id: 'SYS', label: 'Shaheen POS System', sub: 'Root Enterprise Platform', cx: 630, cy: 120, rx: 115, ry: 38, fill: '#FEF3C7', stroke: '#D97706' },
+    { id: 'USER', label: 'System User', sub: 'Authenticated Employee', cx: 240, cy: 220, rx: 90, ry: 35, fill: '#EFF6FF', stroke: '#3B82F6' },
+    { id: 'ADMIN', label: 'Store Administrator', sub: 'Role: Admin / Superuser', cx: 100, cy: 370, rx: 80, ry: 32, fill: '#EFF6FF', stroke: '#1E40AF' },
+    { id: 'BOOKER', label: 'Field Sales Booker', sub: 'Role: Mobile Agent', cx: 280, cy: 370, rx: 85, ry: 32, fill: '#EFF6FF', stroke: '#2563EB' },
+    { id: 'GPS', label: 'GPS Coordinates', sub: 'Field Telemetry Ping', cx: 110, cy: 550, rx: 90, ry: 34, fill: '#EFF6FF', stroke: '#0284C7' },
+    { id: 'SHOP', label: 'Commercial Shop', sub: 'B2B Client Account', cx: 580, cy: 360, rx: 95, ry: 35, fill: '#FAF5FF', stroke: '#7C3AED' },
+    { id: 'ORDER', label: 'Sales Order', sub: 'Transaction Document', cx: 580, cy: 530, rx: 100, ry: 38, fill: '#FEF3C7', stroke: '#B45309' },
+    { id: 'AUTOMAKE', label: 'Automake Action', sub: 'Instant POS Pre-Fill', cx: 580, cy: 730, rx: 85, ry: 32, fill: '#FEF3C7', stroke: '#D97706' },
+    { id: 'RECEIPT', label: 'ESC/POS Receipt', sub: 'Thermal Print Document', cx: 860, cy: 730, rx: 85, ry: 32, fill: '#F8FAFC', stroke: '#475569' },
+    { id: 'DEBT', label: 'Receivable Balance', sub: 'Shop Credit Ledger', cx: 340, cy: 700, rx: 90, ry: 35, fill: '#FFF1F2', stroke: '#E11D48' },
+    { id: 'PROD', label: 'Catalog Product', sub: 'FMCG Wholesale SKU', cx: 1000, cy: 400, rx: 90, ry: 35, fill: '#F0FDF4', stroke: '#059669' },
+    { id: 'STOCK', label: 'Inventory Stock', sub: 'Warehouse Physical Qty', cx: 1000, cy: 600, rx: 90, ry: 35, fill: '#F0FDF4', stroke: '#047857' },
   ];
 
   nodes.forEach(n => {
@@ -537,18 +558,19 @@ const generateSemanticNet = () => {
   });
 
   const links = [
-    { from: 'ADMIN', to: 'USER', label: 'is-a', x: 170, y: 340 },
-    { from: 'BOOKER', to: 'USER', label: 'is-a', x: 260, y: 340 },
-    { from: 'SYS', to: 'USER', label: 'authenticates', x: 420, y: 190 },
-    { from: 'BOOKER', to: 'GPS', label: 'transmits-ping', x: 840, y: 190 },
-    { from: 'BOOKER', to: 'ORDER', label: 'books-for', x: 400, y: 500 },
-    { from: 'SHOP', to: 'ORDER', label: 'places', x: 640, y: 460 },
-    { from: 'ORDER', to: 'PROD', label: 'contains', x: 840, y: 510 },
-    { from: 'ORDER', to: 'STOCK', label: 'decrements', x: 860, y: 610 },
-    { from: 'ORDER', to: 'AUTOMAKE', label: 'triggers', x: 640, y: 660 },
-    { from: 'AUTOMAKE', to: 'RECEIPT', label: 'dispatches-print', x: 780, y: 760 },
-    { from: 'SHOP', to: 'DEBT', label: 'owes (credit)', x: 460, y: 550 },
-    { from: 'ORDER', to: 'DEBT', label: 'increments', x: 480, y: 625 },
+    { from: 'ADMIN', to: 'USER', label: 'is-a', x: 165, y: 295 },
+    { from: 'BOOKER', to: 'USER', label: 'is-a', x: 265, y: 295 },
+    { from: 'SYS', to: 'USER', label: 'authenticates', x: 420, y: 165 },
+    { from: 'BOOKER', to: 'GPS', label: 'transmits-ping', x: 180, y: 470 },
+    { from: 'BOOKER', to: 'ORDER', label: 'books-for', x: 410, y: 460 },
+    { from: 'SHOP', to: 'ORDER', label: 'places', x: 590, y: 445 },
+    { from: 'ORDER', to: 'PROD', label: 'contains', x: 810, y: 460 },
+    { from: 'PROD', to: 'STOCK', label: 'tracks-via', x: 1010, y: 500 },
+    { from: 'ORDER', to: 'STOCK', label: 'decrements', x: 810, y: 575 },
+    { from: 'ORDER', to: 'AUTOMAKE', label: 'triggers', x: 590, y: 640 },
+    { from: 'AUTOMAKE', to: 'RECEIPT', label: 'dispatches-print', x: 720, y: 730 },
+    { from: 'SHOP', to: 'DEBT', label: 'owes (credit)', x: 445, y: 580 },
+    { from: 'ORDER', to: 'DEBT', label: 'increments', x: 450, y: 650 },
   ];
 
   links.forEach(l => {
@@ -556,7 +578,7 @@ const generateSemanticNet = () => {
     const tNode = nodes.find(n => n.id === l.to);
     svg += `
       <line x1="${fNode.cx}" y1="${fNode.cy}" x2="${tNode.cx}" y2="${tNode.cy}" stroke="#64748B" stroke-width="1.8" stroke-dasharray="${l.label.includes('is-a') ? '4,4' : '0'}" marker-end="url(#arrow)"/>
-      <rect x="${l.x - 45}" y="${l.y - 10}" width="90" height="20" rx="4" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1"/>
+      <rect x="${l.x - 46}" y="${l.y - 10}" width="92" height="20" rx="4" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1"/>
       <text x="${l.x}" y="${l.y + 4}" font-size="10" font-weight="bold" fill="#0F172A" text-anchor="middle">${l.label}</text>
     `;
   });
