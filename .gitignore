@@ -33,3 +33,6 @@ dist-ssr
 *.key
 shaheen.key
 shaheen.key.pub
+
+# Office temporary files
+~$*

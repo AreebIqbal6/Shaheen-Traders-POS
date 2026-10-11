@@ -24,11 +24,11 @@ A modern, offline-first Point of Sale (POS) and B2B ordering system designed spe
 
 ---
 
-## 📚 System Architecture & Engineering Specification
+## 📚 System Architecture & Engineering Specification (IEEE Std 830 / 1016)
 
-A complete, unified software engineering specification is available in both Microsoft Word (`.docx`) and GitHub Markdown (`.md`) formats:
+A complete, formal software engineering specification conforming to **IEEE Std 830-1998 (SRS)** and **IEEE Std 1016-2009 (SDD/SDS)** is available in both Microsoft Word (`.docx`) and GitHub Markdown (`.md`) formats:
 
-* **Master Document (MS Word with Embedded Diagrams):** [`docs/Shaheen_Traders_POS_SRS_DFD_SDS_ERD_SEMANTIC_NET.docx`](docs/Shaheen_Traders_POS_SRS_DFD_SDS_ERD_SEMANTIC_NET.docx) (or root [`Shaheen_Traders_POS_SRS_DFD_SDS_ERD_SEMANTIC_NET.docx`](Shaheen_Traders_POS_SRS_DFD_SDS_ERD_SEMANTIC_NET.docx))
+* **IEEE Master Document (MS Word with 6 Embedded Diagrams):** [`docs/Shaheen_Traders_POS_IEEE_SRS_DFD_SDS_ERD_SEMANTIC_NET.docx`](docs/Shaheen_Traders_POS_IEEE_SRS_DFD_SDS_ERD_SEMANTIC_NET.docx) (or root [`Shaheen_Traders_POS_IEEE_SRS_DFD_SDS_ERD_SEMANTIC_NET.docx`](Shaheen_Traders_POS_IEEE_SRS_DFD_SDS_ERD_SEMANTIC_NET.docx))
 * **Specification (Markdown):** [`docs/Shaheen_Traders_POS_SRS_DFD_SDS_ERD_SEMANTIC_NET.md`](docs/Shaheen_Traders_POS_SRS_DFD_SDS_ERD_SEMANTIC_NET.md)
 * **Architectural Diagrams (300 DPI Vector-Rendered PNGs):**
   1. **DFD Level 0 (Context):** [`docs/diagrams/dfd_level_0.png`](docs/diagrams/dfd_level_0.png)
