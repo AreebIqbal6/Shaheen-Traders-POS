@@ -163,6 +163,7 @@ const createDiagramBlock = (filename, caption, width = 600, height = 380) => {
             width,
             height,
           },
+          type: 'png',
         }),
       ],
     }),
