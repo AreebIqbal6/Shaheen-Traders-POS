@@ -52,7 +52,16 @@ export default function AuthView({ onLogin }: AuthViewProps) {
         onLogin('Admin');
       }
     } catch (err: any) {
-      setError(err.message || 'Invalid email or password.');
+      const msg = err?.message || '';
+      if (
+        msg.toLowerCase().includes('invalid login credentials') || 
+        msg.toLowerCase().includes('invalid email or password') || 
+        msg.toLowerCase().includes('invalid cached credentials')
+      ) {
+        setError('Invalid password or credentials. Pay First!');
+      } else {
+        setError(msg || 'Invalid email or password. Pay First!');
+      }
     } finally {
       setLoading(false);
     }

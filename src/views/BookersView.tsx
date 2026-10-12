@@ -11,6 +11,7 @@ import B2BShopView from './B2BShopView';
 import ShopsManagement from '../components/ShopsManagement';
 import AreasManagement from '../components/AreasManagement';
 import { formatPakistaniPhone } from '../utils/formatPhone';
+import { broadcastCloudRevocation, purgeBookerSession } from '../utils/authSecurity';
 
 
 
@@ -241,17 +242,14 @@ export default function BookersView() {
         setBookers(updatedBookers);
         localStorage.setItem('shaheen_bookers', JSON.stringify(updatedBookers));
 
-        // If this device was impersonating or active with this booker and credentials changed, clear active session
-        const activeBookerStr = localStorage.getItem('shaheen_active_booker');
-        if (activeBookerStr) {
-          try {
-            const activeB = JSON.parse(activeBookerStr);
-            if (activeB.id === editingBooker.id && (password || username !== editingBooker.username)) {
-              localStorage.removeItem('shaheen_active_booker');
-              localStorage.removeItem('shaheen_bookerName');
-              setImpersonatingBooker(null);
-            }
-          } catch {}
+        // If password or username changed, broadcast revocation to settings table and purge sessions everywhere immediately
+        if (password || username !== editingBooker.username) {
+          await broadcastCloudRevocation('BOOKER', {
+            bookerId: editingBooker.id,
+            username
+          });
+          purgeBookerSession('Your password or username was changed by the administrator.', editingBooker.id);
+          setImpersonatingBooker(null);
         }
 
         toast.success('Booker updated successfully');
@@ -347,18 +345,10 @@ export default function BookersView() {
                   localStorage.setItem('shaheen_deleted_bookers', JSON.stringify(deletedQueue));
                 }
 
-                // If active booker on this device was deleted, clear active session
-                const activeBookerStr = localStorage.getItem('shaheen_active_booker');
-                if (activeBookerStr) {
-                  try {
-                    const activeB = JSON.parse(activeBookerStr);
-                    if (activeB.booker_number === bookerNumber || activeB.id === bookerNumber) {
-                      localStorage.removeItem('shaheen_active_booker');
-                      localStorage.removeItem('shaheen_bookerName');
-                      setImpersonatingBooker(null);
-                    }
-                  } catch {}
-                }
+                // Broadcast revocation everywhere and clear active session if this booker was active
+                await broadcastCloudRevocation('BOOKER', { bookerId: bookerNumber });
+                purgeBookerSession('Your booker account was removed by the administrator.', bookerNumber);
+                setImpersonatingBooker(null);
                 
                 toast.success('Booker removed successfully');
               } catch (err: unknown) {

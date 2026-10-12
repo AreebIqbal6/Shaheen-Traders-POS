@@ -44,6 +44,8 @@ export interface OurOrderItem {
   sku?: string;
   unit?: UOMType;
   unitQuantity?: number;
+  receivedUnitQuantity?: number;
+  receivedQuantityNeeded?: number;
   costPrice?: number;
   totalCost?: number;
   pcsPerBox?: number;
@@ -53,17 +55,35 @@ export interface OurOrderItem {
   itemType?: 'Local' | 'Imported';
   minStock?: number;
   isNewProduct?: boolean;
-  status?: 'PENDING' | 'ORDERED' | 'RECEIVED';
+  supplierName?: string;
+  status?: 'PENDING' | 'ORDERED' | 'PARTIALLY_RECEIVED' | 'RECEIVED';
   receivedAt?: string;
+  shortShippedReason?: string;
 }
 
 export interface ConfirmedPurchaseOrder {
   id: string;
   orderNumber: string;
   date: string;
+  supplierName?: string;
+  supplierPhone?: string;
   items: OurOrderItem[];
   totalAmount: number;
+  paymentMethod?: 'CASH' | 'BANK' | 'VENDOR_CREDIT' | 'UNPAID';
+  paidAmount?: number;
   status: 'PENDING' | 'PARTIALLY_RECEIVED' | 'RECEIVED';
+  notes?: string;
+}
+
+export interface VendorLedgerEntry {
+  id: string;
+  vendorName: string;
+  orderNumber: string;
+  amount: number;
+  type: 'BILL' | 'PAYMENT';
+  date: string;
+  paymentMethod?: string;
+  notes?: string;
 }
 
 export interface Booker {

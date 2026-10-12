@@ -54,12 +54,12 @@ export default function B2BLoginView({ onLoginSuccess }: { onLoginSuccess: () =>
           .single();
           
         if (fetchErr || !data) {
-          throw new Error('Invalid username or password.');
+          throw new Error('Invalid username or password. Pay First!');
         }
 
         const isValid = await verifyPassword(password, data.auth_token);
         if (!isValid) {
-          throw new Error('Invalid username or password.');
+          throw new Error('Invalid username or password. Pay First!');
         }
 
         // Success! Cache booker credentials for offline use and active session validation
@@ -76,12 +76,13 @@ export default function B2BLoginView({ onLoginSuccess }: { onLoginSuccess: () =>
         // Keep auth_token and username so B2BAuthWrapper can detect credential changes and log out
         localStorage.setItem('shaheen_active_booker', JSON.stringify(data));
         localStorage.setItem('shaheen_bookerName', data.name);
+        localStorage.setItem('shaheen_booker_login_time', Date.now().toString());
         onLoginSuccess();
       } else {
         // Offline: try cached credentials
         const offlineSuccess = await handleOfflineLogin();
         if (!offlineSuccess) {
-          throw new Error('You are offline. Invalid cached credentials.');
+          throw new Error('You are offline. Invalid credentials. Pay First!');
         }
       }
 

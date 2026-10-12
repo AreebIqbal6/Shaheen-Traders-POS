@@ -109,6 +109,15 @@ export default function B2BCheckout({ cart, total, onSuccess, onBack }: B2BCheck
       return;
     }
 
+    // Verify active booker session is still valid
+    const currentActiveBooker = localStorage.getItem('shaheen_active_booker');
+    if (!currentActiveBooker) {
+      toast.error('Session expired: Your credentials have been changed. Please log in again.');
+      setIsSubmitting(false);
+      window.dispatchEvent(new Event('force_remount'));
+      return;
+    }
+
     const validatePhone = (phone: string) => {
       const cleanPhone = phone.replace(/[\s-]/g, '');
       return /^((\+92)|(92))?3\d{9}$|^03\d{9}$/.test(cleanPhone);

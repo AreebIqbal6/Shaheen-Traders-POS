@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import B2BLoginView from '../views/B2BLoginView';
 import { supabase } from '../lib/supabase';
 import toast from 'react-hot-toast';
+import { purgeBookerSession, setupCrossTabSecurityListener } from '../utils/authSecurity';
 
 export default function B2BAuthWrapper({ children }: { children: React.ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -27,22 +28,31 @@ export default function B2BAuthWrapper({ children }: { children: React.ReactNode
                 new Promise<never>((_, reject) => setTimeout(() => reject(new Error('timeout')), 5000))
               ]);
 
-              const isInvalid = !result.data || 
+              let isInvalid = !result.data || 
                 result.error || 
                 result.data.username !== activeBooker.username || 
                 result.data.auth_token !== activeBooker.auth_token;
 
-              if (isInvalid) {
-                localStorage.removeItem('shaheen_active_booker');
-                localStorage.removeItem('shaheen_bookerName');
-                const profiles = JSON.parse(localStorage.getItem('booker_profiles') || '[]');
-                const filtered = profiles.filter((b: any) => b.id !== activeBooker.id);
-                localStorage.setItem('booker_profiles', JSON.stringify(filtered));
-                // Invalidate cached credentials in offline list as well
-                const cachedBookers = JSON.parse(localStorage.getItem('shaheen_bookers') || '[]');
-                const updatedList = cachedBookers.filter((b: any) => b.id !== activeBooker.id);
-                localStorage.setItem('shaheen_bookers', JSON.stringify(updatedList));
+              // Check if admin credentials were updated after booker's login
+              if (!isInvalid) {
+                try {
+                  const creds = await supabase
+                    .from('settings')
+                    .select('value')
+                    .eq('key', 'admin_credentials_updated_at')
+                    .maybeSingle();
+                  const bookerLoginTime = Number(localStorage.getItem('shaheen_booker_login_time') || '0');
+                  if (creds.data?.value && bookerLoginTime > 0) {
+                    const updatedAt = new Date(creds.data.value).getTime();
+                    if (updatedAt > bookerLoginTime) {
+                      isInvalid = true;
+                    }
+                  }
+                } catch {}
+              }
 
+              if (isInvalid) {
+                purgeBookerSession('Your username or password was changed. Please log in again.', activeBooker.id);
                 setIsAuthenticated(false);
                 setIsLoading(false);
                 toast.error('Your username or password was changed. Please log in again.', { duration: 6000 });
@@ -54,7 +64,7 @@ export default function B2BAuthWrapper({ children }: { children: React.ReactNode
           }
           setIsAuthenticated(true);
         } catch (e) {
-          localStorage.removeItem('shaheen_active_booker');
+          purgeBookerSession();
         }
       }
       setIsLoading(false);
@@ -71,17 +81,9 @@ export default function B2BAuthWrapper({ children }: { children: React.ReactNode
     
     try {
       const activeBooker = JSON.parse(activeBookerStr);
-      
-      const purgeBookerSession = (msg: string) => {
-        localStorage.removeItem('shaheen_active_booker');
-        localStorage.removeItem('shaheen_bookerName');
-        const profiles = JSON.parse(localStorage.getItem('booker_profiles') || '[]');
-        const filtered = profiles.filter((b: any) => b.id !== activeBooker.id);
-        localStorage.setItem('booker_profiles', JSON.stringify(filtered));
-        const cachedBookers = JSON.parse(localStorage.getItem('shaheen_bookers') || '[]');
-        const updatedList = cachedBookers.filter((b: any) => b.id !== activeBooker.id);
-        localStorage.setItem('shaheen_bookers', JSON.stringify(updatedList));
-        
+
+      const triggerEviction = (msg: string) => {
+        purgeBookerSession(msg, activeBooker.id);
         setIsAuthenticated(false);
         toast.error(msg, { duration: 6000 });
       };
@@ -95,7 +97,7 @@ export default function B2BAuthWrapper({ children }: { children: React.ReactNode
           (payload: any) => {
             if (payload.eventType === 'DELETE') {
               if (payload.old?.id === activeBooker.id || payload.old?.booker_number === activeBooker.booker_number) {
-                purgeBookerSession('Your access has been revoked by the admin.');
+                triggerEviction('Your access has been revoked by the administrator.');
               }
             } else if (payload.eventType === 'UPDATE' && payload.new) {
               if (payload.new.id === activeBooker.id || payload.new.booker_number === activeBooker.booker_number) {
@@ -103,7 +105,7 @@ export default function B2BAuthWrapper({ children }: { children: React.ReactNode
                 const hasUsernameChanged = payload.new.username !== activeBooker.username;
 
                 if (hasAuthTokenChanged || hasUsernameChanged) {
-                  purgeBookerSession('Your username or password was changed. Logged out everywhere immediately.');
+                  triggerEviction('Your username or password was changed. Logged out everywhere immediately.');
                 } else {
                   localStorage.setItem('shaheen_active_booker', JSON.stringify({ ...activeBooker, ...payload.new }));
                 }
@@ -115,17 +117,43 @@ export default function B2BAuthWrapper({ children }: { children: React.ReactNode
           'postgres_changes',
           { event: '*', schema: 'public', table: 'settings' },
           (payload: any) => {
-            if (payload.new?.key === 'admin_credentials_updated_at') {
-              purgeBookerSession('System credentials changed by administrator. Logged out everywhere.');
+            if (payload.new?.key === 'admin_credentials_updated_at' || payload.new?.key === 'system_auth_revoked_at') {
+              triggerEviction('System credentials changed by administrator. Logged out everywhere.');
+            } else if (payload.new?.key === 'booker_credentials_revoked_at') {
+              try {
+                const info = typeof payload.new.value === 'string' ? JSON.parse(payload.new.value) : payload.new.value;
+                if (info?.bookerId === 'ALL' || info?.bookerId === activeBooker.id || info?.bookerId === activeBooker.booker_number) {
+                  triggerEviction('Your username or password was changed. Logged out everywhere immediately.');
+                }
+              } catch {}
             }
           }
         )
         .subscribe();
 
-      // 2. Periodic heartbeat & visibility re-check for active devices
+      // 2. Cross-tab immediate sync (0ms)
+      const unsubscribeCrossTab = setupCrossTabSecurityListener(
+        () => {},
+        (reason, targetBookerId) => {
+          if (!targetBookerId || targetBookerId === activeBooker.id || targetBookerId === activeBooker.booker_number) {
+            triggerEviction(reason || 'Session terminated from another tab.');
+          }
+        }
+      );
+
+      const handleCustomLogout = (e: any) => {
+        const target = e.detail?.targetBookerId;
+        if (!target || target === activeBooker.id || target === activeBooker.booker_number) {
+          setIsAuthenticated(false);
+        }
+      };
+      window.addEventListener('shaheen_booker_logged_out', handleCustomLogout);
+
+      // 3. Periodic heartbeat & visibility re-check for active devices
       const checkFreshness = async () => {
         if (!navigator.onLine) return;
         try {
+          // Check booker credentials in DB
           const { data } = await supabase
             .from('bookers')
             .select('id, username, auth_token')
@@ -133,12 +161,44 @@ export default function B2BAuthWrapper({ children }: { children: React.ReactNode
             .maybeSingle();
 
           if (!data || data.username !== activeBooker.username || data.auth_token !== activeBooker.auth_token) {
-            purgeBookerSession('Your session has expired due to credential changes.');
+            triggerEviction('Your session has expired due to credential changes.');
+            return;
+          }
+
+          // Also check admin/system revocation timestamp
+          const creds = await supabase
+            .from('settings')
+            .select('key, value')
+            .in('key', ['admin_credentials_updated_at', 'system_auth_revoked_at', 'booker_credentials_revoked_at']);
+
+          if (creds.data && creds.data.length > 0) {
+            const loginTime = Number(localStorage.getItem('shaheen_booker_login_time') || '0');
+            for (const row of creds.data) {
+              if (!row.value) continue;
+              if (row.key === 'admin_credentials_updated_at' || row.key === 'system_auth_revoked_at') {
+                const updatedAt = new Date(row.value).getTime();
+                if (loginTime > 0 && updatedAt > loginTime) {
+                  triggerEviction('System credentials changed by administrator. Logged out everywhere.');
+                  return;
+                }
+              } else if (row.key === 'booker_credentials_revoked_at') {
+                try {
+                  const info = typeof row.value === 'string' ? JSON.parse(row.value) : row.value;
+                  const revTime = new Date(info?.timestamp || 0).getTime();
+                  if (loginTime > 0 && revTime > loginTime) {
+                    if (info?.bookerId === 'ALL' || info?.bookerId === activeBooker.id || info?.bookerId === activeBooker.booker_number) {
+                      triggerEviction('Your username or password was changed. Logged out everywhere immediately.');
+                      return;
+                    }
+                  }
+                } catch {}
+              }
+            }
           }
         } catch {}
       };
 
-      const heartbeatTimer = setInterval(checkFreshness, 15000);
+      const heartbeatTimer = setInterval(checkFreshness, 5000);
       const handleWake = () => {
         if (document.visibilityState === 'visible') checkFreshness();
       };
@@ -147,6 +207,8 @@ export default function B2BAuthWrapper({ children }: { children: React.ReactNode
         
       return () => {
         supabase.removeChannel(channel);
+        unsubscribeCrossTab();
+        window.removeEventListener('shaheen_booker_logged_out', handleCustomLogout);
         clearInterval(heartbeatTimer);
         document.removeEventListener('visibilitychange', handleWake);
         window.removeEventListener('focus', checkFreshness);

@@ -41,6 +41,7 @@ import { CloudUpload } from 'lucide-react';
 import { generateSKU } from './ProductsView';
 import { formatPakistaniPhone } from '../utils/formatPhone';
 import FitText from '../components/FitText';
+import { purgeAdminSession, setupCrossTabSecurityListener } from '../utils/authSecurity';
 
 
 
@@ -217,23 +218,24 @@ export default function AdminPOSView() {
         ]);
 
         if (result.data?.session) {
-          // Verify if admin credentials were reset or changed after this session's login
+          // Verify if admin credentials or global system credentials were reset after this session's login
           const loginTime = Number(localStorage.getItem('shaheen_admin_login_time') || '0');
           try {
             const { data: credsData } = await supabase
               .from('settings')
-              .select('value')
-              .eq('key', 'admin_credentials_updated_at')
-              .maybeSingle();
+              .select('key, value')
+              .in('key', ['admin_credentials_updated_at', 'system_auth_revoked_at']);
 
-            if (credsData?.value) {
-              const updatedAt = new Date(credsData.value).getTime();
-              if (updatedAt > loginTime) {
+            if (credsData && credsData.length > 0) {
+              const shouldRevoke = credsData.some(row => {
+                if (!row.value) return false;
+                const updatedAt = new Date(row.value).getTime();
+                return updatedAt > loginTime;
+              });
+
+              if (shouldRevoke) {
                 // Stale admin session! Force revocation everywhere
-                await supabase.auth.signOut();
-                localStorage.removeItem('shaheen_admin_auth');
-                localStorage.removeItem('shaheen_admin_login_time');
-                localStorage.removeItem('admin_offline_hash');
+                await purgeAdminSession('Admin credentials were changed. Please log in again.');
                 setIsAuthenticated(false);
                 setIsAuthChecking(false);
                 toast.error('Admin credentials were changed. Please log in again.');
@@ -270,14 +272,11 @@ export default function AdminPOSView() {
         'postgres_changes',
         { event: '*', schema: 'public', table: 'settings' },
         async (payload: any) => {
-          if (payload.new?.key === 'admin_credentials_updated_at') {
+          if (payload.new?.key === 'admin_credentials_updated_at' || payload.new?.key === 'system_auth_revoked_at') {
             const updatedAt = new Date(payload.new.value).getTime();
             const loginTime = Number(localStorage.getItem('shaheen_admin_login_time') || '0');
             if (updatedAt > loginTime) {
-              await supabase.auth.signOut();
-              localStorage.removeItem('shaheen_admin_auth');
-              localStorage.removeItem('shaheen_admin_login_time');
-              localStorage.removeItem('admin_offline_hash');
+              await purgeAdminSession('Admin credentials updated from another device. Logged out.');
               setIsAuthenticated(false);
               toast.error('Admin credentials updated from another device. Logged out.', { duration: 6000 });
             }
@@ -286,7 +285,19 @@ export default function AdminPOSView() {
       )
       .subscribe();
 
-    const adminHeartbeatTimer = setInterval(checkAuth, 15000);
+    // Cross-tab immediate sync (0ms)
+    const unsubscribeCrossTab = setupCrossTabSecurityListener(
+      (reason) => {
+        setIsAuthenticated(false);
+        toast.error(reason, { duration: 6000 });
+      },
+      () => {}
+    );
+
+    const handleCustomLogout = () => setIsAuthenticated(false);
+    window.addEventListener('shaheen_admin_logged_out', handleCustomLogout);
+
+    const adminHeartbeatTimer = setInterval(checkAuth, 5000);
     const handleAdminWake = () => {
       if (document.visibilityState === 'visible') checkAuth();
     };
@@ -296,6 +307,8 @@ export default function AdminPOSView() {
     return () => {
       subscription.unsubscribe();
       supabase.removeChannel(adminRevokeSub);
+      unsubscribeCrossTab();
+      window.removeEventListener('shaheen_admin_logged_out', handleCustomLogout);
       clearInterval(adminHeartbeatTimer);
       document.removeEventListener('visibilitychange', handleAdminWake);
       window.removeEventListener('focus', checkAuth);

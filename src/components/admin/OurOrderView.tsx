@@ -3,14 +3,15 @@ import {
   Package, Plus, Check, CheckCheck, AlertTriangle, Trash2, Search, 
   ScanLine, Sparkles, Clock, ArrowRight, Edit2, ShoppingCart, Boxes, 
   FileText, ChevronRight, Download, RefreshCw, X, Loader2, CheckCircle2, 
-  ChevronDown, Layers, ArrowUpRight, Filter
+  ChevronDown, Layers, ArrowUpRight, Filter, Building2, Share2, Printer, 
+  Phone, Wallet, CreditCard, DollarSign, ExternalLink, HelpCircle
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import CameraScanner from '../CameraScanner';
 import { safeSupabaseInsert, safeSupabaseUpdate } from '../../utils/safeSync';
 import { generateUUID } from '../../utils/uuid';
 import { getNextSKU, generateSKU } from '../../views/ProductsView';
-import type { Product, OurOrderItem, ConfirmedPurchaseOrder, UOMType } from '../../types/index';
+import type { Product, OurOrderItem, ConfirmedPurchaseOrder, UOMType, VendorLedgerEntry } from '../../types/index';
 
 interface OurOrderViewProps {
   ourOrderList: OurOrderItem[];
@@ -41,6 +42,75 @@ export default function OurOrderView({
   useEffect(() => {
     localStorage.setItem('shaheen_confirmed_purchase_orders', JSON.stringify(confirmedOrders));
   }, [confirmedOrders]);
+
+  // ----------------------------------------------------
+  // VENDOR / SUPPLIERS & ACCOUNTS PAYABLE STATE
+  // ----------------------------------------------------
+  const [savedSuppliers, setSavedSuppliers] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem('shaheen_suppliers');
+      return saved ? JSON.parse(saved) : [
+        'National Foods', 'Shan Foods', 'Unilever Pakistan', 'Habib Oil Mills',
+        'English Biscuit Manufacturers (EBM)', 'Tapal Tea', 'Nestle Pakistan', 
+        'Engro Foods', 'Local Market Wholesaler'
+      ];
+    } catch {
+      return ['National Foods', 'Shan Foods', 'Unilever Pakistan', 'Habib Oil Mills', 'General Wholesaler'];
+    }
+  });
+
+  const [draftSupplier, setDraftSupplier] = useState({ name: '', phone: '' });
+  const [supplierFilter, setSupplierFilter] = useState<string>('ALL');
+
+  // Vendor Credit Ledgers (Accounts Payable)
+  const [vendorLedgers, setVendorLedgers] = useState<VendorLedgerEntry[]>(() => {
+    try {
+      const saved = localStorage.getItem('shaheen_vendor_ledgers');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  useEffect(() => {
+    localStorage.setItem('shaheen_vendor_ledgers', JSON.stringify(vendorLedgers));
+  }, [vendorLedgers]);
+
+  // Modals for partial receiving, bulk receiving, printing, and vendor ledger
+  const [receiveItemModal, setReceiveItemModal] = useState<{
+    isOpen: boolean;
+    orderId: string;
+    item: OurOrderItem | null;
+    order: ConfirmedPurchaseOrder | null;
+    qtyToReceive: number;
+    markShortShipped: boolean;
+    updateMasterCost: boolean;
+    paymentMethod: 'CASH' | 'BANK' | 'VENDOR_CREDIT' | 'NONE';
+  }>({
+    isOpen: false,
+    orderId: '',
+    item: null,
+    order: null,
+    qtyToReceive: 1,
+    markShortShipped: false,
+    updateMasterCost: true,
+    paymentMethod: 'NONE'
+  });
+
+  const [receiveAllModal, setReceiveAllModal] = useState<{
+    isOpen: boolean;
+    order: ConfirmedPurchaseOrder | null;
+    updateMasterCost: boolean;
+    paymentMethod: 'CASH' | 'BANK' | 'VENDOR_CREDIT' | 'NONE';
+  }>({
+    isOpen: false,
+    order: null,
+    updateMasterCost: true,
+    paymentMethod: 'NONE'
+  });
+
+  const [printOrderModal, setPrintOrderModal] = useState<ConfirmedPurchaseOrder | null>(null);
+  const [isVendorLedgerModalOpen, setIsVendorLedgerModalOpen] = useState(false);
 
   // Minimum stock threshold dictionary
   const minStockDict = useMemo(() => {
@@ -329,6 +399,86 @@ export default function OurOrderView({
   };
 
   // ----------------------------------------------------
+  // FINANCIAL LEDGER & CASH MANAGEMENT RECORDING HELPER
+  // ----------------------------------------------------
+  const recordFinancialTransaction = (
+    orderNumber: string,
+    vendorName: string,
+    amount: number,
+    method: 'CASH' | 'BANK' | 'VENDOR_CREDIT' | 'NONE'
+  ) => {
+    if (method === 'NONE' || amount <= 0) return;
+
+    if (method === 'CASH') {
+      try {
+        const cashTxs = JSON.parse(localStorage.getItem('shaheen_cash_transactions') || '[]');
+        const newTx = {
+          id: generateUUID(),
+          type: 'EXPENSE',
+          category: 'SUPPLIER_PURCHASE',
+          amount,
+          description: `Stock Purchase: PO #${orderNumber} (${vendorName || 'Supplier'})`,
+          date: new Date().toISOString(),
+          cashier: 'Admin'
+        };
+        localStorage.setItem('shaheen_cash_transactions', JSON.stringify([newTx, ...cashTxs]));
+      } catch (e) {
+        console.warn('Failed to record cash drawer transaction:', e);
+      }
+    } else if (method === 'VENDOR_CREDIT') {
+      const newBill: VendorLedgerEntry = {
+        id: generateUUID(),
+        vendorName: vendorName || 'General Supplier',
+        orderNumber,
+        amount,
+        type: 'BILL',
+        date: new Date().toISOString(),
+        paymentMethod: 'VENDOR_CREDIT',
+        notes: `Stock purchase invoice for PO #${orderNumber}`
+      };
+      setVendorLedgers(prev => [newBill, ...prev]);
+    } else if (method === 'BANK') {
+      try {
+        const cashTxs = JSON.parse(localStorage.getItem('shaheen_cash_transactions') || '[]');
+        const newTx = {
+          id: generateUUID(),
+          type: 'BANK_TRANSFER',
+          category: 'SUPPLIER_PURCHASE',
+          amount,
+          description: `Bank transfer payment for PO #${orderNumber} (${vendorName || 'Supplier'})`,
+          date: new Date().toISOString(),
+          cashier: 'Admin'
+        };
+        localStorage.setItem('shaheen_cash_transactions', JSON.stringify([newTx, ...cashTxs]));
+      } catch (e) {}
+    }
+  };
+
+  const handleSettleVendorBill = (billId: string, payFromCash: boolean = false) => {
+    const bill = vendorLedgers.find(b => b.id === billId);
+    if (!bill) return;
+
+    if (payFromCash) {
+      try {
+        const cashTxs = JSON.parse(localStorage.getItem('shaheen_cash_transactions') || '[]');
+        const newTx = {
+          id: generateUUID(),
+          type: 'EXPENSE',
+          category: 'VENDOR_PAYABLE_SETTLEMENT',
+          amount: bill.amount,
+          description: `Settled Vendor Bill for ${bill.vendorName} (PO #${bill.orderNumber})`,
+          date: new Date().toISOString(),
+          cashier: 'Admin'
+        };
+        localStorage.setItem('shaheen_cash_transactions', JSON.stringify([newTx, ...cashTxs]));
+      } catch (e) {}
+    }
+
+    setVendorLedgers(prev => prev.filter(b => b.id !== billId));
+    toast.success(`Bill of Rs ${bill.amount.toLocaleString()} for ${bill.vendorName} settled!`);
+  };
+
+  // ----------------------------------------------------
   // 4. CONFIRM & PLACE PURCHASE ORDER
   // ----------------------------------------------------
   const handleConfirmPurchaseOrder = () => {
@@ -344,6 +494,7 @@ export default function OurOrderView({
         </span>
         <span className="text-xs text-slate-500 dark:text-slate-400">
           {ourOrderList.length} items • Total Estimated Cost: Rs {draftTotalCost.toLocaleString()}
+          {draftSupplier.name && ` • Vendor: ${draftSupplier.name}`}
         </span>
         <div className="flex gap-2 justify-end mt-2">
           <button 
@@ -357,17 +508,35 @@ export default function OurOrderView({
             onClick={() => {
               toast.dismiss(t.id);
               const orderNum = `PO-${Date.now().toString().slice(-5)}`;
+              
+              // Persist supplier if new
+              const supName = draftSupplier.name.trim();
+              if (supName && !savedSuppliers.includes(supName)) {
+                const updated = [...savedSuppliers, supName];
+                setSavedSuppliers(updated);
+                localStorage.setItem('shaheen_suppliers', JSON.stringify(updated));
+              }
+
               const newOrder: ConfirmedPurchaseOrder = {
                 id: generateUUID(),
                 orderNumber: orderNum,
                 date: new Date().toISOString(),
-                items: ourOrderList.map(item => ({ ...item, status: 'ORDERED' })),
+                supplierName: supName || undefined,
+                supplierPhone: draftSupplier.phone.trim() || undefined,
+                items: ourOrderList.map(item => ({ 
+                  ...item, 
+                  supplierName: supName || undefined,
+                  status: 'ORDERED' as const,
+                  receivedUnitQuantity: 0,
+                  receivedQuantityNeeded: 0
+                })),
                 totalAmount: draftTotalCost,
                 status: 'PENDING'
               };
 
               setConfirmedOrders(prev => [newOrder, ...prev]);
               setOurOrderList([]);
+              setDraftSupplier({ name: '', phone: '' });
               setActiveTab('placed');
               toast.success(`Purchase Order #${orderNum} confirmed and awaiting reception!`, { duration: 5000 });
             }}
@@ -380,56 +549,123 @@ export default function OurOrderView({
   };
 
   // ----------------------------------------------------
-  // 5. RECEIVE SINGLE ITEM INTO INVENTORY
+  // WHATSAPP SHARE GENERATOR
   // ----------------------------------------------------
-  const handleReceiveItem = (orderId: string, item: OurOrderItem) => {
-    toast((t) => (
-      <div className="flex flex-col gap-2 p-1">
-        <span className="font-bold text-slate-900 dark:text-slate-100 text-sm">
-          Receive "{item.name}" into inventory?
-        </span>
-        <span className="text-xs text-slate-500 dark:text-slate-400">
-          This will directly add {item.quantityNeeded} pieces to your live stock.
-        </span>
-        <div className="flex gap-2 justify-end mt-2">
-          <button 
-            className="px-3 py-1.5 bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 text-slate-800 dark:text-slate-200 rounded text-xs font-semibold"
-            onClick={() => toast.dismiss(t.id)}
-          >
-            Cancel
-          </button>
-          <button 
-            className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-xs font-bold shadow-sm"
-            onClick={async () => {
-              toast.dismiss(t.id);
-              await executeItemReception(item);
+  const handleShareWhatsApp = (order: ConfirmedPurchaseOrder) => {
+    const supplierText = order.supplierName ? `🏢 *Vendor:* ${order.supplierName}\n` : '';
+    let itemsText = '';
+    order.items.forEach((it, idx) => {
+      const unitText = `${it.unitQuantity || 1} ${it.unit || 'Pcs'} (${it.quantityNeeded} Pcs)`;
+      const rateText = it.costPrice ? ` @ Rs. ${it.costPrice.toLocaleString()}/pc` : '';
+      const lineTotalText = it.totalCost ? ` -> Rs. ${it.totalCost.toLocaleString()}` : '';
+      const statusText = it.status === 'RECEIVED' 
+        ? ' [✓ Received]' 
+        : (it.status === 'PARTIALLY_RECEIVED' ? ` [Partial: ${it.receivedUnitQuantity || 0}/${it.unitQuantity || 0}]` : '');
+      itemsText += `${idx + 1}. *${it.name}*\n   • Qty: ${unitText}${rateText}${lineTotalText}${statusText}\n`;
+    });
 
-              // Update confirmed orders state
-              setConfirmedOrders(prev => prev.map(po => {
-                if (po.id !== orderId) return po;
-                const updatedItems = po.items.map(it => 
-                  it.id === item.id ? { ...it, status: 'RECEIVED' as const, receivedAt: new Date().toISOString() } : it
-                );
-                const allReceived = updatedItems.every(it => it.status === 'RECEIVED');
-                return {
-                  ...po,
-                  items: updatedItems,
-                  status: allReceived ? 'RECEIVED' : 'PARTIALLY_RECEIVED'
-                };
-              }));
+    const message = 
+      `📦 *PURCHASE REQUISITION ORDER*\n` +
+      `🏢 *Shaheen Global Traders*\n` +
+      `📋 *PO Ref:* #${order.orderNumber}\n` +
+      supplierText +
+      `📅 *Date:* ${new Date(order.date).toLocaleDateString()}\n` +
+      `----------------------------------------\n` +
+      itemsText +
+      `----------------------------------------\n` +
+      `📦 *Total Line Items:* ${order.items.length}\n` +
+      `💰 *Total Estimated Value:* Rs. ${order.totalAmount.toLocaleString()}\n\n` +
+      `_Please confirm dispatch schedule and delivery ETA._`;
 
-              toast.success(`Received ${item.name} (+${item.quantityNeeded} pcs added directly to inventory)!`);
-            }}
-          >
-            Yes, Receive
-          </button>
-        </div>
-      </div>
-    ), { duration: 6000, position: 'top-center' });
+    let phone = order.supplierPhone ? order.supplierPhone.replace(/[^0-9]/g, '') : '';
+    if (phone.startsWith('0')) {
+      phone = '92' + phone.slice(1);
+    }
+    const url = phone 
+      ? `https://wa.me/${phone}?text=${encodeURIComponent(message)}`
+      : `https://wa.me/?text=${encodeURIComponent(message)}`;
+
+    window.open(url, '_blank');
   };
 
   // ----------------------------------------------------
-  // 6. RECEIVE ALL ITEMS FROM AN ORDER
+  // 5. RECEIVE SINGLE ITEM INTO INVENTORY (Modal Opener)
+  // ----------------------------------------------------
+  const handleReceiveItem = (orderId: string, item: OurOrderItem) => {
+    const order = confirmedOrders.find(o => o.id === orderId) || null;
+    const remainingUnits = (item.unitQuantity || 1) - (item.receivedUnitQuantity || 0);
+
+    setReceiveItemModal({
+      isOpen: true,
+      orderId,
+      item,
+      order,
+      qtyToReceive: Math.max(1, remainingUnits),
+      markShortShipped: false,
+      updateMasterCost: true,
+      paymentMethod: 'NONE'
+    });
+  };
+
+  // Confirm Single Item Reception from Modal
+  const confirmItemReception = async () => {
+    const { orderId, item, order, qtyToReceive, markShortShipped, updateMasterCost, paymentMethod } = receiveItemModal;
+    if (!item) return;
+
+    const multiplier = item.unit === 'Ctn' ? ((item.pcsPerBox || 12) * (item.boxPerCtn || 6)) : (item.unit === 'Box' ? (item.pcsPerBox || 12) : 1);
+    const arrivedPieces = qtyToReceive * multiplier;
+    const lineCost = arrivedPieces * (item.costPrice || 0);
+
+    // 1. Add Stock into Inventory
+    await executeItemReception(item, arrivedPieces, updateMasterCost);
+
+    // 2. Financial settlement record
+    if (paymentMethod !== 'NONE' && lineCost > 0) {
+      recordFinancialTransaction(
+        order?.orderNumber || 'DIRECT',
+        order?.supplierName || item.supplierName || 'Vendor',
+        lineCost,
+        paymentMethod
+      );
+    }
+
+    // 3. Update Order Item Status
+    setConfirmedOrders(prev => prev.map(po => {
+      if (po.id !== orderId) return po;
+
+      const updatedItems = po.items.map(it => {
+        if (it.id !== item.id) return it;
+
+        const newReceivedUnits = (it.receivedUnitQuantity || 0) + qtyToReceive;
+        const newReceivedPieces = (it.receivedQuantityNeeded || 0) + arrivedPieces;
+        const isFull = newReceivedUnits >= (it.unitQuantity || 1);
+        const isCompleted = isFull || markShortShipped;
+
+        return {
+          ...it,
+          receivedUnitQuantity: newReceivedUnits,
+          receivedQuantityNeeded: newReceivedPieces,
+          status: isCompleted ? ('RECEIVED' as const) : ('PARTIALLY_RECEIVED' as const),
+          receivedAt: new Date().toISOString(),
+          shortShippedReason: markShortShipped ? 'Short-shipped / Closed by operator' : undefined
+        };
+      });
+
+      const allReceived = updatedItems.every(it => it.status === 'RECEIVED');
+
+      return {
+        ...po,
+        items: updatedItems,
+        status: allReceived ? ('RECEIVED' as const) : ('PARTIALLY_RECEIVED' as const)
+      };
+    }));
+
+    toast.success(`Received +${arrivedPieces} pcs of "${item.name}" into inventory!`, { icon: '📦' });
+    setReceiveItemModal(prev => ({ ...prev, isOpen: false, item: null }));
+  };
+
+  // ----------------------------------------------------
+  // 6. RECEIVE ALL ITEMS FROM AN ORDER (Modal Opener)
   // ----------------------------------------------------
   const handleReceiveAll = (order: ConfirmedPurchaseOrder) => {
     const unreceived = order.items.filter(i => i.status !== 'RECEIVED');
@@ -438,50 +674,69 @@ export default function OurOrderView({
       return;
     }
 
-    toast((t) => (
-      <div className="flex flex-col gap-2 p-1">
-        <span className="font-bold text-slate-900 dark:text-slate-100 text-sm">
-          Receive ALL items from Order #{order.orderNumber}?
-        </span>
-        <span className="text-xs text-slate-500 dark:text-slate-400">
-          {unreceived.length} pending items will be directly added to inventory right now.
-        </span>
-        <div className="flex gap-2 justify-end mt-2">
-          <button 
-            className="px-3 py-1.5 bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 text-slate-800 dark:text-slate-200 rounded text-xs font-semibold"
-            onClick={() => toast.dismiss(t.id)}
-          >
-            Cancel
-          </button>
-          <button 
-            className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-xs font-bold shadow-sm"
-            onClick={async () => {
-              toast.dismiss(t.id);
-              for (const it of unreceived) {
-                await executeItemReception(it);
-              }
+    setReceiveAllModal({
+      isOpen: true,
+      order,
+      updateMasterCost: true,
+      paymentMethod: 'NONE'
+    });
+  };
 
-              setConfirmedOrders(prev => prev.map(po => {
-                if (po.id !== order.id) return po;
-                return {
-                  ...po,
-                  items: po.items.map(it => ({ ...it, status: 'RECEIVED' as const, receivedAt: new Date().toISOString() })),
-                  status: 'RECEIVED'
-                };
-              }));
+  // Confirm Bulk Reception from Modal
+  const confirmReceiveAll = async () => {
+    const { order, updateMasterCost, paymentMethod } = receiveAllModal;
+    if (!order) return;
 
-              toast.success(`All items from Order #${order.orderNumber} successfully received into inventory!`);
-            }}
-          >
-            Yes, Receive All
-          </button>
-        </div>
-      </div>
-    ), { duration: 8000, position: 'top-center' });
+    const unreceived = order.items.filter(i => i.status !== 'RECEIVED');
+    let totalPiecesReceived = 0;
+    let totalReceivedCost = 0;
+
+    for (const it of unreceived) {
+      const remainingUnits = (it.unitQuantity || 1) - (it.receivedUnitQuantity || 0);
+      const multiplier = it.unit === 'Ctn' ? ((it.pcsPerBox || 12) * (it.boxPerCtn || 6)) : (it.unit === 'Box' ? (it.pcsPerBox || 12) : 1);
+      const remainingPieces = Math.max(0, it.quantityNeeded - (it.receivedQuantityNeeded || 0));
+
+      await executeItemReception(it, remainingPieces, updateMasterCost);
+      totalPiecesReceived += remainingPieces;
+      totalReceivedCost += (remainingPieces * (it.costPrice || 0));
+    }
+
+    // Record Financial Transaction
+    if (paymentMethod !== 'NONE' && totalReceivedCost > 0) {
+      recordFinancialTransaction(
+        order.orderNumber,
+        order.supplierName || 'Vendor',
+        totalReceivedCost,
+        paymentMethod
+      );
+    }
+
+    setConfirmedOrders(prev => prev.map(po => {
+      if (po.id !== order.id) return po;
+      return {
+        ...po,
+        items: po.items.map(it => ({
+          ...it,
+          receivedUnitQuantity: it.unitQuantity || 1,
+          receivedQuantityNeeded: it.quantityNeeded,
+          status: 'RECEIVED' as const,
+          receivedAt: new Date().toISOString()
+        })),
+        status: 'RECEIVED',
+        paymentMethod: paymentMethod !== 'NONE' ? paymentMethod : po.paymentMethod
+      };
+    }));
+
+    toast.success(`All items from Order #${order.orderNumber} (+${totalPiecesReceived} pcs) successfully received!`, { icon: '✅' });
+    setReceiveAllModal({ isOpen: false, order: null, updateMasterCost: true, paymentMethod: 'NONE' });
   };
 
   // Helper to apply product reception to state, localStorage, and Supabase
-  const executeItemReception = async (item: OurOrderItem) => {
+  const executeItemReception = async (
+    item: OurOrderItem, 
+    receivedPieces: number = item.quantityNeeded, 
+    updateMasterCost: boolean = true
+  ) => {
     const existing = products.find(p => p.id === item.id || (p.barcode && p.barcode === item.barcode));
 
     if (item.isNewProduct || !existing) {
@@ -491,8 +746,8 @@ export default function OurOrderView({
         name: item.name,
         barcode: item.barcode || ('BC-' + generateUUID().slice(0, 8).toUpperCase()),
         sku: item.sku || generateSKU(item.name, item.barcode),
-        price: item.costPrice || 0,
-        stock: item.quantityNeeded,
+        price: (item.costPrice && item.costPrice > 0) ? item.costPrice : 0,
+        stock: receivedPieces,
         pcsPerBox: item.pcsPerBox || 12,
         boxPerCtn: item.boxPerCtn || 6,
         retail_price: item.retailPrice,
@@ -527,11 +782,12 @@ export default function OurOrderView({
       }
     } else {
       // Restock existing product
-      const newStock = (existing.stock || 0) + item.quantityNeeded;
+      const newStock = (existing.stock || 0) + receivedPieces;
+      const newPrice = (updateMasterCost && item.costPrice && item.costPrice > 0) ? item.costPrice : existing.price;
 
       if (setProducts) {
         setProducts(prev => {
-          const updated = prev.map(p => p.id === existing.id ? { ...p, stock: newStock } : p);
+          const updated = prev.map(p => p.id === existing.id ? { ...p, stock: newStock, price: newPrice } : p);
           localStorage.setItem('shaheen_products', JSON.stringify(updated));
           return updated;
         });
@@ -541,7 +797,8 @@ export default function OurOrderView({
       try {
         await safeSupabaseUpdate('products', existing.id, {
           stock: newStock,
-          total_base_pieces: newStock
+          total_base_pieces: newStock,
+          ...(updateMasterCost && item.costPrice && item.costPrice > 0 ? { price: newPrice } : {})
         });
       } catch (err) {
         console.warn('Failed to update product stock on Supabase:', err);
@@ -560,14 +817,38 @@ export default function OurOrderView({
     return ourOrderList.reduce((acc, item) => acc + item.quantityNeeded, 0);
   }, [ourOrderList]);
 
-  // Placed orders filtering
+  // Placed orders filtering by status and supplier
   const activePlacedOrders = useMemo(() => {
-    return confirmedOrders.filter(po => po.status !== 'RECEIVED');
-  }, [confirmedOrders]);
+    return confirmedOrders.filter(po => {
+      const isNotReceived = po.status !== 'RECEIVED';
+      if (!isNotReceived) return false;
+      if (supplierFilter === 'ALL') return true;
+      return po.supplierName === supplierFilter;
+    });
+  }, [confirmedOrders, supplierFilter]);
 
   const historyPlacedOrders = useMemo(() => {
-    return confirmedOrders.filter(po => po.status === 'RECEIVED');
+    return confirmedOrders.filter(po => {
+      const isReceived = po.status === 'RECEIVED';
+      if (!isReceived) return false;
+      if (supplierFilter === 'ALL') return true;
+      return po.supplierName === supplierFilter;
+    });
+  }, [confirmedOrders, supplierFilter]);
+
+  // Unique list of suppliers in current placed orders
+  const activeSuppliersInOrders = useMemo(() => {
+    const set = new Set<string>();
+    confirmedOrders.forEach(po => {
+      if (po.supplierName) set.add(po.supplierName);
+    });
+    return Array.from(set);
   }, [confirmedOrders]);
+
+  // Total outstanding unpaid vendor bills
+  const totalVendorPayables = useMemo(() => {
+    return vendorLedgers.reduce((acc, b) => acc + (b.amount || 0), 0);
+  }, [vendorLedgers]);
 
   return (
     <div className="flex-1 flex flex-col h-full bg-slate-50 dark:bg-[#0a0a0c] overflow-y-auto">
@@ -589,6 +870,25 @@ export default function OurOrderView({
 
         {/* Action Buttons */}
         <div className="flex items-center gap-2 flex-wrap">
+          {/* Vendor Payables Ledger Button */}
+          <button
+            onClick={() => setIsVendorLedgerModalOpen(true)}
+            className={`flex items-center gap-1.5 px-3.5 py-2 font-bold text-xs rounded-lg shadow-sm transition-all border ${
+              totalVendorPayables > 0
+                ? 'bg-rose-50 hover:bg-rose-100 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300 border-rose-200 dark:border-rose-900/50'
+                : 'bg-white hover:bg-slate-50 text-slate-700 dark:bg-zinc-800 dark:hover:bg-zinc-700 dark:text-slate-300 border-slate-200 dark:border-zinc-700'
+            }`}
+            title="View vendor credit ledgers and unpaid supplier bills"
+          >
+            <Wallet size={14} className={totalVendorPayables > 0 ? 'text-rose-600 dark:text-rose-400' : 'text-slate-500'} />
+            Vendor Payables
+            {totalVendorPayables > 0 && (
+              <span className="bg-rose-600 text-white text-[10px] px-1.5 py-0.2 rounded-full font-mono">
+                Rs {totalVendorPayables.toLocaleString()}
+              </span>
+            )}
+          </button>
+
           <button 
             onClick={handleOpenLowStockWizard}
             className="flex items-center gap-1.5 px-3.5 py-2 bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs rounded-lg shadow-sm transition-all"
@@ -730,6 +1030,74 @@ export default function OurOrderView({
                   </div>
                 </div>
 
+                {/* Vendor / Supplier Tagging Card */}
+                <div className="bg-white dark:bg-zinc-900/60 p-4 rounded-xl border border-slate-200 dark:border-zinc-800/50 shadow-sm flex flex-col gap-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider flex items-center gap-1.5">
+                      <Building2 size={15} className="text-blue-600" /> Vendor / Supplier Tagging (Optional)
+                    </span>
+                    <span className="text-[11px] text-slate-400 hidden sm:inline">
+                      Tag orders to distributors for automatic WhatsApp routing & ledger billing
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 block mb-1">
+                        Distributor / Supplier Name
+                      </label>
+                      <input
+                        type="text"
+                        list="supplier-suggestions"
+                        placeholder="e.g. National Foods, Unilever, Habib Oil..."
+                        value={draftSupplier.name}
+                        onChange={e => setDraftSupplier(prev => ({ ...prev, name: e.target.value }))}
+                        className="w-full bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-xs font-semibold text-slate-900 dark:text-white outline-none focus:border-blue-500"
+                      />
+                      <datalist id="supplier-suggestions">
+                        {savedSuppliers.map(s => (
+                          <option key={s} value={s} />
+                        ))}
+                      </datalist>
+                    </div>
+
+                    <div>
+                      <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 block mb-1">
+                        Supplier WhatsApp / Phone (Optional)
+                      </label>
+                      <div className="relative">
+                        <Phone size={14} className="absolute left-3 top-2.5 text-slate-400" />
+                        <input
+                          type="text"
+                          placeholder="e.g. 03001234567"
+                          value={draftSupplier.phone}
+                          onChange={e => setDraftSupplier(prev => ({ ...prev, phone: e.target.value }))}
+                          className="w-full bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-lg pl-9 pr-3 py-2 text-xs font-mono text-slate-900 dark:text-white outline-none focus:border-blue-500"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Quick Clickable Supplier Pills */}
+                  <div className="flex items-center gap-1.5 flex-wrap pt-1">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Quick Select:</span>
+                    {savedSuppliers.slice(0, 6).map(sup => (
+                      <button
+                        key={sup}
+                        type="button"
+                        onClick={() => setDraftSupplier(prev => ({ ...prev, name: sup }))}
+                        className={`text-[11px] px-2.5 py-0.5 rounded-full border transition-all ${
+                          draftSupplier.name === sup
+                            ? 'bg-blue-600 text-white border-blue-600 font-bold'
+                            : 'bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-zinc-700 font-medium'
+                        }`}
+                      >
+                        {sup}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
                 {/* Draft Items Table */}
                 <div className="bg-white dark:bg-zinc-900/60 rounded-xl border border-slate-200 dark:border-zinc-800/50 shadow-sm overflow-hidden">
                   <div className="overflow-x-auto">
@@ -801,6 +1169,41 @@ export default function OurOrderView({
         {/* ==================================================== */}
         {activeTab === 'placed' && (
           <div className="max-w-6xl mx-auto flex flex-col gap-6">
+            {/* Supplier Filter Bar */}
+            {activeSuppliersInOrders.length > 0 && (
+              <div className="flex items-center gap-2 overflow-x-auto pb-1 bg-white dark:bg-zinc-900/60 p-3 rounded-xl border border-slate-200 dark:border-zinc-800/50 shadow-sm">
+                <span className="text-xs font-bold text-slate-500 dark:text-slate-400 flex items-center gap-1 shrink-0">
+                  <Filter size={13} /> Filter Vendor:
+                </span>
+                <button
+                  onClick={() => setSupplierFilter('ALL')}
+                  className={`px-3 py-1 text-xs font-bold rounded-lg transition-all shrink-0 ${
+                    supplierFilter === 'ALL'
+                      ? 'bg-blue-600 text-white shadow-sm'
+                      : 'bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-600 dark:text-slate-300'
+                  }`}
+                >
+                  All Vendors ({confirmedOrders.filter(o => o.status !== 'RECEIVED').length})
+                </button>
+                {activeSuppliersInOrders.map(sup => {
+                  const count = confirmedOrders.filter(o => o.status !== 'RECEIVED' && o.supplierName === sup).length;
+                  return (
+                    <button
+                      key={sup}
+                      onClick={() => setSupplierFilter(sup)}
+                      className={`px-3 py-1 text-xs font-bold rounded-lg transition-all flex items-center gap-1 shrink-0 ${
+                        supplierFilter === sup
+                          ? 'bg-blue-600 text-white shadow-sm'
+                          : 'bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-600 dark:text-slate-300'
+                      }`}
+                    >
+                      <Building2 size={12} /> {sup} ({count})
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+
             {activePlacedOrders.length === 0 ? (
               <div className="bg-white dark:bg-zinc-900/60 rounded-xl border border-slate-200 dark:border-zinc-800/50 p-12 flex flex-col items-center justify-center text-center shadow-sm">
                 <CheckCircle2 size={40} className="text-emerald-500 mb-3" />
@@ -825,23 +1228,33 @@ export default function OurOrderView({
                       className="bg-white dark:bg-zinc-900/60 border border-slate-200 dark:border-zinc-800/50 rounded-xl shadow-sm overflow-hidden"
                     >
                       {/* Order Card Header */}
-                      <div className="bg-slate-100/70 dark:bg-zinc-800/40 p-4 border-b border-slate-200 dark:border-zinc-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                      <div className="bg-slate-100/70 dark:bg-zinc-800/40 p-4 border-b border-slate-200 dark:border-zinc-800 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
                         <div className="flex items-center gap-3">
                           <div className="w-9 h-9 rounded-lg bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold text-xs">
                             PO
                           </div>
                           <div>
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2 flex-wrap">
                               <span className="font-bold text-base text-slate-900 dark:text-slate-50">
                                 Order #{order.orderNumber}
                               </span>
                               <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
                                 order.status === 'PARTIALLY_RECEIVED' 
-                                  ? 'bg-blue-100 text-blue-800 dark:bg-blue-950/50 dark:text-blue-300' 
-                                  : 'bg-amber-100 text-amber-800 dark:bg-amber-950/50 dark:text-amber-300'
+                                  ? 'bg-blue-100 text-blue-800 dark:bg-blue-950/50 dark:text-blue-300 border border-blue-200' 
+                                  : 'bg-amber-100 text-amber-800 dark:bg-amber-950/50 dark:text-amber-300 border border-amber-200'
                               }`}>
                                 {order.status === 'PARTIALLY_RECEIVED' ? 'PARTIALLY RECEIVED' : 'AWAITING DELIVERY'}
                               </span>
+                              {order.supplierName && (
+                                <span className="bg-slate-200/80 dark:bg-zinc-700 text-slate-800 dark:text-slate-200 text-[11px] font-bold px-2.5 py-0.5 rounded-md flex items-center gap-1">
+                                  <Building2 size={12} className="text-blue-600 dark:text-blue-400" /> {order.supplierName}
+                                </span>
+                              )}
+                              {order.supplierPhone && (
+                                <span className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1 font-mono">
+                                  <Phone size={11} /> {order.supplierPhone}
+                                </span>
+                              )}
                             </div>
                             <span className="text-xs text-slate-500 dark:text-slate-400">
                               Placed on {new Date(order.date).toLocaleDateString()} at {new Date(order.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} • {order.items.length} items
@@ -849,13 +1262,31 @@ export default function OurOrderView({
                           </div>
                         </div>
 
-                        <div className="flex items-center gap-4 self-end sm:self-auto">
-                          <div className="text-right">
-                            <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block">Total Cost</span>
-                            <span className="text-base font-black text-slate-900 dark:text-slate-50">
+                        <div className="flex items-center gap-3 self-end lg:self-auto flex-wrap">
+                          <div className="text-right mr-2">
+                            <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider block">Estimated Value</span>
+                            <span className="text-base font-black text-slate-900 dark:text-slate-50 font-mono">
                               Rs {order.totalAmount.toLocaleString()}
                             </span>
                           </div>
+
+                          {/* 1-Click WhatsApp Share */}
+                          <button
+                            onClick={() => handleShareWhatsApp(order)}
+                            className="px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 dark:hover:bg-emerald-950/60 font-bold text-xs rounded-lg border border-emerald-200 dark:border-emerald-900/50 flex items-center gap-1.5 transition-colors shadow-sm"
+                            title="Share Purchase Order details via WhatsApp to supplier"
+                          >
+                            <Share2 size={14} className="text-emerald-600" /> Share WhatsApp
+                          </button>
+
+                          {/* Printable PO Voucher */}
+                          <button
+                            onClick={() => setPrintOrderModal(order)}
+                            className="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-zinc-800 dark:hover:bg-zinc-700 dark:text-slate-300 font-bold text-xs rounded-lg border border-slate-200 dark:border-zinc-700 flex items-center gap-1.5 transition-colors shadow-sm"
+                            title="Print Purchase Requisition slip / voucher"
+                          >
+                            <Printer size={14} /> Print P.O.
+                          </button>
 
                           <button 
                             onClick={() => handleReceiveAll(order)}
@@ -876,6 +1307,7 @@ export default function OurOrderView({
                               <th className="py-2.5 px-4 font-semibold">Barcode / SKU</th>
                               <th className="py-2.5 px-4 font-semibold text-center">Ordered Unit</th>
                               <th className="py-2.5 px-4 font-semibold text-center">Base Pieces</th>
+                              <th className="py-2.5 px-4 font-semibold text-center">Receiving Status</th>
                               <th className="py-2.5 px-4 font-semibold text-right">Cost / Pc</th>
                               <th className="py-2.5 px-4 font-semibold text-right">Line Total</th>
                               <th className="py-2.5 px-4 font-semibold text-right">Action</th>
@@ -884,6 +1316,7 @@ export default function OurOrderView({
                           <tbody>
                             {order.items.map((item) => {
                               const isReceived = item.status === 'RECEIVED';
+                              const isPartial = item.status === 'PARTIALLY_RECEIVED';
                               return (
                                 <tr 
                                   key={item.id} 
@@ -900,13 +1333,36 @@ export default function OurOrderView({
                                     </div>
                                   </td>
                                   <td className="py-3 px-4 text-xs font-mono text-slate-500 dark:text-slate-400">
-                                    {item.barcode}
+                                    {item.barcode || item.sku || '-'}
                                   </td>
                                   <td className="py-3 px-4 text-center font-bold text-slate-800 dark:text-slate-200">
                                     {item.unitQuantity || 1} {item.unit || 'Pcs'}
                                   </td>
-                                  <td className="py-3 px-4 text-center font-bold text-blue-600 dark:text-blue-400">
+                                  <td className="py-3 px-4 text-center font-bold text-blue-600 dark:text-blue-400 font-mono">
                                     {item.quantityNeeded} pcs
+                                  </td>
+                                  <td className="py-3 px-4 text-center">
+                                    {isReceived ? (
+                                      <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-950/50 px-2.5 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-800">
+                                        <Check size={12} strokeWidth={3} /> Fully Received
+                                      </span>
+                                    ) : isPartial ? (
+                                      <div className="flex flex-col items-center">
+                                        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-700 dark:text-amber-400 bg-amber-100 dark:bg-amber-950/50 px-2 py-0.5 rounded-full border border-amber-200">
+                                          Partial: {item.receivedUnitQuantity || 0}/{item.unitQuantity || 1} {item.unit}
+                                        </span>
+                                        <span className="text-[10px] text-slate-400 mt-0.5">
+                                          ({item.receivedQuantityNeeded || 0}/{item.quantityNeeded} pcs)
+                                        </span>
+                                        {item.shortShippedReason && (
+                                          <span className="text-[9px] text-rose-500 font-medium">{item.shortShippedReason}</span>
+                                        )}
+                                      </div>
+                                    ) : (
+                                      <span className="text-[11px] font-medium text-slate-400">
+                                        Awaiting (0/{item.unitQuantity || 1})
+                                      </span>
+                                    )}
                                   </td>
                                   <td className="py-3 px-4 text-right font-mono text-slate-700 dark:text-slate-300">
                                     Rs {(item.costPrice || 0).toLocaleString()}
@@ -923,8 +1379,9 @@ export default function OurOrderView({
                                       <button 
                                         onClick={() => handleReceiveItem(order.id, item)}
                                         className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-md shadow-sm transition-colors inline-flex items-center gap-1"
+                                        title="Receive stock (supports partial quantities & short delivery)"
                                       >
-                                        <Check size={14} /> Received
+                                        <Check size={14} /> Receive {isPartial ? 'More' : ''}
                                       </button>
                                     )}
                                   </td>
@@ -957,24 +1414,50 @@ export default function OurOrderView({
                 {historyPlacedOrders.map((order) => (
                   <div key={order.id} className="bg-white dark:bg-zinc-900/60 border border-slate-200 dark:border-zinc-800/50 rounded-xl p-4 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                     <div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
                         <span className="font-bold text-slate-900 dark:text-white">Order #{order.orderNumber}</span>
-                        <span className="bg-emerald-100 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-400 text-[10px] font-bold px-2 py-0.5 rounded-full">
+                        <span className="bg-emerald-100 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-400 text-[10px] font-bold px-2 py-0.5 rounded-full border border-emerald-200">
                           FULLY RECEIVED
                         </span>
+                        {order.supplierName && (
+                          <span className="bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-slate-300 text-[11px] font-bold px-2 py-0.5 rounded flex items-center gap-1">
+                            <Building2 size={12} className="text-blue-600" /> {order.supplierName}
+                          </span>
+                        )}
+                        {order.paymentMethod && order.paymentMethod !== 'UNPAID' && (
+                          <span className="bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 text-[10px] font-bold px-2 py-0.5 rounded border border-blue-200">
+                            {order.paymentMethod === 'CASH' ? 'Paid: Cash Register' : order.paymentMethod === 'VENDOR_CREDIT' ? 'Vendor Credit Ledger' : 'Bank Transfer'}
+                          </span>
+                        )}
                       </div>
                       <p className="text-xs text-slate-500 mt-1">
                         Completed on {new Date(order.date).toLocaleDateString()} • {order.items.length} items
                       </p>
                     </div>
 
-                    <div className="flex items-center gap-4 self-end md:self-auto">
-                      <div className="text-right">
+                    <div className="flex items-center gap-3 self-end md:self-auto">
+                      <div className="text-right mr-2">
                         <span className="text-xs text-slate-400 block">Total Invoiced</span>
-                        <span className="font-black text-slate-900 dark:text-slate-100 text-base">
+                        <span className="font-black text-slate-900 dark:text-slate-100 text-base font-mono">
                           Rs {order.totalAmount.toLocaleString()}
                         </span>
                       </div>
+
+                      <button
+                        onClick={() => handleShareWhatsApp(order)}
+                        className="px-2.5 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 rounded-lg border border-emerald-200 text-xs font-semibold flex items-center gap-1 transition-colors"
+                        title="Share voucher via WhatsApp"
+                      >
+                        <Share2 size={13} /> WhatsApp
+                      </button>
+
+                      <button
+                        onClick={() => setPrintOrderModal(order)}
+                        className="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-zinc-800 dark:hover:bg-zinc-700 dark:text-slate-300 rounded-lg border border-slate-200 text-xs font-semibold flex items-center gap-1 transition-colors"
+                        title="Print Purchase Slip"
+                      >
+                        <Printer size={13} /> Print
+                      </button>
                     </div>
                   </div>
                 ))}
@@ -1552,6 +2035,520 @@ export default function OurOrderView({
                 </div>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* ==================================================== */}
+      {/* MODAL 4: PARTIAL QUANTITY & SHORT DELIVERY RECEIVING */}
+      {/* ==================================================== */}
+      {receiveItemModal.isOpen && receiveItemModal.item && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setReceiveItemModal(prev => ({ ...prev, isOpen: false, item: null }))}>
+          <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-2xl w-full max-w-lg p-6 shadow-2xl flex flex-col gap-4" onClick={e => e.stopPropagation()}>
+            <div className="flex justify-between items-center border-b border-slate-200 dark:border-zinc-800 pb-3">
+              <div>
+                <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                  <Package size={18} className="text-emerald-600" /> Receive Stock Delivery
+                </h2>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  Record physical stock arrival into your live inventory.
+                </p>
+              </div>
+              <button onClick={() => setReceiveItemModal(prev => ({ ...prev, isOpen: false, item: null }))} className="text-slate-400 hover:text-slate-600">
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Product & Order Details */}
+            <div className="bg-slate-50 dark:bg-zinc-800/50 p-3.5 rounded-xl border border-slate-200 dark:border-zinc-700/60 flex flex-col gap-2">
+              <div className="flex justify-between items-start">
+                <div>
+                  <span className="font-bold text-sm text-slate-900 dark:text-white block">{receiveItemModal.item.name}</span>
+                  <span className="text-xs font-mono text-slate-400">
+                    Barcode: {receiveItemModal.item.barcode || '-'} • SKU: {receiveItemModal.item.sku || '-'}
+                  </span>
+                </div>
+                {receiveItemModal.item.isNewProduct && (
+                  <span className="text-[10px] font-bold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full">
+                    NEW PRODUCT
+                  </span>
+                )}
+              </div>
+
+              <div className="grid grid-cols-3 gap-2 pt-2 border-t border-slate-200/80 dark:border-zinc-700/60 text-xs">
+                <div>
+                  <span className="text-slate-400 block text-[10px]">Ordered:</span>
+                  <span className="font-bold text-slate-800 dark:text-slate-200">
+                    {receiveItemModal.item.unitQuantity || 1} {receiveItemModal.item.unit || 'Pcs'}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-slate-400 block text-[10px]">Previously Rcvd:</span>
+                  <span className="font-bold text-slate-800 dark:text-slate-200">
+                    {receiveItemModal.item.receivedUnitQuantity || 0} {receiveItemModal.item.unit || 'Pcs'}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-slate-400 block text-[10px]">Remaining:</span>
+                  <span className="font-bold text-amber-600 dark:text-amber-400">
+                    {Math.max(0, (receiveItemModal.item.unitQuantity || 1) - (receiveItemModal.item.receivedUnitQuantity || 0))} {receiveItemModal.item.unit || 'Pcs'}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Arrived Quantity Input */}
+            <div>
+              <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
+                Quantity Arrived Today (in {receiveItemModal.item.unit || 'Pcs'})
+              </label>
+              <div className="flex items-center gap-3">
+                <input
+                  type="number"
+                  min={1}
+                  value={receiveItemModal.qtyToReceive}
+                  onChange={e => {
+                    const val = parseInt(e.target.value) || 1;
+                    const maxRem = Math.max(1, (receiveItemModal.item?.unitQuantity || 1) - (receiveItemModal.item?.receivedUnitQuantity || 0));
+                    setReceiveItemModal(prev => ({
+                      ...prev,
+                      qtyToReceive: val,
+                      markShortShipped: val < maxRem ? prev.markShortShipped : false
+                    }));
+                  }}
+                  className="w-28 bg-white dark:bg-zinc-800 border-2 border-emerald-500 rounded-lg px-3 py-2 text-base font-bold font-mono text-center text-slate-900 dark:text-white outline-none"
+                />
+                <div className="text-xs text-slate-500 dark:text-slate-400">
+                  <span>Converts to: </span>
+                  <span className="font-bold text-emerald-600 dark:text-emerald-400 text-sm">
+                    +{calculatePieces(
+                      receiveItemModal.item.unit || 'Pcs',
+                      receiveItemModal.qtyToReceive,
+                      receiveItemModal.item.pcsPerBox,
+                      receiveItemModal.item.boxPerCtn
+                    )} base pieces
+                  </span>
+                  <div className="text-[11px] font-mono text-slate-400">
+                    Valued at Rs {(
+                      calculatePieces(
+                        receiveItemModal.item.unit || 'Pcs',
+                        receiveItemModal.qtyToReceive,
+                        receiveItemModal.item.pcsPerBox,
+                        receiveItemModal.item.boxPerCtn
+                      ) * (receiveItemModal.item.costPrice || 0)
+                    ).toLocaleString()}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Short Delivery Checkbox if receiving less than remaining */}
+            {receiveItemModal.qtyToReceive < Math.max(1, (receiveItemModal.item.unitQuantity || 1) - (receiveItemModal.item.receivedUnitQuantity || 0)) && (
+              <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/40 p-3 rounded-lg flex items-start gap-2.5">
+                <input
+                  type="checkbox"
+                  id="markShortShipped"
+                  checked={receiveItemModal.markShortShipped}
+                  onChange={e => setReceiveItemModal(prev => ({ ...prev, markShortShipped: e.target.checked }))}
+                  className="mt-0.5 rounded text-amber-600 focus:ring-amber-500"
+                />
+                <label htmlFor="markShortShipped" className="text-xs text-amber-900 dark:text-amber-200 font-medium cursor-pointer">
+                  <span className="font-bold block">Mark Remaining Balance as Short-Shipped / Closed</span>
+                  Check this if the supplier cannot deliver the remaining units and this order item should be marked complete.
+                </label>
+              </div>
+            )}
+
+            {/* Master Cost Update Toggle */}
+            <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-zinc-800/40 rounded-lg border border-slate-200 dark:border-zinc-700">
+              <div>
+                <span className="text-xs font-bold text-slate-800 dark:text-slate-200 block">
+                  Update Master Product Cost Price
+                </span>
+                <span className="text-[11px] text-slate-500 dark:text-slate-400">
+                  Set master inventory price to Rs {receiveItemModal.item.costPrice || 0}/pc
+                </span>
+              </div>
+              <input
+                type="checkbox"
+                checked={receiveItemModal.updateMasterCost}
+                onChange={e => setReceiveItemModal(prev => ({ ...prev, updateMasterCost: e.target.checked }))}
+                className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500"
+              />
+            </div>
+
+            {/* Financial Settlement & Accounts Payable */}
+            <div>
+              <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
+                Payment & Financial Settlement
+              </label>
+              <select
+                value={receiveItemModal.paymentMethod}
+                onChange={e => setReceiveItemModal(prev => ({ ...prev, paymentMethod: e.target.value as any }))}
+                className="w-full bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-xs font-semibold text-slate-900 dark:text-white"
+              >
+                <option value="NONE">Stock Only (No cash or ledger movement)</option>
+                <option value="CASH">Cash Drawer Out (Deduct from Daily Cash Balance)</option>
+                <option value="VENDOR_CREDIT">Vendor Credit Bill (Record in Accounts Payable Ledger)</option>
+                <option value="BANK">Bank Transfer (Record as bank expense)</option>
+              </select>
+            </div>
+
+            {/* Modal Actions */}
+            <div className="flex justify-end gap-2 pt-3 border-t border-slate-200 dark:border-zinc-800">
+              <button
+                type="button"
+                onClick={() => setReceiveItemModal(prev => ({ ...prev, isOpen: false, item: null }))}
+                className="px-4 py-2 text-xs font-semibold text-slate-600 dark:text-slate-400"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={confirmItemReception}
+                className="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-lg shadow-sm flex items-center gap-1.5"
+              >
+                <Check size={15} /> Confirm Reception
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ==================================================== */}
+      {/* MODAL 5: BULK RECEIVE ALL CONFIRMATION               */}
+      {/* ==================================================== */}
+      {receiveAllModal.isOpen && receiveAllModal.order && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setReceiveAllModal(prev => ({ ...prev, isOpen: false, order: null }))}>
+          <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-2xl w-full max-w-lg p-6 shadow-2xl flex flex-col gap-4" onClick={e => e.stopPropagation()}>
+            <div className="flex justify-between items-center border-b border-slate-200 dark:border-zinc-800 pb-3">
+              <div>
+                <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                  <CheckCheck size={20} className="text-emerald-600" /> Receive All Order Items
+                </h2>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  Order #{receiveAllModal.order.orderNumber} • {receiveAllModal.order.supplierName || 'General Vendor'}
+                </p>
+              </div>
+              <button onClick={() => setReceiveAllModal(prev => ({ ...prev, isOpen: false, order: null }))} className="text-slate-400 hover:text-slate-600">
+                <X size={18} />
+              </button>
+            </div>
+
+            <p className="text-xs text-slate-600 dark:text-slate-300">
+              This will receive all unreceived line items in this order directly into live inventory at their set purchase rates.
+            </p>
+
+            {/* Unreceived Summary */}
+            <div className="bg-slate-50 dark:bg-zinc-800/50 p-4 rounded-xl border border-slate-200 dark:border-zinc-700/60 flex flex-col gap-2">
+              <div className="flex justify-between text-xs">
+                <span className="text-slate-500">Unreceived Line Items:</span>
+                <span className="font-bold text-slate-900 dark:text-white">
+                  {receiveAllModal.order.items.filter(i => i.status !== 'RECEIVED').length} items
+                </span>
+              </div>
+              <div className="flex justify-between text-xs">
+                <span className="text-slate-500">Total Unreceived Base Pieces:</span>
+                <span className="font-bold text-emerald-600 dark:text-emerald-400 font-mono">
+                  +{receiveAllModal.order.items.filter(i => i.status !== 'RECEIVED').reduce((acc, i) => acc + Math.max(0, i.quantityNeeded - (i.receivedQuantityNeeded || 0)), 0)} pcs
+                </span>
+              </div>
+              <div className="flex justify-between text-sm font-bold pt-2 border-t border-slate-200 dark:border-zinc-700">
+                <span className="text-slate-700 dark:text-slate-300">Total Value:</span>
+                <span className="text-blue-600 dark:text-blue-400 font-mono">
+                  Rs {receiveAllModal.order.items.filter(i => i.status !== 'RECEIVED').reduce((acc, i) => {
+                    const remPieces = Math.max(0, i.quantityNeeded - (i.receivedQuantityNeeded || 0));
+                    return acc + (remPieces * (i.costPrice || 0));
+                  }, 0).toLocaleString()}
+                </span>
+              </div>
+            </div>
+
+            {/* Master Cost Update Toggle */}
+            <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-zinc-800/40 rounded-lg border border-slate-200 dark:border-zinc-700">
+              <div>
+                <span className="text-xs font-bold text-slate-800 dark:text-slate-200 block">
+                  Update Master Product Cost Prices
+                </span>
+                <span className="text-[11px] text-slate-500 dark:text-slate-400">
+                  Update master inventory price for all received products
+                </span>
+              </div>
+              <input
+                type="checkbox"
+                checked={receiveAllModal.updateMasterCost}
+                onChange={e => setReceiveAllModal(prev => ({ ...prev, updateMasterCost: e.target.checked }))}
+                className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500"
+              />
+            </div>
+
+            {/* Financial Settlement */}
+            <div>
+              <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
+                Payment & Settlement Method
+              </label>
+              <select
+                value={receiveAllModal.paymentMethod}
+                onChange={e => setReceiveAllModal(prev => ({ ...prev, paymentMethod: e.target.value as any }))}
+                className="w-full bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-xs font-semibold text-slate-900 dark:text-white"
+              >
+                <option value="NONE">Stock Only (No cash or ledger movement)</option>
+                <option value="CASH">Deduct from Cash Register Drawer (Cash Out / Expense)</option>
+                <option value="VENDOR_CREDIT">Record as Vendor Credit Bill (Accounts Payable)</option>
+                <option value="BANK">Bank Transfer (Record as bank expense)</option>
+              </select>
+            </div>
+
+            {/* Actions */}
+            <div className="flex justify-end gap-2 pt-3 border-t border-slate-200 dark:border-zinc-800">
+              <button
+                type="button"
+                onClick={() => setReceiveAllModal(prev => ({ ...prev, isOpen: false, order: null }))}
+                className="px-4 py-2 text-xs font-semibold text-slate-600"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={confirmReceiveAll}
+                className="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-lg shadow-sm flex items-center gap-1.5"
+              >
+                <CheckCheck size={16} /> Confirm & Receive All
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ==================================================== */}
+      {/* MODAL 6: PRINTABLE PURCHASE ORDER SLIP (P.O. Slip)   */}
+      {/* ==================================================== */}
+      {printOrderModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setPrintOrderModal(null)}>
+          <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-2xl w-full max-w-3xl max-h-[92vh] flex flex-col shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
+            <div className="px-6 py-4 border-b border-slate-200 dark:border-zinc-800 flex justify-between items-center bg-slate-50 dark:bg-zinc-800/50 print:hidden">
+              <h2 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <Printer size={18} className="text-blue-600" /> Purchase Requisition Voucher / P.O. Slip
+              </h2>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => window.print()}
+                  className="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-lg shadow-sm flex items-center gap-1.5"
+                >
+                  <Printer size={14} /> Print Slip
+                </button>
+                <button onClick={() => setPrintOrderModal(null)} className="text-slate-400 hover:text-slate-600 p-1">
+                  <X size={18} />
+                </button>
+              </div>
+            </div>
+
+            {/* Print Content Area */}
+            <div className="p-8 overflow-y-auto custom-scrollbar flex-1 bg-white text-slate-900" id="po-slip-print-content">
+              {/* Slip Header */}
+              <div className="border-b-2 border-slate-900 pb-4 mb-6 flex justify-between items-start">
+                <div>
+                  <h1 className="text-2xl font-black tracking-tight text-slate-900">SHAHEEN GLOBAL TRADERS</h1>
+                  <p className="text-xs font-semibold text-slate-600">FMCG Wholesale & General Distribution</p>
+                  <p className="text-xs text-slate-500">Shaheen Market, Quetta, Pakistan • Tel: +92 81 2824567</p>
+                </div>
+                <div className="text-right">
+                  <span className="text-xs font-bold text-blue-700 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded uppercase">
+                    Purchase Order (PO)
+                  </span>
+                  <div className="text-lg font-black font-mono mt-1">#{printOrderModal.orderNumber}</div>
+                  <div className="text-xs text-slate-500">{new Date(printOrderModal.date).toLocaleDateString()}</div>
+                </div>
+              </div>
+
+              {/* Vendor & Order Details */}
+              <div className="grid grid-cols-2 gap-4 mb-6 text-xs bg-slate-50 p-4 rounded-lg border border-slate-200">
+                <div>
+                  <span className="font-bold text-slate-500 uppercase tracking-wider block mb-1">Supplier / Vendor:</span>
+                  <div className="font-black text-sm text-slate-900">{printOrderModal.supplierName || 'General Wholesaler / Distributor'}</div>
+                  {printOrderModal.supplierPhone && (
+                    <div className="text-slate-600 font-mono mt-0.5">Phone: {printOrderModal.supplierPhone}</div>
+                  )}
+                </div>
+                <div>
+                  <span className="font-bold text-slate-500 uppercase tracking-wider block mb-1">Requisition Status:</span>
+                  <div className="font-bold text-slate-800">{printOrderModal.status === 'RECEIVED' ? 'Fully Received & Stocked' : 'Awaiting Delivery'}</div>
+                  <div className="text-slate-600 mt-0.5">Total Line Items: {printOrderModal.items.length}</div>
+                </div>
+              </div>
+
+              {/* Items Table */}
+              <table className="w-full text-left border-collapse text-xs mb-6">
+                <thead>
+                  <tr className="border-b-2 border-slate-800 bg-slate-100">
+                    <th className="py-2 px-3 font-bold">#</th>
+                    <th className="py-2 px-3 font-bold">Item Description</th>
+                    <th className="py-2 px-3 font-bold">Barcode / SKU</th>
+                    <th className="py-2 px-3 font-bold text-center">Ordered Unit</th>
+                    <th className="py-2 px-3 font-bold text-center">Total Pcs</th>
+                    <th className="py-2 px-3 font-bold text-right">Cost / Pc</th>
+                    <th className="py-2 px-3 font-bold text-right">Total (PKR)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {printOrderModal.items.map((it, idx) => (
+                    <tr key={it.id} className="border-b border-slate-200">
+                      <td className="py-2 px-3 font-mono text-slate-500">{idx + 1}</td>
+                      <td className="py-2 px-3 font-bold text-slate-900">{it.name}</td>
+                      <td className="py-2 px-3 font-mono text-slate-600">{it.barcode || it.sku || '-'}</td>
+                      <td className="py-2 px-3 text-center font-bold">{it.unitQuantity || 1} {it.unit || 'Pcs'}</td>
+                      <td className="py-2 px-3 text-center font-bold text-blue-700">{it.quantityNeeded} pcs</td>
+                      <td className="py-2 px-3 text-right font-mono">Rs {(it.costPrice || 0).toLocaleString()}</td>
+                      <td className="py-2 px-3 text-right font-mono font-bold">
+                        Rs {(it.totalCost || (it.quantityNeeded * (it.costPrice || 0))).toLocaleString()}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+
+              {/* Summary Totals */}
+              <div className="flex justify-end mb-10">
+                <div className="w-64 bg-slate-50 p-4 rounded-lg border border-slate-200 flex flex-col gap-2 text-xs">
+                  <div className="flex justify-between">
+                    <span className="text-slate-600">Total Items:</span>
+                    <span className="font-bold">{printOrderModal.items.length}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-600">Total Pieces:</span>
+                    <span className="font-bold font-mono">
+                      {printOrderModal.items.reduce((acc, i) => acc + i.quantityNeeded, 0)} pcs
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-base font-black pt-2 border-t border-slate-300">
+                    <span>Grand Total:</span>
+                    <span className="text-blue-700 font-mono">Rs {printOrderModal.totalAmount.toLocaleString()}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Signatures */}
+              <div className="grid grid-cols-3 gap-6 pt-8 border-t border-dashed border-slate-300 text-center text-xs text-slate-600">
+                <div>
+                  <div className="border-b border-slate-400 mb-2 h-10"></div>
+                  <span className="font-bold">Prepared / Authorized By</span>
+                </div>
+                <div>
+                  <div className="border-b border-slate-400 mb-2 h-10"></div>
+                  <span className="font-bold">Vendor Delivery Agent</span>
+                </div>
+                <div>
+                  <div className="border-b border-slate-400 mb-2 h-10"></div>
+                  <span className="font-bold">Warehouse Stock Received</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ==================================================== */}
+      {/* MODAL 7: VENDOR CREDIT & ACCOUNTS PAYABLE LEDGER     */}
+      {/* ==================================================== */}
+      {isVendorLedgerModalOpen && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setIsVendorLedgerModalOpen(false)}>
+          <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-2xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
+            <div className="px-6 py-4 border-b border-slate-200 dark:border-zinc-800 flex justify-between items-center bg-slate-50 dark:bg-zinc-800/50">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-rose-100 dark:bg-rose-950/60 text-rose-600 flex items-center justify-center">
+                  <Wallet size={20} />
+                </div>
+                <div>
+                  <h2 className="text-lg font-bold text-slate-900 dark:text-white">Vendor Accounts Payable Ledger</h2>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    Track unpaid supplier invoices and credit deliveries.
+                  </p>
+                </div>
+              </div>
+              <button onClick={() => setIsVendorLedgerModalOpen(false)} className="text-slate-400 hover:text-slate-600">
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Total Balance Card */}
+            <div className="p-6 border-b border-slate-200 dark:border-zinc-800 bg-slate-100/50 dark:bg-zinc-800/30 flex justify-between items-center">
+              <div>
+                <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider block">
+                  Total Outstanding Vendor Payables
+                </span>
+                <span className="text-2xl font-black text-rose-600 dark:text-rose-400 font-mono">
+                  Rs {totalVendorPayables.toLocaleString()}
+                </span>
+              </div>
+              <span className="bg-rose-100 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 text-xs font-bold px-3 py-1 rounded-full border border-rose-200 dark:border-rose-900">
+                {vendorLedgers.length} Unpaid Bills
+              </span>
+            </div>
+
+            {/* Ledger Bills List */}
+            <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
+              {vendorLedgers.length === 0 ? (
+                <div className="py-12 text-center text-slate-400">
+                  <CheckCircle2 size={40} className="mx-auto mb-2 text-emerald-500 opacity-80" />
+                  <p className="font-bold text-slate-700 dark:text-slate-300">No Outstanding Vendor Payables</p>
+                  <p className="text-xs mt-1">All supplier credit bills have been settled.</p>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-3">
+                  {vendorLedgers.map(bill => (
+                    <div key={bill.id} className="p-4 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-800/40 shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-1.5">
+                            <Building2 size={14} className="text-blue-600" /> {bill.vendorName}
+                          </span>
+                          <span className="text-xs font-mono font-semibold bg-slate-100 dark:bg-zinc-700 px-2 py-0.5 rounded text-slate-600 dark:text-slate-300">
+                            PO #{bill.orderNumber}
+                          </span>
+                        </div>
+                        <span className="text-xs text-slate-500 dark:text-slate-400 block mt-1">
+                          Bill recorded on {new Date(bill.date).toLocaleDateString()} at {new Date(bill.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          {bill.notes && ` • ${bill.notes}`}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center gap-3 self-end sm:self-auto">
+                        <span className="text-base font-black text-rose-600 dark:text-rose-400 font-mono">
+                          Rs {bill.amount.toLocaleString()}
+                        </span>
+
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            onClick={() => handleSettleVendorBill(bill.id, true)}
+                            className="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-lg shadow-sm transition-colors"
+                            title="Pay from register cash drawer"
+                          >
+                            Pay Cash
+                          </button>
+                          <button
+                            onClick={() => handleSettleVendorBill(bill.id, false)}
+                            className="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-zinc-700 text-slate-700 dark:text-slate-200 font-bold text-xs rounded-lg transition-colors"
+                            title="Mark as paid / settled externally"
+                          >
+                            Mark Settled
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="px-6 py-3 border-t border-slate-200 dark:border-zinc-800 flex justify-end bg-slate-50 dark:bg-zinc-800/50">
+              <button
+                onClick={() => setIsVendorLedgerModalOpen(false)}
+                className="px-4 py-2 bg-slate-200 hover:bg-slate-300 dark:bg-zinc-700 text-slate-800 dark:text-slate-200 text-xs font-bold rounded-lg"
+              >
+                Close
+              </button>
+            </div>
           </div>
         </div>
       )}

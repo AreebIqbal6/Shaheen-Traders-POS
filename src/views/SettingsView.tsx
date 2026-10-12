@@ -4,6 +4,7 @@ import toast from 'react-hot-toast';
 
 import { supabase } from '../lib/supabase';
 import { ensureBackupFolder } from '../utils/backupValidator';
+import { broadcastCloudRevocation, purgeAdminSession } from '../utils/authSecurity';
 
 
 export default function SettingsView() {
@@ -101,28 +102,14 @@ export default function SettingsView() {
       });
       if (error) throw error;
 
-      // Broadcast credential revocation timestamp to log out admin everywhere across all devices
-      const updateTimestamp = new Date().toISOString();
-      try {
-        await supabase.from('settings').upsert({ key: 'admin_credentials_updated_at', value: updateTimestamp });
-      } catch (err) {
-        console.warn('Failed to broadcast admin update timestamp:', err);
-      }
+      // Broadcast credential revocation timestamp to log out admin and bookers everywhere across all devices
+      await broadcastCloudRevocation('ALL');
 
-      // Invalidate all active Supabase sessions globally
-      try {
-        await supabase.auth.signOut({ scope: 'global' } as any);
-      } catch {
-        await supabase.auth.signOut();
-      }
-
-      // Clear local admin credentials cache
-      localStorage.removeItem('shaheen_admin_auth');
-      localStorage.removeItem('shaheen_admin_login_time');
-      localStorage.removeItem('admin_offline_hash');
+      // Invalidate all active Supabase sessions globally and clear local cache
+      await purgeAdminSession('Admin credentials updated. Logged out everywhere.');
       setAdminPassword('');
 
-      toast.success('Admin credentials updated! All active sessions have been revoked. Please log in again.', { id: 'auth-update', duration: 4000 });
+      toast.success('Admin credentials updated! All active sessions have been revoked immediately everywhere.', { id: 'auth-update', duration: 4000 });
       
       setTimeout(() => {
         window.location.reload();
