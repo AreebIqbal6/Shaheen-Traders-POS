@@ -46,12 +46,7 @@ import FitText from '../components/FitText';
 
 
 
-export interface OurOrderItem {
-  id: string;
-  name: string;
-  barcode: string;
-  quantityNeeded: number;
-}
+export type { OurOrderItem } from '../types/index';
 
 const GlobalLiveClock = ({ mobile }: { mobile?: boolean }) => {
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -1508,7 +1503,14 @@ export default function AdminPOSView() {
       case 'Bookers & Shops':
         return <BookersView />;
       case 'Our Order':
-        return <OurOrderView ourOrderList={ourOrderList} setOurOrderList={setOurOrderList} />;
+        return (
+          <OurOrderView 
+            ourOrderList={ourOrderList} 
+            setOurOrderList={setOurOrderList} 
+            products={products}
+            setProducts={setProducts}
+          />
+        );
       case 'Orders':
         return (
           <IncomingOrdersView
@@ -2406,6 +2408,12 @@ export default function AdminPOSView() {
                                     className="px-3 py-1.5 bg-yellow-500 hover:bg-yellow-600 text-white font-semibold text-xs rounded-md shadow-sm transition-colors"
                                   >
                                     Order Received
+                                  </button>
+                                  <button 
+                                    onClick={() => handleCancelIncomingOrder(order)}
+                                    className="px-3 py-1.5 bg-red-50 hover:bg-red-100 dark:bg-red-950/40 dark:hover:bg-red-900/50 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800/60 font-semibold text-xs rounded-md shadow-sm transition-colors"
+                                  >
+                                    Cancel
                                   </button>
                                 </>
                               ) : (

@@ -132,6 +132,12 @@ export default function IncomingOrdersView({
                               >
                                 Order Received
                               </button>
+                              <button 
+                                onClick={() => handleCancelIncomingOrder(order)}
+                                className="px-3 py-1.5 bg-red-50 hover:bg-red-100 dark:bg-red-950/40 dark:hover:bg-red-900/50 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800/60 font-semibold text-xs rounded-md shadow-sm transition-colors"
+                              >
+                                Cancel Order
+                              </button>
                             </>
                           ) : (
                             <>

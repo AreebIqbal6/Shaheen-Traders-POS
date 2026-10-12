@@ -34,11 +34,36 @@ export interface Order {
   phone?: string;
 }
 
+export type UOMType = 'Pcs' | 'Box' | 'Ctn';
+
 export interface OurOrderItem {
   id: string;
   name: string;
   barcode: string;
   quantityNeeded: number;
+  sku?: string;
+  unit?: UOMType;
+  unitQuantity?: number;
+  costPrice?: number;
+  totalCost?: number;
+  pcsPerBox?: number;
+  boxPerCtn?: number;
+  retailPrice?: number;
+  category?: string;
+  itemType?: 'Local' | 'Imported';
+  minStock?: number;
+  isNewProduct?: boolean;
+  status?: 'PENDING' | 'ORDERED' | 'RECEIVED';
+  receivedAt?: string;
+}
+
+export interface ConfirmedPurchaseOrder {
+  id: string;
+  orderNumber: string;
+  date: string;
+  items: OurOrderItem[];
+  totalAmount: number;
+  status: 'PENDING' | 'PARTIALLY_RECEIVED' | 'RECEIVED';
 }
 
 export interface Booker {
