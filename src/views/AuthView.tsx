@@ -26,6 +26,8 @@ export default function AuthView({ onLogin }: AuthViewProps) {
         const savedHash = localStorage.getItem('admin_offline_hash');
         
         if (savedEmail === email && savedHash === btoa(password)) {
+          localStorage.setItem('shaheen_admin_login_time', Date.now().toString());
+          localStorage.setItem('shaheen_admin_auth', 'true');
           onLogin('Admin');
         } else {
           throw new Error('You are offline. Invalid cached credentials or never logged in.');
@@ -45,6 +47,8 @@ export default function AuthView({ onLogin }: AuthViewProps) {
         // Save offline fallback credentials
         localStorage.setItem('admin_offline_email', email);
         localStorage.setItem('admin_offline_hash', btoa(password));
+        localStorage.setItem('shaheen_admin_login_time', Date.now().toString());
+        localStorage.setItem('shaheen_admin_auth', 'true');
         onLogin('Admin');
       }
     } catch (err: any) {

@@ -240,6 +240,20 @@ export default function BookersView() {
         const updatedBookers = bookers.map(b => b.id === editingBooker.id ? { ...b, ...payload } : b);
         setBookers(updatedBookers);
         localStorage.setItem('shaheen_bookers', JSON.stringify(updatedBookers));
+
+        // If this device was impersonating or active with this booker and credentials changed, clear active session
+        const activeBookerStr = localStorage.getItem('shaheen_active_booker');
+        if (activeBookerStr) {
+          try {
+            const activeB = JSON.parse(activeBookerStr);
+            if (activeB.id === editingBooker.id && (password || username !== editingBooker.username)) {
+              localStorage.removeItem('shaheen_active_booker');
+              localStorage.removeItem('shaheen_bookerName');
+              setImpersonatingBooker(null);
+            }
+          } catch {}
+        }
+
         toast.success('Booker updated successfully');
       } else {
         // --- ADD MODE ---
@@ -331,6 +345,19 @@ export default function BookersView() {
                 if (!deletedQueue.includes(bookerNumber)) {
                   deletedQueue.push(bookerNumber);
                   localStorage.setItem('shaheen_deleted_bookers', JSON.stringify(deletedQueue));
+                }
+
+                // If active booker on this device was deleted, clear active session
+                const activeBookerStr = localStorage.getItem('shaheen_active_booker');
+                if (activeBookerStr) {
+                  try {
+                    const activeB = JSON.parse(activeBookerStr);
+                    if (activeB.booker_number === bookerNumber || activeB.id === bookerNumber) {
+                      localStorage.removeItem('shaheen_active_booker');
+                      localStorage.removeItem('shaheen_bookerName');
+                      setImpersonatingBooker(null);
+                    }
+                  } catch {}
                 }
                 
                 toast.success('Booker removed successfully');

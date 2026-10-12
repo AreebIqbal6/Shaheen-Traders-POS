@@ -220,7 +220,39 @@ export default function AdminPOSView() {
           supabase.auth.getSession(),
           new Promise<never>((_, reject) => setTimeout(() => reject(new Error('timeout')), 5000))
         ]);
-        setIsAuthenticated(!!result.data?.session);
+
+        if (result.data?.session) {
+          // Verify if admin credentials were reset or changed after this session's login
+          const loginTime = Number(localStorage.getItem('shaheen_admin_login_time') || '0');
+          try {
+            const { data: credsData } = await supabase
+              .from('settings')
+              .select('value')
+              .eq('key', 'admin_credentials_updated_at')
+              .maybeSingle();
+
+            if (credsData?.value) {
+              const updatedAt = new Date(credsData.value).getTime();
+              if (updatedAt > loginTime) {
+                // Stale admin session! Force revocation everywhere
+                await supabase.auth.signOut();
+                localStorage.removeItem('shaheen_admin_auth');
+                localStorage.removeItem('shaheen_admin_login_time');
+                localStorage.removeItem('admin_offline_hash');
+                setIsAuthenticated(false);
+                setIsAuthChecking(false);
+                toast.error('Admin credentials were changed. Please log in again.');
+                return;
+              }
+            }
+          } catch (e) {
+            console.warn('Could not check admin credentials timestamp:', e);
+          }
+
+          setIsAuthenticated(true);
+        } else {
+          setIsAuthenticated(false);
+        }
       } catch {
         // Offline or timed out — check if we were previously authenticated
         const cachedAuth = localStorage.getItem('shaheen_admin_auth');
@@ -236,7 +268,43 @@ export default function AdminPOSView() {
       setIsAuthChecking(false);
     });
 
-    return () => subscription.unsubscribe();
+    // Realtime listener for immediate admin session termination across all devices/tabs
+    const adminRevokeSub = supabase
+      .channel('admin-auth-revocation')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'settings' },
+        async (payload: any) => {
+          if (payload.new?.key === 'admin_credentials_updated_at') {
+            const updatedAt = new Date(payload.new.value).getTime();
+            const loginTime = Number(localStorage.getItem('shaheen_admin_login_time') || '0');
+            if (updatedAt > loginTime) {
+              await supabase.auth.signOut();
+              localStorage.removeItem('shaheen_admin_auth');
+              localStorage.removeItem('shaheen_admin_login_time');
+              localStorage.removeItem('admin_offline_hash');
+              setIsAuthenticated(false);
+              toast.error('Admin credentials updated from another device. Logged out.', { duration: 6000 });
+            }
+          }
+        }
+      )
+      .subscribe();
+
+    const adminHeartbeatTimer = setInterval(checkAuth, 15000);
+    const handleAdminWake = () => {
+      if (document.visibilityState === 'visible') checkAuth();
+    };
+    document.addEventListener('visibilitychange', handleAdminWake);
+    window.addEventListener('focus', checkAuth);
+
+    return () => {
+      subscription.unsubscribe();
+      supabase.removeChannel(adminRevokeSub);
+      clearInterval(adminHeartbeatTimer);
+      document.removeEventListener('visibilitychange', handleAdminWake);
+      window.removeEventListener('focus', checkAuth);
+    };
   }, []);
 
   useEffect(() => {
@@ -2133,6 +2201,9 @@ export default function AdminPOSView() {
               <button 
                 onClick={() => {
                   supabase.auth.signOut();
+                  localStorage.removeItem('shaheen_admin_auth');
+                  localStorage.removeItem('shaheen_admin_login_time');
+                  localStorage.removeItem('admin_offline_hash');
                   setIsAuthenticated(false);
                 }}
                 className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg transition-all w-full text-red-600 dark:text-red-500 bg-red-50 dark:bg-red-500/10 hover:bg-red-100 dark:hover:bg-red-500/20 font-bold"
@@ -2262,6 +2333,9 @@ export default function AdminPOSView() {
           <button 
             onClick={() => {
               supabase.auth.signOut();
+              localStorage.removeItem('shaheen_admin_auth');
+              localStorage.removeItem('shaheen_admin_login_time');
+              localStorage.removeItem('admin_offline_hash');
               setIsAuthenticated(false);
             }}
             className="flex items-center justify-center gap-2 px-3 py-2 rounded-lg transition-all text-[12.5px] font-bold w-full relative overflow-hidden text-red-600 dark:text-red-500 bg-red-50 dark:bg-red-500/10 hover:bg-red-100 dark:hover:bg-red-500/20"
