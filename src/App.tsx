@@ -9,6 +9,7 @@ const ReportView = React.lazy(() => import('./views/ReportView'));
 const NotFoundView = React.lazy(() => import('./views/NotFoundView'));
 const ReportAuthWrapper = React.lazy(() => import('./components/ReportAuthWrapper'));
 import OfflineIndicator from './components/OfflineIndicator';
+import VersionGate from './components/VersionGate';
 import { Toaster, ToastBar, toast } from 'react-hot-toast';
 import { X } from 'lucide-react';
 import { supabase } from './lib/supabase';
@@ -335,6 +336,7 @@ export default function App() {
 
   return (
     <>
+      <VersionGate />
       <Toaster 
         position="top-center" 
         containerClassName="print:hidden"

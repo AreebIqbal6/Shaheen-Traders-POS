@@ -42,6 +42,7 @@ import { generateSKU } from './ProductsView';
 import { formatPakistaniPhone } from '../utils/formatPhone';
 import FitText from '../components/FitText';
 import { purgeAdminSession, setupCrossTabSecurityListener } from '../utils/authSecurity';
+import { isVersionOutdated } from '../utils/versionEnforcer';
 
 
 
@@ -1375,6 +1376,14 @@ export default function AdminPOSView() {
 
   const handleDispatch = useCallback(async () => {
     if (isSubmitting || isDispatchingRef.current) return false;
+
+    // Verify app version is latest
+    const minRequired = localStorage.getItem('shaheen_min_required_version');
+    if (minRequired && isVersionOutdated(packageJson.version, minRequired)) {
+      toast.error(`App version v${packageJson.version} is outdated. Please update to v${minRequired} to dispatch orders.`);
+      return false;
+    }
+
     isDispatchingRef.current = true;
     setIsSubmitting(true);
 

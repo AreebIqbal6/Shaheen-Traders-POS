@@ -5,6 +5,8 @@ import { safeSupabaseInsert } from '../utils/safeSync';
 import { generateUUID } from '../utils/uuid';
 import { Package, MapPin, User, CreditCard, Send, Building, Phone, ChevronDown, Search } from 'lucide-react';
 import { formatPakistaniPhone } from '../utils/formatPhone';
+import { CURRENT_APP_VERSION, isVersionOutdated } from '../utils/versionEnforcer';
+import toast from 'react-hot-toast';
 import FitText from './FitText';
 
 interface CartItem {
@@ -115,6 +117,14 @@ export default function B2BCheckout({ cart, total, onSuccess, onBack }: B2BCheck
       toast.error('Session expired: Your credentials have been changed. Please log in again.');
       setIsSubmitting(false);
       window.dispatchEvent(new Event('force_remount'));
+      return;
+    }
+
+    // Verify app version is latest
+    const minRequired = localStorage.getItem('shaheen_min_required_version');
+    if (minRequired && isVersionOutdated(CURRENT_APP_VERSION, minRequired)) {
+      toast.error(`App version v${CURRENT_APP_VERSION} is outdated. Please update to v${minRequired} to place orders.`);
+      setIsSubmitting(false);
       return;
     }
 
