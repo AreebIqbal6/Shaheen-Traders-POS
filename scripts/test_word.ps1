@@ -1,7 +1,6 @@
 $docPaths = @(
     "C:\Users\ESHOP\.gemini\antigravity\scratch\Shaheen-Traders-POS\docs\Shaheen_Traders_POS_IEEE_SRS_DFD_SDS_ERD_SEMANTIC_NET.docx",
-    "C:\Users\ESHOP\.gemini\antigravity\scratch\Shaheen-Traders-POS\Shaheen_Traders_POS_IEEE_SRS_DFD_SDS_ERD_SEMANTIC_NET.docx",
-    "C:\Users\ESHOP\.gemini\antigravity\scratch\de-Ledgers-System-Software\docs\de_Ledgers_System_SRS_DFD_SDS_ERD_SEMANTIC_NET.docx"
+    "C:\Users\ESHOP\.gemini\antigravity\scratch\Shaheen-Traders-POS\Shaheen_Traders_POS_IEEE_SRS_DFD_SDS_ERD_SEMANTIC_NET.docx"
 )
 
 $word = New-Object -ComObject Word.Application

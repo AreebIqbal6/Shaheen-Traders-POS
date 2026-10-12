@@ -1,4 +1,4 @@
-# Learning Journal: Shaheen POS & de-Ledgers
+# Learning Journal: Shaheen Global Traders POS
 
 ## 1. Why this project exists
 The system was designed as a modern, offline-first Point of Sale (POS) and inventory management tool. It aims to solve the problem of unreliable internet connections in wholesale and retail environments by leveraging local caching (IndexedDB) combined with background synchronization to a remote database (Supabase).
