@@ -3,7 +3,7 @@ import {
   Package, Plus, Check, CheckCheck, AlertTriangle, Trash2, Search, 
   ScanLine, Sparkles, Clock, ArrowRight, Edit2, ShoppingCart, Boxes, 
   FileText, ChevronRight, Download, RefreshCw, X, Loader2, CheckCircle2, 
-  ChevronDown, Layers, ArrowUpRight, Filter, Building2, Share2, Printer, 
+  ChevronDown, ChevronUp, Layers, ArrowUpRight, Filter, Building2, Share2, Printer, 
   Phone, Wallet, CreditCard, DollarSign, ExternalLink, HelpCircle
 } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -111,6 +111,45 @@ export default function OurOrderView({
 
   const [printOrderModal, setPrintOrderModal] = useState<ConfirmedPurchaseOrder | null>(null);
   const [isVendorLedgerModalOpen, setIsVendorLedgerModalOpen] = useState(false);
+  const [expandedHistoryOrderIds, setExpandedHistoryOrderIds] = useState<Record<string, boolean>>({});
+
+  const toggleHistoryOrderExpand = (orderId: string) => {
+    setExpandedHistoryOrderIds(prev => ({
+      ...prev,
+      [orderId]: !prev[orderId]
+    }));
+  };
+
+  const handleDeleteOrder = (orderId: string, orderNumber: string) => {
+    toast((t) => (
+      <div className="flex flex-col gap-2 p-1">
+        <span className="font-bold text-slate-900 dark:text-slate-100 text-sm">
+          Delete Order #{orderNumber}?
+        </span>
+        <span className="text-xs text-slate-500">
+          This will permanently remove this order from history.
+        </span>
+        <div className="flex gap-2 justify-end mt-2">
+          <button 
+            className="px-3 py-1 bg-slate-200 text-xs font-semibold rounded text-slate-800"
+            onClick={() => toast.dismiss(t.id)}
+          >
+            Cancel
+          </button>
+          <button 
+            className="px-3 py-1 bg-red-600 text-white text-xs font-bold rounded"
+            onClick={() => {
+              toast.dismiss(t.id);
+              setConfirmedOrders(prev => prev.filter(o => o.id !== orderId));
+              toast.success(`Order #${orderNumber} deleted.`);
+            }}
+          >
+            Yes, Delete
+          </button>
+        </div>
+      </div>
+    ), { duration: 6000 });
+  };
 
   // Minimum stock threshold dictionary
   const minStockDict = useMemo(() => {
@@ -762,6 +801,21 @@ export default function OurOrderView({
         });
       }
 
+      if (item.minStock) {
+        try {
+          const msDict = JSON.parse(localStorage.getItem('shaheen_min_stock') || '{}');
+          msDict[newProduct.id] = item.minStock;
+          localStorage.setItem('shaheen_min_stock', JSON.stringify(msDict));
+        } catch {}
+      }
+      if (item.retailPrice) {
+        try {
+          const rpDict = JSON.parse(localStorage.getItem('shaheen_retail_prices') || '{}');
+          rpDict[newProduct.id] = item.retailPrice;
+          localStorage.setItem('shaheen_retail_prices', JSON.stringify(rpDict));
+        } catch {}
+      }
+
       // Sync to Cloud / Offline queue
       try {
         await safeSupabaseInsert('products', {
@@ -1295,6 +1349,15 @@ export default function OurOrderView({
                           >
                             <CheckCheck size={16} /> Received All ({unreceivedCount})
                           </button>
+
+                          {/* Cancel / Delete Order */}
+                          <button
+                            onClick={() => handleDeleteOrder(order.id, order.orderNumber)}
+                            className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg transition-colors border border-transparent hover:border-red-200 dark:hover:border-red-900/50"
+                            title="Cancel / Delete Purchase Order"
+                          >
+                            <Trash2 size={15} />
+                          </button>
                         </div>
                       </div>
 
@@ -1405,62 +1468,162 @@ export default function OurOrderView({
         {activeTab === 'history' && (
           <div className="max-w-6xl mx-auto flex flex-col gap-6">
             {historyPlacedOrders.length === 0 ? (
-              <div className="bg-white dark:bg-zinc-900/60 rounded-xl border border-slate-200 dark:border-zinc-800/50 p-12 text-center text-slate-400">
-                <CheckCircle2 size={40} className="mx-auto mb-2 opacity-30" />
-                <p>No completed purchase orders in history yet.</p>
+              <div className="bg-white dark:bg-zinc-900/60 rounded-xl border border-slate-200 dark:border-zinc-800/50 p-12 flex flex-col items-center justify-center text-center shadow-sm">
+                <div className="w-16 h-16 rounded-2xl bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mb-4">
+                  <CheckCircle2 size={32} />
+                </div>
+                <h3 className="text-lg font-bold text-slate-800 dark:text-slate-200 mb-1">No Completed Purchase Orders in History Yet</h3>
+                <p className="text-sm text-slate-500 dark:text-slate-400 max-w-md mb-6">
+                  When you receive stock from the <strong>Placed Orders (Awaiting Delivery)</strong> tab, completed orders will automatically appear here with their receiving history, item breakdowns, and printable vouchers.
+                </p>
+                <div className="flex items-center gap-3">
+                  <button 
+                    onClick={() => setActiveTab('placed')}
+                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-lg shadow-sm transition-all flex items-center gap-1.5"
+                  >
+                    <Clock size={14} /> View Placed Orders ({activePlacedOrders.length})
+                  </button>
+                  <button 
+                    onClick={() => setActiveTab('draft')}
+                    className="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-700 dark:text-slate-200 font-bold text-xs rounded-lg shadow-sm transition-all flex items-center gap-1.5"
+                  >
+                    <Plus size={14} /> Create Order Draft
+                  </button>
+                </div>
               </div>
             ) : (
               <div className="flex flex-col gap-4">
-                {historyPlacedOrders.map((order) => (
-                  <div key={order.id} className="bg-white dark:bg-zinc-900/60 border border-slate-200 dark:border-zinc-800/50 rounded-xl p-4 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                    <div>
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-bold text-slate-900 dark:text-white">Order #{order.orderNumber}</span>
-                        <span className="bg-emerald-100 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-400 text-[10px] font-bold px-2 py-0.5 rounded-full border border-emerald-200">
-                          FULLY RECEIVED
-                        </span>
-                        {order.supplierName && (
-                          <span className="bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-slate-300 text-[11px] font-bold px-2 py-0.5 rounded flex items-center gap-1">
-                            <Building2 size={12} className="text-blue-600" /> {order.supplierName}
-                          </span>
-                        )}
-                        {order.paymentMethod && order.paymentMethod !== 'UNPAID' && (
-                          <span className="bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 text-[10px] font-bold px-2 py-0.5 rounded border border-blue-200">
-                            {order.paymentMethod === 'CASH' ? 'Paid: Cash Register' : order.paymentMethod === 'VENDOR_CREDIT' ? 'Vendor Credit Ledger' : 'Bank Transfer'}
-                          </span>
-                        )}
+                {historyPlacedOrders.map((order) => {
+                  const isExpanded = !!expandedHistoryOrderIds[order.id];
+                  return (
+                    <div 
+                      key={order.id} 
+                      className="bg-white dark:bg-zinc-900/60 border border-slate-200 dark:border-zinc-800/50 rounded-xl shadow-sm overflow-hidden transition-all"
+                    >
+                      <div className="p-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-slate-50/50 dark:bg-zinc-800/30">
+                        <div>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-bold text-slate-900 dark:text-white">Order #{order.orderNumber}</span>
+                            <span className="bg-emerald-100 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-400 text-[10px] font-bold px-2 py-0.5 rounded-full border border-emerald-200">
+                              FULLY RECEIVED
+                            </span>
+                            {order.supplierName && (
+                              <span className="bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-slate-300 text-[11px] font-bold px-2 py-0.5 rounded flex items-center gap-1">
+                                <Building2 size={12} className="text-blue-600" /> {order.supplierName}
+                              </span>
+                            )}
+                            {order.paymentMethod && order.paymentMethod !== 'UNPAID' && (
+                              <span className="bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 text-[10px] font-bold px-2 py-0.5 rounded border border-blue-200">
+                                {order.paymentMethod === 'CASH' ? 'Paid: Cash Register' : order.paymentMethod === 'VENDOR_CREDIT' ? 'Vendor Credit Ledger' : 'Bank Transfer'}
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-xs text-slate-500 mt-1">
+                            Completed on {new Date(order.date).toLocaleDateString()} at {new Date(order.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} • {order.items.length} items
+                          </p>
+                        </div>
+
+                        <div className="flex items-center gap-2 self-end md:self-auto flex-wrap">
+                          <div className="text-right mr-2">
+                            <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block">Total Invoiced</span>
+                            <span className="font-black text-slate-900 dark:text-slate-100 text-base font-mono">
+                              Rs {order.totalAmount.toLocaleString()}
+                            </span>
+                          </div>
+
+                          {/* Toggle Expand Items */}
+                          <button
+                            onClick={() => toggleHistoryOrderExpand(order.id)}
+                            className="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-700 dark:text-slate-300 rounded-lg border border-slate-200 dark:border-zinc-700 text-xs font-semibold flex items-center gap-1 transition-colors"
+                            title="Inspect received items table"
+                          >
+                            {isExpanded ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+                            {isExpanded ? 'Hide' : `Items (${order.items.length})`}
+                          </button>
+
+                          <button
+                            onClick={() => handleShareWhatsApp(order)}
+                            className="px-2.5 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 rounded-lg border border-emerald-200 text-xs font-semibold flex items-center gap-1 transition-colors"
+                            title="Share voucher via WhatsApp"
+                          >
+                            <Share2 size={13} /> WhatsApp
+                          </button>
+
+                          <button
+                            onClick={() => setPrintOrderModal(order)}
+                            className="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-zinc-800 dark:hover:bg-zinc-700 dark:text-slate-300 rounded-lg border border-slate-200 text-xs font-semibold flex items-center gap-1 transition-colors"
+                            title="Print Purchase Slip"
+                          >
+                            <Printer size={13} /> Print
+                          </button>
+
+                          <button
+                            onClick={() => handleDeleteOrder(order.id, order.orderNumber)}
+                            className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg transition-colors border border-transparent hover:border-red-200 dark:hover:border-red-900/50"
+                            title="Delete this order from history"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
                       </div>
-                      <p className="text-xs text-slate-500 mt-1">
-                        Completed on {new Date(order.date).toLocaleDateString()} • {order.items.length} items
-                      </p>
+
+                      {/* Expanded Items Breakdown */}
+                      {isExpanded && (
+                        <div className="border-t border-slate-200 dark:border-zinc-800/80 bg-white dark:bg-zinc-900/80 overflow-x-auto">
+                          <table className="w-full text-left border-collapse text-xs">
+                            <thead>
+                              <tr className="border-b border-slate-100 dark:border-zinc-800/80 bg-slate-50 dark:bg-zinc-800/40 text-slate-500 uppercase tracking-wider">
+                                <th className="py-2.5 px-4 font-semibold">Item</th>
+                                <th className="py-2.5 px-4 font-semibold">Barcode / SKU</th>
+                                <th className="py-2.5 px-4 font-semibold text-center">Unit Received</th>
+                                <th className="py-2.5 px-4 font-semibold text-center">Base Pieces</th>
+                                <th className="py-2.5 px-4 font-semibold text-right">Cost / Pc</th>
+                                <th className="py-2.5 px-4 font-semibold text-right">Line Total</th>
+                                <th className="py-2.5 px-4 font-semibold text-center">Status</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {order.items.map((it) => (
+                                <tr key={it.id} className="border-b border-slate-100 dark:border-zinc-800/40 hover:bg-slate-50/50 dark:hover:bg-zinc-800/20">
+                                  <td className="py-2.5 px-4 font-semibold text-slate-900 dark:text-slate-100">
+                                    <div className="flex items-center gap-1.5">
+                                      <span>{it.name}</span>
+                                      {it.isNewProduct && (
+                                        <span className="text-[9px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-400 px-1.5 py-0.2 rounded border border-emerald-300">
+                                          NEW PRODUCT
+                                        </span>
+                                      )}
+                                    </div>
+                                  </td>
+                                  <td className="py-2.5 px-4 font-mono text-slate-500 dark:text-slate-400">
+                                    {it.barcode || it.sku || '-'}
+                                  </td>
+                                  <td className="py-2.5 px-4 text-center font-bold text-slate-800 dark:text-slate-200">
+                                    {it.receivedUnitQuantity || it.unitQuantity || 1} {it.unit || 'Pcs'}
+                                  </td>
+                                  <td className="py-2.5 px-4 text-center font-bold text-blue-600 dark:text-blue-400 font-mono">
+                                    +{it.receivedQuantityNeeded || it.quantityNeeded} pcs
+                                  </td>
+                                  <td className="py-2.5 px-4 text-right font-mono text-slate-700 dark:text-slate-300">
+                                    Rs {(it.costPrice || 0).toLocaleString()}
+                                  </td>
+                                  <td className="py-2.5 px-4 text-right font-mono font-bold text-slate-900 dark:text-slate-100">
+                                    Rs {(it.totalCost || (it.quantityNeeded * (it.costPrice || 0))).toLocaleString()}
+                                  </td>
+                                  <td className="py-2.5 px-4 text-center">
+                                    <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-950/50 px-2 py-0.5 rounded-full border border-emerald-200">
+                                      <Check size={11} strokeWidth={3} /> Received
+                                    </span>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
                     </div>
-
-                    <div className="flex items-center gap-3 self-end md:self-auto">
-                      <div className="text-right mr-2">
-                        <span className="text-xs text-slate-400 block">Total Invoiced</span>
-                        <span className="font-black text-slate-900 dark:text-slate-100 text-base font-mono">
-                          Rs {order.totalAmount.toLocaleString()}
-                        </span>
-                      </div>
-
-                      <button
-                        onClick={() => handleShareWhatsApp(order)}
-                        className="px-2.5 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 rounded-lg border border-emerald-200 text-xs font-semibold flex items-center gap-1 transition-colors"
-                        title="Share voucher via WhatsApp"
-                      >
-                        <Share2 size={13} /> WhatsApp
-                      </button>
-
-                      <button
-                        onClick={() => setPrintOrderModal(order)}
-                        className="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-zinc-800 dark:hover:bg-zinc-700 dark:text-slate-300 rounded-lg border border-slate-200 text-xs font-semibold flex items-center gap-1 transition-colors"
-                        title="Print Purchase Slip"
-                      >
-                        <Printer size={13} /> Print
-                      </button>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
