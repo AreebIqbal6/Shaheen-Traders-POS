@@ -297,7 +297,7 @@ export default function AdminPOSView() {
     const handleCustomLogout = () => setIsAuthenticated(false);
     window.addEventListener('shaheen_admin_logged_out', handleCustomLogout);
 
-    const adminHeartbeatTimer = setInterval(checkAuth, 5000);
+    const adminHeartbeatTimer = setInterval(checkAuth, 25000);
     const handleAdminWake = () => {
       if (document.visibilityState === 'visible') checkAuth();
     };
@@ -541,7 +541,7 @@ export default function AdminPOSView() {
     }
   };
 
-  // Background Auto-Sync every 10 seconds (Silent Mode)
+  // Background Auto-Sync every 30 seconds (Silent Mode)
   const syncRef = useRef(handleSyncToCloud);
   useEffect(() => {
     syncRef.current = handleSyncToCloud;
@@ -549,7 +549,7 @@ export default function AdminPOSView() {
   useEffect(() => {
     const timer = setInterval(() => {
       if (syncRef.current) syncRef.current(true);
-    }, 10000);
+    }, 30000);
     return () => clearInterval(timer);
   }, []);
 
@@ -562,13 +562,27 @@ export default function AdminPOSView() {
     document.documentElement.classList.remove('dark');
   }, []);
 
-  // Silent Autosave Engine
+  // Debounced Autosave Engine (Prevents main-thread UI freezing during typing / scanning)
   useEffect(() => {
-    localStorage.setItem('shaheen_products', JSON.stringify(products));
+    const timer = setTimeout(() => {
+      try {
+        localStorage.setItem('shaheen_products', JSON.stringify(products));
+      } catch (err) {
+        console.warn('Failed to save products to localStorage:', err);
+      }
+    }, 400);
+    return () => clearTimeout(timer);
   }, [products]);
 
   useEffect(() => {
-    localStorage.setItem('shaheen_orders', JSON.stringify(pastOrders));
+    const timer = setTimeout(() => {
+      try {
+        localStorage.setItem('shaheen_orders', JSON.stringify(pastOrders));
+      } catch (err) {
+        console.warn('Failed to save orders to localStorage:', err);
+      }
+    }, 500);
+    return () => clearTimeout(timer);
   }, [pastOrders]);
 
   // Auto-pull products from Supabase on mount (cross-device sync)
@@ -639,6 +653,20 @@ export default function AdminPOSView() {
           return p;
         });
 
+        // Skip state update if no products changed (prevents pointless re-renders)
+        if (prev.length === cleanMerged.length) {
+          let hasDiff = false;
+          for (let i = 0; i < prev.length; i++) {
+            const a = prev[i];
+            const b = cleanMerged[i];
+            if (a.id !== b.id || a.stock !== b.stock || a.price !== b.price || a.name !== b.name || a.sku !== b.sku) {
+              hasDiff = true;
+              break;
+            }
+          }
+          if (!hasDiff) return prev;
+        }
+
         return cleanMerged;
       });
     } catch (err) {
@@ -700,6 +728,9 @@ export default function AdminPOSView() {
           }
         });
         
+        // Skip state update if no new orders arrived (prevents pointless re-renders)
+        if (newOrders.length === 0) return prev;
+
         const combined = [...newOrders, ...prev];
         const uniqueOrdersMap = new Map();
         combined.forEach(o => {

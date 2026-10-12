@@ -40,6 +40,18 @@ setInterval(() => {
   updateSW(false);
 }, 15 * 60 * 1000);
 
+// Auto-recover from Vite chunk hash mismatches during app updates / Vercel deployments
+window.addEventListener('vite:preloadError', (event) => {
+  event.preventDefault();
+  const lastReload = sessionStorage.getItem('shaheen_last_chunk_reload');
+  const now = Date.now();
+  // Prevent infinite reload loops (only reload if not reloaded in the last 15 seconds)
+  if (!lastReload || now - parseInt(lastReload, 10) > 15000) {
+    sessionStorage.setItem('shaheen_last_chunk_reload', now.toString());
+    window.location.reload();
+  }
+});
+
 // Capture PWA install prompt globally before React lazy loads views
 window.addEventListener('beforeinstallprompt', (e) => {
   e.preventDefault();

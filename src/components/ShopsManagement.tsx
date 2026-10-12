@@ -53,10 +53,12 @@ export default function ShopsManagement() {
 
   useEffect(() => {
     fetchShops();
+    let lastCached = localStorage.getItem('shaheen_shops') || '';
     const interval = setInterval(() => {
       try {
         const cached = localStorage.getItem('shaheen_shops');
-        if (cached) {
+        if (cached && cached !== lastCached) {
+          lastCached = cached;
           setShops(JSON.parse(cached).map(mapRowToShop));
         }
       } catch {}

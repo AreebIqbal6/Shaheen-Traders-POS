@@ -106,10 +106,10 @@ export default function App() {
   
   React.useEffect(() => {
     // Generate missing monthly and bi-yearly reports in the background
-    // Delay heavy background report generation by 5 seconds to let UI mount smoothly
+    // Delay heavy background report generation by 20 seconds to let UI mount smoothly
     const reportTimeout = setTimeout(() => {
       autoGenerateMissingReports().catch(err => console.error("Auto report generation failed:", err));
-    }, 5000);
+    }, 20000);
 
     const handler = () => setRemountKey(k => k + 1);
     window.addEventListener('force_remount', handler);

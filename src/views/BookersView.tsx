@@ -116,10 +116,12 @@ export default function BookersView() {
     };
     window.addEventListener('online', handleOnline);
     
-    // Auto sync UI with localStorage every 5 seconds
+    // Auto sync UI with localStorage only when data changes
+    let lastCached = localStorage.getItem('shaheen_bookers') || '';
     const interval = setInterval(() => {
       const cached = localStorage.getItem('shaheen_bookers');
-      if (cached) {
+      if (cached && cached !== lastCached) {
+        lastCached = cached;
         setBookers(JSON.parse(cached));
       }
     }, 5000);

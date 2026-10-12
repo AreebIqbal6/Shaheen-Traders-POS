@@ -21,6 +21,15 @@ export default class ErrorBoundary extends Component<Props, State> {
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error('Uncaught error:', error, errorInfo);
+    const isChunk = error?.message?.includes('dynamically imported module') || error?.message?.includes('Failed to fetch');
+    if (isChunk) {
+      const lastReload = sessionStorage.getItem('shaheen_chunk_eb_reload');
+      const now = Date.now();
+      if (!lastReload || now - parseInt(lastReload, 10) > 15000) {
+        sessionStorage.setItem('shaheen_chunk_eb_reload', now.toString());
+        window.location.reload();
+      }
+    }
   }
 
   public render() {
@@ -33,18 +42,18 @@ export default class ErrorBoundary extends Component<Props, State> {
             <h1 className="text-xl font-bold text-red-600 dark:text-red-400 mb-2">Something went wrong</h1>
             <p className="text-sm text-slate-700 dark:text-slate-300 mb-4 break-words">
               {isChunkLoadError 
-                ? 'Could not load a part of the app. This usually happens if you are offline or if the app was recently updated. Please check your internet connection and reload.'
+                ? 'A new app update was deployed. Please click below to load the latest version.'
                 : (this.state.error?.message || 'An unexpected error occurred in the React application.')}
             </p>
             <button 
               onClick={() => {
-                // If it's a chunk load error and we have a specific path, reload that path.
-                // Otherwise just reload current location.
-                window.location.reload();
+                sessionStorage.removeItem('shaheen_chunk_eb_reload');
+                sessionStorage.removeItem('shaheen_last_chunk_reload');
+                window.location.href = window.location.origin + window.location.pathname + '?reload=' + Date.now();
               }}
               className="bg-red-600 text-white px-4 py-2 rounded-sm font-semibold hover:bg-red-700 transition-colors"
             >
-              {isChunkLoadError ? 'Check Connection & Reload' : 'Reload Application'}
+              {isChunkLoadError ? 'Load Latest Version' : 'Reload Application'}
             </button>
           </div>
         </div>
