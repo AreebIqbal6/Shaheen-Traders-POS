@@ -1,6 +1,6 @@
 [package]
 name = "shaheen-pos"
-version = "0.5.68"
+version = "0.5.85"
 description = "Shaheen Traders Desktop Application"
 authors = ["you"]
 license = ""

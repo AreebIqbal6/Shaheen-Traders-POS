@@ -12,7 +12,7 @@
 | **Standard Compliance** | **IEEE Std 830-1998** (SRS) & **IEEE Std 1016-2009** (Software Design Descriptions) |
 | **Document Identifier** | `IEEE-SRS-SDD-SGT-2026-V1.0` |
 | **Software Product Name** | Shaheen Global Traders POS & B2B Wholesale Distribution Platform |
-| **Product Release Version** | Release Version 0.5.84 (Production Multi-Role Build) |
+| **Product Release Version** | Release Version 0.5.85 (Production Multi-Role Build) |
 | **Operating Environment** | Windows Desktop (Tauri v2 Native Shell) & PWA Mobile Client (B2B Booker Portal) |
 | **Cloud & Database Stack** | Supabase Cloud (PostgreSQL 15), PostgREST, Realtime WebSockets, Row-Level Security |
 | **Embedded Visual Models** | 6 High-Resolution 300-DPI Architectural Models (DFD Level 0/1/2, SDS, ERD, SEMANTIC.NET) |
@@ -25,7 +25,7 @@
 ## 1. INTRODUCTION
 
 ### 1.1 Purpose
-The purpose of this document is to establish the formal Software Requirements Specification (SRS) in conformance with **IEEE Std 830-1998**, and the Software Design Description (SDD/SDS) in conformance with **IEEE Std 1016-2009**, for the Shaheen Traders Point of Sale (POS) and B2B Distribution Platform (Version 0.5.84). This specification delineates both the external customer-facing operational behaviors and the low-level architectural abstractions required for development, testing, auditing, and maintenance of the complete enterprise system.
+The purpose of this document is to establish the formal Software Requirements Specification (SRS) in conformance with **IEEE Std 830-1998**, and the Software Design Description (SDD/SDS) in conformance with **IEEE Std 1016-2009**, for the Shaheen Traders Point of Sale (POS) and B2B Distribution Platform (Version 0.5.85). This specification delineates both the external customer-facing operational behaviors and the low-level architectural abstractions required for development, testing, auditing, and maintenance of the complete enterprise system.
 
 ### 1.2 Scope of the Software Product
 The Shaheen Traders POS platform is a hybrid desktop-and-mobile software suite designed specifically for commercial Fast-Moving Consumer Goods (FMCG) distributors, wholesale merchants, and multi-route field sales networks. The software encompasses five mission-critical functional areas:
@@ -299,4 +299,4 @@ In accordance with **IEEE Std 830-1998 §3.8**, the following matrix establishes
 * **[5] PostgreSQL 15 Documentation**: The PostgreSQL Global Development Group. *Declarative Row-Level Security Policies, PostgREST HTTP REST API, and Realtime Engine*.
 
 ---
-*Official IEEE Std 830-1998 & IEEE Std 1016-2009 Master Engineering Specification approved for Shaheen Traders POS Release v0.5.84.*
+*Official IEEE Std 830-1998 & IEEE Std 1016-2009 Master Engineering Specification approved for Shaheen Traders POS Release v0.5.85.*

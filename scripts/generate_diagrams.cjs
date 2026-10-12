@@ -64,7 +64,7 @@ const generateDFDLevel0 = () => {
   svg += `
     <rect x="30" y="24" width="1140" height="60" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1.5" filter="url(#shadow)"/>
     <text x="50" y="60" font-size="20" font-weight="bold" fill="#B45309">Data Flow Diagram (DFD Level 0) — Context Boundary Model</text>
-    <text x="1150" y="60" font-size="13" font-weight="600" fill="#64748B" text-anchor="end">System: Shaheen Global Traders POS Platform (v0.5.84)</text>
+    <text x="1150" y="60" font-size="13" font-weight="600" fill="#64748B" text-anchor="end">System: Shaheen Global Traders POS Platform (v0.5.85)</text>
 
     <!-- Central Process 0.0 -->
     <circle cx="600" cy="420" r="140" fill="url(#amberGrad)" stroke="#B45309" stroke-width="4" filter="url(#shadow)"/>

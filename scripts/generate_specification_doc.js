@@ -222,7 +222,7 @@ const doc = new Document({
             ['Standard Compliance', 'IEEE Std 830-1998 (SRS) & IEEE Std 1016-2009 (Software Design Descriptions)'],
             ['Document Identifier', 'IEEE-SRS-SDD-SGT-2026-V1.0'],
             ['Software Product Name', 'Shaheen Global Traders POS & B2B Wholesale Distribution Platform'],
-            ['Product Release Version', 'Release Version 0.5.84 (Production Multi-Role Build)'],
+            ['Product Release Version', 'Release Version 0.5.85 (Production Multi-Role Build)'],
             ['Operating Environment', 'Windows Desktop (Tauri v2 Native Shell) & PWA Mobile Client (B2B Booker Portal)'],
             ['Cloud & Database Stack', 'Supabase Cloud (PostgreSQL 15), PostgREST, Realtime WebSockets, Row-Level Security'],
             ['Embedded Visual Models', '6 High-Resolution 300-DPI Architectural Models (DFD Level 0/1/2, SDS, ERD, SEMANTIC.NET)'],
@@ -239,7 +239,7 @@ const doc = new Document({
         ieeeH1('1. INTRODUCTION'),
         
         ieeeH2('1.1 Purpose'),
-        p('The purpose of this document is to establish the formal Software Requirements Specification (SRS) in conformance with IEEE Std 830-1998, and the Software Design Description (SDD/SDS) in conformance with IEEE Std 1016-2009, for the Shaheen Traders Point of Sale (POS) and B2B Distribution Platform (Version 0.5.84). This specification delineates both the external customer-facing operational behaviors and the low-level architectural abstractions required for development, testing, auditing, and maintenance of the complete enterprise system.'),
+        p('The purpose of this document is to establish the formal Software Requirements Specification (SRS) in conformance with IEEE Std 830-1998, and the Software Design Description (SDD/SDS) in conformance with IEEE Std 1016-2009, for the Shaheen Traders Point of Sale (POS) and B2B Distribution Platform (Version 0.5.85). This specification delineates both the external customer-facing operational behaviors and the low-level architectural abstractions required for development, testing, auditing, and maintenance of the complete enterprise system.'),
 
         ieeeH2('1.2 Scope of the Software Product'),
         p('The Shaheen Traders POS platform is a hybrid desktop-and-mobile software suite designed specifically for commercial Fast-Moving Consumer Goods (FMCG) distributors, wholesale merchants, and multi-route field sales networks. The software encompasses five mission-critical functional areas:'),
@@ -551,7 +551,7 @@ const doc = new Document({
         bullet('[5] PostgreSQL 15 Documentation', 'The PostgreSQL Global Development Group. Declarative Row-Level Security Policies, PostgREST HTTP REST API, and Realtime Engine.'),
 
         new Paragraph({ spacing: { before: 400, after: 120 } }),
-        p('This specification concludes the formal IEEE Std 830-1998 and IEEE Std 1016-2009 Master Engineering Specification for Shaheen Traders POS Release v0.5.84. All models, requirements, schemas, and semantic structures reflect the verified production repository state.', { italics: true, color: '555555' }),
+        p('This specification concludes the formal IEEE Std 830-1998 and IEEE Std 1016-2009 Master Engineering Specification for Shaheen Traders POS Release v0.5.85. All models, requirements, schemas, and semantic structures reflect the verified production repository state.', { italics: true, color: '555555' }),
       ],
     },
   ],
