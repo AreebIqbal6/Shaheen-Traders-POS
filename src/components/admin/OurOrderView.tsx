@@ -489,7 +489,7 @@ export default function OurOrderView({
       const newProduct: Product = {
         id: item.id || generateUUID(),
         name: item.name,
-        barcode: item.barcode || ('BC-' + Date.now().toString(36).toUpperCase()),
+        barcode: item.barcode || ('BC-' + generateUUID().slice(0, 8).toUpperCase()),
         sku: item.sku || generateSKU(item.name, item.barcode),
         price: item.costPrice || 0,
         stock: item.quantityNeeded,

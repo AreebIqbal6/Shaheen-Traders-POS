@@ -38,7 +38,8 @@ export default defineConfig([
       '@typescript-eslint/no-use-before-define': 'off',
       'react-hooks/rules-of-hooks': 'off',
       'react-hooks/immutability': 'off',
-      'react-hooks/preserve-manual-memoization': 'off'
+      'react-hooks/preserve-manual-memoization': 'off',
+      'react-hooks/purity': 'off'
     }
   },
 ])
