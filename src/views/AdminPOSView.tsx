@@ -27,6 +27,10 @@ const LedgerView = lazy(() => import('./LedgerView'));
 const CashManagementView = lazy(() => import('./CashManagementView'));
 import OurOrderView from '../components/admin/OurOrderView';
 import IncomingOrdersView from '../components/admin/IncomingOrdersView';
+import { PosCatalogGrid } from './pos/PosCatalogGrid';
+import { PosCartPanel } from './pos/PosCartPanel';
+import { PosCheckoutPanel } from './pos/PosCheckoutPanel';
+import { PosIncomingAlertDrawer } from './pos/PosIncomingAlertDrawer';
 
 import { QRCodeSVG } from 'qrcode.react';
 import Barcode from 'react-barcode';
@@ -1585,533 +1589,79 @@ export default function AdminPOSView() {
           <div className="flex flex-1 flex-col md:flex-row overflow-hidden bg-slate-50 dark:bg-[#0a0a0c]">
             {/* Main Content Area */}
             <div className="flex-1 flex overflow-hidden relative">
-              
+              {/* Hidden Scanner Input */}
+              <input 
+                ref={hiddenScannerRef}
+                className="opacity-0 absolute top-0 left-0 w-1 h-1"
+                onFocus={() => setIsScannerFocused(true)}
+                onBlur={() => setIsScannerFocused(false)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    handleScan(e.currentTarget.value);
+                    e.currentTarget.value = '';
+                  }
+                }}
+              />
+
               {/* Center-Left Column: Product Catalog */}
               <div className={`${mobileActiveTab === 'catalog' ? 'flex' : 'hidden'} md:flex flex-1 flex-col bg-slate-50 dark:bg-[#0a0a0c] min-w-0`}>
-                <div className="flex-1 flex flex-col h-full overflow-hidden relative">
-                  
-                  {/* Hidden Scanner Input */}
-                  <input 
-                    ref={hiddenScannerRef}
-                    className="opacity-0 absolute top-0 left-0 w-1 h-1"
-                    onFocus={() => setIsScannerFocused(true)}
-                    onBlur={() => setIsScannerFocused(false)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        handleScan(e.currentTarget.value);
-                        e.currentTarget.value = '';
-                      }
-                    }}
-                  />
-
-                  <div className="flex flex-col shrink-0 p-4 md:px-6 md:pt-6 md:pb-2 gap-3 md:gap-4">
-                    <h1 className="text-2xl font-semibold text-slate-900 dark:text-slate-50 tracking-tight">Register</h1>
-                    
-                    <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-3 md:gap-4 w-full">
-                      <div className="flex bg-white dark:bg-zinc-900/60 backdrop-blur-md p-1 rounded-sm border border-slate-200 dark:border-zinc-800/50 shadow-sm shrink-0 gap-1">
-                        <button 
-                          onClick={() => setRegisterItemTypeFilter('All')}
-                          className={`px-3 py-1 rounded-sm text-[12px] font-medium transition-all ${registerItemTypeFilter === 'All' ? 'bg-slate-800 dark:bg-slate-100 text-white dark:text-slate-900' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
-                        >All</button>
-                        <button 
-                          onClick={() => setRegisterItemTypeFilter('Local')}
-                          className={`px-3 py-1 rounded-sm text-[12px] font-medium transition-all flex items-center gap-1.5 ${registerItemTypeFilter === 'Local' ? 'bg-slate-800 dark:bg-slate-100 text-white dark:text-slate-900' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
-                        ><div className="w-1.5 h-1.5 rounded-full bg-green-500"></div> Local</button>
-                        <button 
-                          onClick={() => setRegisterItemTypeFilter('Imported')}
-                          className={`px-3 py-1 rounded-sm text-[12px] font-medium transition-all flex items-center gap-1.5 ${registerItemTypeFilter === 'Imported' ? 'bg-slate-800 dark:bg-slate-100 text-white dark:text-slate-900' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
-                        ><div className="w-1.5 h-1.5 rounded-full bg-blue-500"></div> Imported</button>
-                      </div>
-
-                      <div className="flex items-center bg-white dark:bg-zinc-900/60 backdrop-blur-md border border-slate-200 dark:border-zinc-800/50 rounded-sm px-4 py-2 w-full lg:max-w-[420px] shadow-sm focus-within:ring-1 ring-slate-400 transition-all">
-                        <Search size={18} className="text-slate-400 mr-3 shrink-0" />
-                      <input 
-                        type="text" 
-                        placeholder="Search or scan..."
-                        value={registerSearchQuery}
-                        onChange={(e) => setRegisterSearchQuery(e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') {
-                            const val = e.currentTarget.value.trim();
-                            if (val) {
-                              const product = products.find(p => p.barcode === val);
-                              if (product) {
-                                handleScan(val);
-                                setRegisterSearchQuery('');
-                              } else if (filteredProducts.length === 1) {
-                                addToCart(filteredProducts[0]);
-                                setRegisterSearchQuery('');
-                              }
-                            }
-                          }
-                        }}
-                        className="w-full bg-transparent border-none outline-none text-[15px] font-medium text-slate-900 dark:text-slate-50 placeholder-slate-400 min-w-0 text-ellipsis"
-                      />
-                      <button 
-                          onClick={() => setIsCameraOpen(true)}
-                          className="p-1 rounded-sm focus:outline-none bg-white dark:bg-zinc-900/60 backdrop-blur-md shrink-0"
-                          title="Open Camera Scanner"
-                        >
-                          <ScanBarcode size={22} className={`${isScannerFocused ? 'text-green-500 drop-shadow-[0_0_2px_rgba(34,197,94,0.5)]' : 'text-red-500'} transition-all`} />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Filtered Product Grid (Virtualized) */}
-                  <div className="flex-1 min-h-0 p-4">
-                    <VirtuosoGrid
-                      className="custom-scrollbar"
-                      style={{ height: '100%', width: '100%' }}
-                      data={filteredProducts}
-                      overscan={200}
-                      listClassName="flex flex-col gap-2.5"
-                      itemClassName="flex flex-col w-full"
-                      itemContent={(index, p) => (
-                        <button 
-                          onClick={() => {
-                            addToCart(p);
-                            if (window.innerWidth > 768) {
-                              hiddenScannerRef.current?.focus();
-                            }
-                          }}
-                          className="bg-white dark:bg-zinc-900/60 backdrop-blur-md border border-slate-200 dark:border-zinc-800/50 rounded-sm p-3 sm:p-3.5 hover:border-slate-400 transition-all text-left w-full flex flex-row items-center justify-between gap-3 shadow-sm overflow-hidden"
-                        >
-                          <div className="flex flex-col items-start min-w-0 flex-1">
-                            <FitText
-                              className="font-bold text-slate-800 dark:text-slate-200 leading-tight mb-1"
-                              baseSize={14} minSize={9}
-                            >
-                              {p.name}
-                            </FitText>
-                            <p className="text-[11px] text-slate-500 dark:text-slate-400 font-mono flex items-center gap-1.5 flex-wrap">
-                              <span>{p.barcode}</span>
-                              {p.sku && p.sku !== p.barcode && (
-                                <>
-                                  <span className="opacity-40">•</span>
-                                  <span className="text-blue-600 dark:text-blue-400 font-semibold">{p.sku}</span>
-                                </>
-                              )}
-                            </p>
-                          </div>
-                          <div className="flex flex-col sm:flex-row items-end sm:items-center gap-1.5 sm:gap-4 shrink-0">
-                            <div className="flex items-center gap-1.5 flex-wrap justify-end">
-                              <span className="font-black text-slate-900 dark:text-slate-50 text-[15px] leading-tight">Rs {p.price}</span>
-                              {Boolean(p.retail_price) || (retailPricesDict[p.id] !== undefined && Number(retailPricesDict[p.id]) > 0) ? (
-                                <span className="text-[10px] font-semibold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 px-1.5 py-0.5 rounded border border-emerald-200 dark:border-emerald-800/50 whitespace-nowrap leading-tight">
-                                  Retail: Rs {Number(p.retail_price || retailPricesDict[p.id]).toLocaleString()}
-                                </span>
-                              ) : (
-                                <span className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-zinc-800/50 px-1.5 py-0.5 rounded border border-slate-200 dark:border-slate-700/50 whitespace-nowrap leading-tight opacity-70">
-                                  Retail: -
-                                </span>
-                              )}
-                            </div>
-                            <span className="text-[11px] font-semibold bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 px-2 py-0.5 rounded-sm shrink-0">Stock: {p.stock}</span>
-                          </div>
-                        </button>
-                      )}
-                    />
-                  </div>
-                </div>
+                <PosCatalogGrid
+                  products={products}
+                  addToCart={addToCart}
+                  registerItemTypeFilter={registerItemTypeFilter}
+                  setRegisterItemTypeFilter={setRegisterItemTypeFilter}
+                  registerSearchQuery={registerSearchQuery}
+                  setRegisterSearchQuery={setRegisterSearchQuery}
+                  retailPricesDict={retailPricesDict}
+                  isScannerFocused={isScannerFocused}
+                  onOpenCamera={() => setIsCameraOpen(true)}
+                  hiddenScannerRef={hiddenScannerRef}
+                  handleScan={handleScan}
+                />
               </div>
 
               {/* Center-Right Column: Cart Items */}
               <div className={`${mobileActiveTab === 'cart' ? 'flex' : 'hidden'} md:flex w-full md:w-[25%] lg:w-[25%] xl:w-[20%] shrink-0 border-l border-slate-200 dark:border-zinc-800/50 flex-col h-full bg-white dark:bg-zinc-900/60 backdrop-blur-md z-10`}>
-                <div className="p-4 border-b border-slate-100 dark:border-zinc-900 flex justify-between items-center bg-slate-50 dark:bg-[#0a0a0c]/50 shrink-0">
-                  <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-50 tracking-tight">Cart Items</h2>
-                  <div className="flex items-center gap-2">
-                    {unhandledOutOfStockItems.length > 0 && (
-                      <button 
-                        onClick={scrollToFirstOutOfStock}
-                        className="flex items-center gap-1 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 px-2 py-0.5 rounded-sm text-xs font-bold border border-red-200 dark:border-red-900/50 hover:bg-red-200 transition-colors"
-                        title="View out of stock items"
-                      >
-                        <AlertTriangle size={12} />
-                        {unhandledOutOfStockItems.length}
-                      </button>
-                    )}
-                    <span className="bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 px-2 py-0.5 rounded-sm text-xs font-bold border border-slate-200 dark:border-zinc-800/50">
-                      {cart.length} units
-                    </span>
-                    {cart.length > 0 && !isCheckoutSuccess && (
-                      <button 
-                        onClick={handleClearAll} 
-                        className="text-red-500 hover:text-red-700 hover:bg-red-50 dark:bg-red-900/30 p-1 rounded-sm transition-colors" 
-                        title="Clear All"
-                      >
-                        <Trash2 size={14} />
-                      </button>
-                    )}
-                  </div>
-                </div>
-
-                <div className="flex-1 overflow-y-auto p-4 custom-scrollbar bg-slate-50 dark:bg-[#0a0a0c]/30 relative">
-                  {cart.length === 0 ? (
-                    <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-400 gap-4 p-8">
-                        <ShoppingBag size={48} className="opacity-30 text-slate-400" />
-                        <p className="text-sm font-medium text-center">Scan or select items</p>
-                    </div>
-                  ) : (
-                    <div className="flex flex-col gap-3">
-                        {cart.map((item, idx) => {
-                          const currentProduct = products.find(p => p.id === item.id);
-                          const stockAvailable = currentProduct?.stock || 0;
-                          const deficit = item.quantity - stockAvailable;
-                          const isOutOfStock = deficit > 0;
-                          
-                          const itemPcsPerBox = item.pcsPerBox || (item as any).pcs_per_box || currentProduct?.pcsPerBox || (currentProduct as any)?.pcs_per_box;
-                          const itemBoxPerCtn = item.boxPerCtn || (item as any).box_per_ctn || currentProduct?.boxPerCtn || (currentProduct as any)?.box_per_ctn;
-
-                          return (
-                          <div id={`cart-item-${item.id}`} className={`flex flex-col bg-white dark:bg-zinc-900/60 backdrop-blur-md border ${isOutOfStock ? 'border-red-400 dark:border-red-600 shadow-[0_0_8px_rgba(239,68,68,0.2)]' : 'border-slate-200 dark:border-zinc-800/50 shadow-sm'} p-3 rounded-sm group gap-2`} key={idx}>
-                          <div className="flex items-center gap-2">
-                              <span className="text-slate-400 font-semibold text-xs w-4 shrink-0">{idx + 1}</span>
-                              <div className="flex-1 min-w-0">
-                                <FitText
-                                  as="p"
-                                  className="font-semibold text-slate-800 dark:text-slate-200 leading-tight"
-                                  baseSize={13} minSize={9}
-                                >
-                                  {item.name}
-                                </FitText>
-                                {item.barcode && <p className="text-[11px] text-slate-400 font-mono mt-0.5 truncate">{item.barcode}</p>}
-                              </div>
-                              <button 
-                                onClick={() => removeFromCart(item.cartId)}
-                                className="w-6 h-6 rounded-sm bg-slate-100 dark:bg-slate-700 text-slate-400 flex items-center justify-center hover:bg-slate-200 dark:bg-slate-600 dark:hover:bg-slate-600 hover:text-slate-600 dark:text-slate-400 transition-colors shrink-0"
-                              >
-                                <Trash2 size={12} />
-                              </button>
-                          </div>                          <div className="flex items-center justify-between flex-wrap gap-y-2 border-t border-slate-100 dark:border-zinc-900 pt-2">
-                              <div className="flex items-center gap-1.5">
-                                <select 
-                                  value={item.uom || 'Pcs'}
-                                  onChange={e => updateCartItem(item.cartId, { uom: e.target.value })}
-                                  className="bg-slate-50 dark:bg-[#0a0a0c] border border-slate-200 dark:border-zinc-800/50 rounded-sm text-[11px] font-semibold text-slate-600 dark:text-slate-400 focus:outline-none focus:border-slate-400 h-6 px-1 outline-none"
-                                >
-                                  <option value="Pcs">Pcs</option>
-                                  {itemPcsPerBox && <option value="Box">Box</option>}
-                                  {itemPcsPerBox && itemBoxPerCtn && <option value="Ctn">Ctn</option>}
-                                </select>
-                                <div className="flex items-center gap-0.5 shrink-0 bg-slate-50 dark:bg-[#0a0a0c] border border-slate-200 dark:border-zinc-800/50 rounded-sm p-0.5 h-6">
-                                  <button 
-                                    onClick={() => updateCartItem(item.cartId, { quantity: item.quantity - 1 })}
-                                    className="w-6 h-5 flex items-center justify-center text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:bg-slate-600 dark:hover:bg-slate-600 hover:text-slate-800 dark:text-slate-200 rounded-sm transition-colors text-sm leading-none"
-                                  >
-                                    -
-                                  </button>
-                                  <input 
-                                    type="number" 
-                                    step="1"
-                                    min="1"
-                                    value={item.quantity} 
-                                    onChange={e => {
-                                      const v = e.target.value;
-                                      if (v === '0') updateCartItem(item.cartId, { quantity: 0 });
-                                      else updateCartItem(item.cartId, { quantity: parseInt(v, 10) || 1 });
-                                    }}
-                                    className="w-6 bg-transparent text-center font-semibold text-slate-700 dark:text-slate-300 focus:outline-none text-[12px] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                                  />
-                                  <button 
-                                    onClick={() => updateCartItem(item.cartId, { quantity: item.quantity + 1 })}
-                                    className="w-6 h-5 flex items-center justify-center text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:bg-slate-600 dark:hover:bg-slate-600 hover:text-slate-800 dark:text-slate-200 rounded-sm transition-colors text-sm leading-none"
-                                  >
-                                    +
-                                  </button>
-                                </div>
-                              </div>
-                              <div className="flex flex-col items-end justify-center ml-auto leading-tight">
-                                <span className="font-semibold text-slate-900 dark:text-slate-50 text-[13px]">Rs {calculateItemPrice(item).toFixed(2)}</span>
-                                {currentProduct?.retail_price != null && (
-                                  <span className="text-[10px] text-slate-500 font-medium mt-0.5">Retail: Rs {currentProduct.retail_price}</span>
-                                )}
-                              </div>
-                          </div>
-                          
-                          {isOutOfStock && (
-                            <div className="flex items-center justify-between mt-1 pt-2 border-t border-red-100 dark:border-red-900/30">
-                               <span className="text-xs font-semibold text-red-600 dark:text-red-400 flex items-center">
-                                 <AlertTriangle size={12} className="inline mr-1" />
-                                 Missing {deficit} in stock
-                               </span>
-                               <button 
-                                 onClick={() => handleAddToOurOrder(currentProduct || item, deficit)}
-                                 className="text-[10px] font-bold bg-red-100 dark:bg-red-900/50 text-red-700 dark:text-red-400 px-2 py-1 rounded-sm hover:bg-red-200 transition-colors"
-                               >
-                                 Add to Our Order
-                               </button>
-                            </div>
-                          )}
-                        </div>
-                        )})}
-                    </div>
-                  )}
-                </div>
+                <PosCartPanel
+                  cart={cart}
+                  products={products}
+                  unhandledOutOfStockItems={unhandledOutOfStockItems}
+                  scrollToFirstOutOfStock={scrollToFirstOutOfStock}
+                  handleClearAll={handleClearAll}
+                  isCheckoutSuccess={isCheckoutSuccess}
+                  removeFromCart={removeFromCart}
+                  updateCartItem={updateCartItem}
+                  calculateItemPrice={calculateItemPrice}
+                  onAddToOurOrder={handleAddToOurOrder}
+                />
               </div>
 
               {/* Rightmost Column: Checkout & Actions */}
               <div className={`${mobileActiveTab === 'checkout' ? 'flex' : 'hidden'} md:flex w-full md:w-80 shrink-0 border-l border-slate-200 dark:border-zinc-800/50 flex-col h-full bg-slate-50 dark:bg-[#0a0a0c]/80 z-20 shadow-sm relative`}>
-                <div className="pb-3 border-b border-slate-200 dark:border-zinc-800/50 shrink-0 p-4">
-                  <h3 className="text-xs font-bold text-slate-500 dark:text-slate-400 tracking-wider uppercase mb-0.5">Checkout</h3>
-                  <h2 className="text-base font-semibold text-slate-900 dark:text-slate-50 tracking-tight">Summary & Dispatch</h2>
-                </div>
-                
-                {isCheckoutSuccess ? (
-                  <div className="flex flex-col flex-1 pt-8 overflow-hidden items-center text-center">
-                    <div className="w-16 h-16 bg-green-100 text-green-600 dark:text-green-400 rounded-full flex items-center justify-center mb-4 shrink-0 shadow-sm">
-                      <Package size={32} />
-                    </div>
-                    <h3 className="text-lg font-bold text-slate-900 dark:text-slate-50 mb-1">Order Dispatched!</h3>
-                    <p className="text-sm text-slate-500 dark:text-slate-400 mb-8 px-4 font-medium">Receipt <span className="font-mono text-slate-700 dark:text-slate-300 font-bold">{lastReceiptNumber}</span> has been processed successfully.</p>
-                    
-                    <div className="w-full flex flex-col gap-3 mt-auto shrink-0 border-t border-slate-200 dark:border-zinc-800/50 pt-4 p-4">
-                      <button 
-                        onClick={() => window.print()}
-                        className="w-full h-10 bg-white dark:bg-zinc-900/60 backdrop-blur-md border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 rounded-sm font-bold text-[14px] hover:bg-slate-50 dark:hover:bg-slate-700 dark:bg-[#0a0a0c] hover:border-slate-400 transition-all flex items-center justify-center gap-2 shadow-sm"
-                      >
-                        <Printer size={16} /> Print Receipt
-                      </button>
-                      <button 
-                        onClick={handleStartNewOrder}
-                        className="w-full h-10 bg-slate-900 text-slate-50 rounded-sm font-semibold text-[14px] hover:bg-slate-800 transition-all flex items-center justify-center gap-2 shadow-sm"
-                      >
-                        <ShoppingBag size={16} /> Start New Order
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="flex flex-col flex-1 p-4 overflow-y-auto custom-scrollbar">
-                    <div className="flex flex-col gap-1.5 mb-4 shrink-0">
-                      <div className="flex justify-between items-center text-slate-500 dark:text-slate-400 text-xs">
-                        <span>Subtotal</span>
-                        <span className="font-medium text-slate-700 dark:text-slate-300 break-words max-w-[120px] text-right">Rs {subTotal.toFixed(2)}</span>
-                      </div>
-                      <div className="border-t border-slate-200 dark:border-zinc-800/50 my-1.5"></div>
-                      <div className="flex justify-between items-center flex-wrap gap-2">
-                        <span className="text-slate-800 dark:text-slate-200 font-semibold text-sm">TOTAL</span>
-                        <span className="font-bold text-lg text-slate-900 dark:text-slate-50 tracking-tight break-words text-right">Rs {total.toFixed(2)}</span>
-                      </div>
-                    </div>
-
-                    <div className="bg-white dark:bg-zinc-900/60 backdrop-blur-md border border-slate-200 dark:border-zinc-800/50 rounded-sm p-3 flex flex-col gap-2.5 mb-4 shrink-0 shadow-sm">
-                        <div ref={dropdownRef} className={`relative ${showShopDropdown ? 'z-30' : 'z-10'}`}>
-                          <label className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide flex items-center gap-1.5 mb-1">
-                            <User size={10} className="text-slate-400" /> Client / Business Name
-                          </label>
-                          <div className="relative">
-                            <input 
-                              type="text" 
-                              value={clientName}
-                              onChange={e => {
-                                  const val = e.target.value;
-                                  setClientName(val);
-                                  setShowShopDropdown(true);
-                                  
-                                  const exactShop = shops.find(s => String(s.name || '').toLowerCase() === val.toLowerCase());
-                                  if (exactShop) {
-                                    if (!area) setArea(exactShop.address || exactShop.area || '');
-                                    if (!contactNumber) setContactNumber(exactShop.contact_number || exactShop.contactNumber || exactShop.phone || '');
-                                  }
-                                }}
-                              onFocus={() => { setShowShopDropdown(true); setShowBookerDropdown(false); }}
-                              className="w-full bg-slate-50 dark:bg-[#0a0a0c] border border-slate-200 dark:border-zinc-800/50 rounded-sm py-1.5 px-2 pr-8 font-medium focus:outline-none focus:border-blue-500 transition-all text-xs"
-                              placeholder="e.g. Metro Wholesale"
-                            />
-                            <ChevronDown 
-                              size={14} 
-                              className={`absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 transition-transform cursor-pointer ${showShopDropdown ? 'rotate-180' : ''}`}
-                              onClick={() => setShowShopDropdown(!showShopDropdown)}
-                            />
-                          </div>
-
-                          {showShopDropdown && (
-                            <div className="absolute top-full left-0 w-full mt-1 bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-md shadow-xl overflow-hidden max-h-60 overflow-y-auto z-50">
-                              {shops.filter(s => 
-                                String(s.name || '').toLowerCase().includes(clientName.toLowerCase()) ||
-                                String(s.contactNumber || s.contact_number || '').includes(clientName) ||
-                                String(s.address || '').toLowerCase().includes(clientName.toLowerCase())
-                              ).length === 0 ? (
-                                <div className="p-3 text-center text-xs text-slate-500 dark:text-slate-400">
-                                  No shops found. Type to enter a new one.
-                                </div>
-                              ) : (
-                                <div className="py-1">
-                                  {shops
-                                    .filter(s => 
-                                      String(s.name || '').toLowerCase().includes(clientName.toLowerCase()) ||
-                                      String(s.contactNumber || s.contact_number || '').includes(clientName) ||
-                                      String(s.address || '').toLowerCase().includes(clientName.toLowerCase())
-                                    )
-                                    .sort((a, b) => String(a.name || '').localeCompare(String(b.name || '')))
-                                    .map((shop, i) => (
-                                      <div 
-                                        key={i}
-                                        className="px-3 py-2 hover:bg-slate-50 dark:hover:bg-zinc-700/50 cursor-pointer border-b border-slate-100 dark:border-zinc-700/50 last:border-0"
-                                        onClick={() => {
-                                          setClientName(shop.name);
-                                          setArea(shop.address || shop.area || '');
-                                          setContactNumber(shop.contact_number || shop.contactNumber || shop.phone || '');
-                                          setShowShopDropdown(false);
-                                        }}
-                                      >
-                                        <div className="font-semibold text-slate-800 dark:text-slate-200 text-[13px]">{shop.name}</div>
-                                        <div className="flex items-center gap-3 mt-1">
-                                          {(shop.address || shop.area) && (
-                                            <div className="flex items-center gap-1 text-[10px] text-slate-500">
-                                              <MapPin size={10} /> {shop.address || shop.area}
-                                            </div>
-                                          )}
-                                          {(shop.contact_number || shop.contactNumber) && (
-                                            <div className="flex items-center gap-1 text-[10px] text-slate-500 whitespace-nowrap">
-                                              <Phone size={10} /> {formatPakistaniPhone(shop.contact_number || shop.contactNumber)}
-                                            </div>
-                                          )}
-                                        </div>
-                                      </div>
-                                    ))}
-                                </div>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      <div>
-                        <label className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide flex items-center gap-1.5 mb-1">
-                          <FileText size={10} className="text-slate-400" /> Payment Terms
-                        </label>
-                        <div className="relative">
-                          {!isCustomPayment ? (
-                            <>
-                              <select
-                                value={paymentTerms}
-                                onChange={(e) => {
-                                  if (e.target.value === 'CUSTOM') {
-                                    setIsCustomPayment(true);
-                                    setPaymentTerms('');
-                                  } else {
-                                    setPaymentTerms(e.target.value);
-                                  }
-                                }}
-                                className="w-full bg-slate-100 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-800/50 rounded-sm py-1.5 px-2 pr-8 font-medium focus:outline-none focus:border-blue-500 transition-all text-xs appearance-none cursor-pointer"
-                              >
-                                <option value="Cash">Cash (Immediate)</option>
-                                <option value="Bank Transfer">Bank Transfer</option>
-                                <option value="30-Day Credit">30-Day Credit</option>
-                                <option value="60-Day Credit">60-Day Credit</option>
-                                <option value="CUSTOM" className="text-slate-400 italic">Custom Payment Method...</option>
-                              </select>
-                              <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={14} />
-                            </>
-                          ) : (
-                            <div className="flex gap-1">
-                              <input
-                                type="text"
-                                autoFocus
-                                placeholder="Type custom method..."
-                                value={paymentTerms}
-                                onChange={(e) => setPaymentTerms(e.target.value)}
-                                className="flex-1 bg-slate-100 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-800/50 rounded-sm py-1.5 px-2 font-medium focus:outline-none focus:border-blue-500 transition-all text-xs"
-                              />
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setIsCustomPayment(false);
-                                  setPaymentTerms('Bank Transfer');
-                                }}
-                                className="px-2 bg-slate-200 text-slate-600 rounded-sm hover:bg-slate-300 transition-colors flex items-center justify-center shrink-0"
-                              >
-                                <X size={14} />
-                              </button>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                        <div ref={bookerDropdownRef} className={`relative ${showBookerDropdown ? 'z-30' : 'z-10'}`}>
-                          <label className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide flex items-center gap-1.5 mb-1">
-                            Booker Name
-                          </label>
-                          <div className="relative">
-                            <input 
-                              type="text" 
-                              value={bookerName}
-                              onChange={(e) => {
-                                setBookerName(e.target.value);
-                                setShowBookerDropdown(true);
-                              }}
-                              onFocus={() => { setShowBookerDropdown(true); setShowShopDropdown(false); }}
-                              className="w-full bg-slate-100 dark:bg-[#0a0a0c] border border-slate-200 dark:border-zinc-800/50 rounded-sm py-1.5 px-2 pr-8 font-medium focus:outline-none focus:border-blue-500 transition-all text-xs"
-                              placeholder="e.g. Admin or Salesman"
-                            />
-                            <ChevronDown 
-                              size={14} 
-                              className={`absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 transition-transform cursor-pointer ${showBookerDropdown ? 'rotate-180' : ''}`}
-                              onClick={() => setShowBookerDropdown(!showBookerDropdown)}
-                            />
-                          </div>
-
-                          {showBookerDropdown && (
-                            <div className="absolute top-full left-0 w-full mt-1 bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-md shadow-xl overflow-hidden max-h-60 overflow-y-auto z-50">
-                              {bookersList.filter(b => (b.name || '').toLowerCase().includes(bookerName.toLowerCase())).length === 0 ? (
-                                <div className="p-3 text-center text-xs text-slate-500 dark:text-slate-400">
-                                  No bookers found. Type to enter a new one.
-                                </div>
-                              ) : (
-                                <div className="py-1">
-                                  {bookersList
-                                    .filter(b => (b.name || '').toLowerCase().includes(bookerName.toLowerCase()))
-                                    .sort((a, b) => String(a.name || '').localeCompare(String(b.name || '')))
-                                    .map((booker, i) => (
-                                      <div 
-                                        key={i}
-                                        className="px-3 py-2 hover:bg-slate-50 dark:hover:bg-zinc-700/50 cursor-pointer border-b border-slate-100 dark:border-zinc-700/50 last:border-0"
-                                        onClick={() => {
-                                          setBookerName(booker.name);
-                                          setShowBookerDropdown(false);
-                                        }}
-                                      >
-                                        <div className="font-semibold text-slate-800 dark:text-slate-200 text-[13px]">{booker.name}</div>
-                                        {booker.contact_number && (
-                                          <div className="flex items-center gap-1 text-[10px] text-slate-500 mt-1 whitespace-nowrap">
-                                            <Phone size={10} /> {formatPakistaniPhone(booker.contact_number)}
-                                          </div>
-                                        )}
-                                      </div>
-                                    ))}
-                                </div>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                        <div>
-                          <label className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide flex items-center gap-1.5 mb-1">
-                            Area Name
-                          </label>
-                          <input 
-                            type="text" 
-                            value={area}
-                            onChange={e => setArea(e.target.value)}
-                            className="w-full bg-slate-50 dark:bg-[#0a0a0c] border border-slate-200 dark:border-zinc-800/50 rounded-sm py-1.5 px-2 font-medium focus:outline-none focus:border-slate-400 transition-all text-xs"
-                            placeholder="e.g. Samnabad"
-                          />
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="mt-auto shrink-0 border-t border-slate-200 dark:border-zinc-800/50 pt-3">
-                      <button 
-                        onClick={handlePrintReceipt}
-                        disabled={cart.length === 0}
-                        className="w-full h-10 bg-slate-900 text-slate-50 rounded-sm font-semibold text-[14px] hover:bg-slate-800 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-sm"
-                      >
-                        <Printer size={16} /> Preview & Dispatch
-                      </button>
-                    </div>
-                  </div>
-                )}
+                <PosCheckoutPanel
+                  isCheckoutSuccess={isCheckoutSuccess}
+                  lastReceiptNumber={lastReceiptNumber}
+                  onPrintReceipt={handlePrintReceipt}
+                  onStartNewOrder={handleStartNewOrder}
+                  subTotal={subTotal}
+                  total={total}
+                  clientName={clientName}
+                  setClientName={setClientName}
+                  shops={shops}
+                  area={area}
+                  setArea={setArea}
+                  contactNumber={contactNumber}
+                  setContactNumber={setContactNumber}
+                  paymentTerms={paymentTerms}
+                  setPaymentTerms={setPaymentTerms}
+                  bookerName={bookerName}
+                  setBookerName={setBookerName}
+                  bookersList={bookersList}
+                  cart={cart}
+                />
               </div>
             </div>
-            
+
             {isCameraOpen && (
               <Suspense fallback={<div className="fixed inset-0 z-[9999] bg-black flex items-center justify-center text-white font-bold">Loading camera...</div>}>
                 <CameraScanner 
@@ -2404,103 +1954,16 @@ export default function AdminPOSView() {
       </aside>
 
       {/* Alert Drawer Overlay */}
-      {isAlertDrawerOpen && (
-        <div className="absolute inset-0 z-50 flex print:hidden">
-           <div className="absolute inset-0 bg-black/20 backdrop-blur-sm" onClick={() => setIsAlertDrawerOpen(false)}></div>
-           <div className="w-[400px] h-full bg-white dark:bg-zinc-900/60 backdrop-blur-md shadow-2xl relative z-10 flex flex-col border-r border-slate-200 dark:border-zinc-800/50 animate-in slide-in-from-left duration-300">
-             <div className="px-6 py-6 border-b border-slate-100 dark:border-zinc-900 flex justify-between items-center bg-slate-50 dark:bg-[#0a0a0c]/50">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-blue-100 text-blue-600 dark:text-blue-400 rounded-lg"><Package size={20} /></div>
-                  <h2 className="text-lg font-bold text-slate-900 dark:text-slate-50 tracking-tight">Incoming B2B Orders</h2>
-                </div>
-                <button onClick={() => setIsAlertDrawerOpen(false)} className="text-slate-400 hover:text-slate-600 dark:text-slate-400"><X size={20} /></button>
-             </div>
-             <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
-                {incomingOrders.length === 0 ? (
-                  <div className="h-full flex flex-col items-center justify-center text-slate-400">
-                    <Package size={48} className="mb-4 opacity-20" />
-                    <p className="text-[15px] font-medium text-center">No new incoming orders right now.</p>
-                  </div>
-                ) : (
-                  <div className="flex flex-col gap-4">
-                    {incomingOrders.map((order, idx) => (
-                      <div key={idx} className="bg-gradient-to-br from-white to-blue-50/30 dark:from-slate-800 dark:to-slate-800/80 border border-blue-100 dark:border-zinc-800/50 rounded-xl p-4 flex flex-col shadow-sm hover:shadow-md transition-all relative overflow-hidden group hover:-translate-y-0.5 active:scale-[0.98]">
-                         <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 dark:bg-blue-400/5 rounded-bl-full -z-0 transition-transform group-hover:scale-110 pointer-events-none"></div>
-                         <div className="flex justify-between items-start mb-2 relative z-10">
-                            <span className="font-bold text-slate-900 dark:text-slate-50 text-sm">{order.client_name || 'B2B Client'}</span>
-                            <div className="flex gap-2">
-                              {autoBackedUpOrders.includes((order.id || order.receipt_number)?.toString()) && (
-                                <span className="text-xs font-bold px-2 py-1 rounded-md bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400">
-                                  PC BACKED UP
-                                </span>
-                              )}
-                              <span className="text-xs font-bold px-2 py-1 rounded-md bg-blue-100 text-blue-700">
-                                NEW
-                              </span>
-                            </div>
-                         </div>
-                         <div className="flex flex-col gap-1 text-xs text-slate-500 dark:text-slate-400 font-medium mb-3">
-                            <span className="flex items-center gap-1"><MapPin size={12} /> Area: {order.area || 'N/A'}</span>
-                            <span className="flex items-center gap-1"><User size={12} /> Booker: {order.booker_name || 'N/A'}</span>
-                              <span className="flex items-center gap-1"><CreditCard size={12} /> Terms: {order.payment_terms || 'Cash'}</span>
-                              <span className="flex items-center gap-1 whitespace-nowrap"><Phone size={12} /> Phone: {order.client_phone || order.contact_number || order.contactNumber ? formatPakistaniPhone(order.client_phone || order.contact_number || order.contactNumber) : 'N/A'}</span>
-                         </div>
-                         <div className="flex justify-between items-center border-t border-blue-100/50 dark:border-zinc-800/50 pt-3 relative z-10">
-                            <span className="text-slate-800 dark:text-slate-200 font-bold text-lg">Rs {(order.total || 0).toLocaleString()}</span>
-                            <div className="flex gap-2">
-                              {order.status === 'PENDING' ? (
-                                <>
-                                  <button 
-                                    onClick={() => setViewOrderDetails(order)}
-                                    className="px-3 py-1.5 bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 font-semibold text-xs rounded-md shadow-sm transition-colors"
-                                  >
-                                    View
-                                  </button>
-                                  <button 
-                                    onClick={() => handleAcknowledgeOrder(order)}
-                                    className="px-3 py-1.5 bg-yellow-500 hover:bg-yellow-600 text-white font-semibold text-xs rounded-md shadow-sm transition-colors"
-                                  >
-                                    Order Received
-                                  </button>
-                                  <button 
-                                    onClick={() => handleCancelIncomingOrder(order)}
-                                    className="px-3 py-1.5 bg-red-50 hover:bg-red-100 dark:bg-red-950/40 dark:hover:bg-red-900/50 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800/60 font-semibold text-xs rounded-md shadow-sm transition-colors"
-                                  >
-                                    Cancel
-                                  </button>
-                                </>
-                              ) : (
-                                <>
-                                  <button 
-                                    onClick={() => setViewOrderDetails(order)}
-                                    className="px-3 py-1.5 bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 font-semibold text-xs rounded-md shadow-sm transition-colors"
-                                  >
-                                    View
-                                  </button>
-                                  <button 
-                                    onClick={() => handleAcceptOrder(order)}
-                                    className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs rounded-md shadow-sm transition-colors"
-                                  >
-                                    Auto Make
-                                  </button>
-                                  <button 
-                                    onClick={() => handleCancelIncomingOrder(order)}
-                                    className="px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-500 font-semibold text-xs rounded-md shadow-sm transition-colors"
-                                  >
-                                    Cancel
-                                  </button>
-                                </>
-                              )}
-                            </div>
-                         </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-             </div>
-           </div>
-        </div>
-      )}
+      <PosIncomingAlertDrawer
+        isOpen={isAlertDrawerOpen}
+        onClose={() => setIsAlertDrawerOpen(false)}
+        incomingOrders={incomingOrders}
+        autoBackedUpOrders={autoBackedUpOrders}
+        onViewOrderDetails={setViewOrderDetails}
+        onAcknowledgeOrder={handleAcknowledgeOrder}
+        onAcceptOrder={handleAcceptOrder}
+        onCancelIncomingOrder={handleCancelIncomingOrder}
+      />
 
       {/* Main Content Area */}
       <main className="flex-1 flex flex-col overflow-hidden bg-white dark:bg-[#0a0a0c] relative md:pt-0 pt-[53px]">
