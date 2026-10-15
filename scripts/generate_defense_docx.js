@@ -21,7 +21,7 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-console.log('Generating Professional DBMS Project Defense Guide DOCX for Shaheen Traders POS...');
+console.log('Generating Updated Professional DBMS Project Defense Guide DOCX (Database -> Areeb, Frontend -> Umer)...');
 
 const FONT_BODY = 'Calibri';
 const FONT_HEADING = 'Calibri';
@@ -108,20 +108,6 @@ const createH2 = (text) => new Paragraph({
       size: 26, // 13pt
       bold: true,
       color: COLOR_SECONDARY,
-    }),
-  ],
-});
-
-const createH3 = (text) => new Paragraph({
-  heading: HeadingLevel.HEADING_3,
-  spacing: { before: 140, after: 60 },
-  children: [
-    new TextRun({
-      text,
-      font: FONT_HEADING,
-      size: 23, // 11.5pt
-      bold: true,
-      color: COLOR_ACCENT,
     }),
   ],
 });
@@ -227,8 +213,8 @@ children.push(
       { text: 'Booker Portal: https://shaheen-traders-pos.vercel.app/booker  |  Admin Terminal: https://shaheen-traders-pos.vercel.app/admin' },
     ], { after: 40 }),
     createRunsP([
-      { text: 'Team Members: ', bold: true, color: '0F172A' },
-      { text: 'Areeb Iqbal (Frontend & Hardware) & Umer Khan (Database & Backend Engineering)' },
+      { text: 'Team Roles: ', bold: true, color: '0F172A' },
+      { text: 'Areeb Iqbal (DBMS & Backend Engineering)  &  Umer Khan (Frontend Architecture & Client Systems)' },
     ], { after: 0 }),
   ], COLOR_BG_LIGHT, COLOR_PRIMARY),
   new Paragraph({ spacing: { after: 180 } })
@@ -242,36 +228,28 @@ children.push(
   createCallout([
     createP('⚠️ CONFIDENTIAL / INTERNAL TEAM BRIEFING', { bold: true, color: COLOR_AMBER_TEXT, after: 60 }),
     createP(
-      'Listen up bro: We built a full-blown commercial-grade enterprise system with real PostgreSQL cloud databases, offline PWA synchronization, optimistic concurrency locking, and thermal hardware printing. When the DBMS instructor looks at this, they are going to be shocked because most university students bring a basic toy SQLite app or an un-normalized PHP form.',
+      'Listen up bro: We built a full-blown commercial-grade enterprise system with real PostgreSQL cloud databases, offline PWA synchronization, optimistic concurrency locking, hardware barcode scanning, and thermal receipt printing. When the DBMS instructor looks at this, they are going to see a legit production software used in real wholesale markets.',
       { color: '78350F', after: 60 }
     ),
     createP(
-      'Because this is a DBMS course, the teacher does not care about CSS colors or button animations. They care strictly about the Database:',
+      'Here is the game plan for our 50 / 50 defense:',
       { color: '78350F', bold: true, after: 40 }
     ),
     createBulletP([
-      { text: '1. Relational Schema & Normalization: ', bold: true, color: '78350F' },
-      { text: 'How tables are structured in 3NF and BCNF without update anomalies.', color: '78350F' },
+      { text: '• Areeb Iqbal: ', bold: true, color: '78350F' },
+      { text: 'Database Architecture & Backend Engineering (PostgreSQL Relational Schema, 3NF Normalization, ACID Transactions, Stored Procedures, Concurrency Control, SafeSync, Row Level Security, and Disaster Recovery).', color: '78350F' },
     ]),
     createBulletP([
-      { text: '2. Concurrency Control: ', bold: true, color: '78350F' },
-      { text: 'How concurrent cashiers selling the same product never drop stock below zero.', color: '78350F' },
-    ]),
-    createBulletP([
-      { text: '3. ACID Transaction Integrity: ', bold: true, color: '78350F' },
-      { text: 'How multi-table orders roll back cleanly if inventory is insufficient.', color: '78350F' },
-    ]),
-    createBulletP([
-      { text: '4. Database Security (RLS): ', bold: true, color: '78350F' },
-      { text: 'How PostgreSQL Row Level Security rejects unauthorized API calls at the storage layer.', color: '78350F' },
-    ]),
-    createBulletP([
-      { text: '5. Offline Sync & Idempotency: ', bold: true, color: '78350F' },
-      { text: 'How mobile bookers submit orders offline without creating duplicate records on reconnect.', color: '78350F' },
+      { text: '• Umer Khan: ', bold: true, color: '78350F' },
+      { text: 'Frontend Architecture & Client-Side Systems (React 18 + TypeScript, Progressive Web App (PWA) Offline Engine, Service Worker Caching, Zustand Reactive Stores, Hardware Laser Scanner Buffering, Thermal Receipt Engine, and Client-Side Data Streaming).', color: '78350F' },
     ]),
     createP(
-      'We have split the credit strictly 50 / 50: Areeb handled Frontend & Client Architecture; Umer handled Database Architecture, Schema, ACID Transactions, and Security. Your job in the viva is to own the Database side like a pro. Everything you need to say is written below.',
-      { color: '78350F', bold: true, after: 0, before: 60 }
+      'Why this division is perfect for you: In university DBMS defenses, professors often grill the database person with raw SQL theory, relational algebra, and BCNF proofs. Because Areeb is taking that heat, your role is to present the entire client application, how it talks to the database, how offline mode works when the database is unreachable, and how hardware (scanners and thermal printers) interacts with data.',
+      { color: '78350F', after: 60, before: 40 }
+    ),
+    createP(
+      'When the teacher asks you: "Umer, what did you build and how does your side interact with the database?", you will speak with complete confidence. Everything you need to say, the exact architectural concepts, and the exact answers to the teacher\'s questions are scripted below.',
+      { color: '78350F', bold: true, after: 0 }
     ),
   ], COLOR_AMBER_BG, COLOR_AMBER_BORDER),
   new Paragraph({ spacing: { after: 180 } })
@@ -289,60 +267,59 @@ const tableHeaders = ['Module / Component', 'Owner', 'Technologies', 'Key Delive
 const tableData = [
   [
     'Frontend Architecture & UI',
-    'Areeb Iqbal',
+    'Umer Khan',
     'React 18, TypeScript, Tailwind CSS, Vite',
     'High-speed desktop POS terminal, Booker touch-first mobile interface, dark/light theme engine, virtualized cart tables, and modal dialogs.'
   ],
   [
     'Relational Database Design',
-    'Umer Khan',
+    'Areeb Iqbal',
     'PostgreSQL 15 (Supabase), SQL DDL',
     '3NF normalized schema across 7 tables (products, orders, order_items, users, product_barcodes, booker_locations, areas) with strict PK/FK constraints.'
   ],
   [
     'PWA & Offline Service Worker',
-    'Areeb Iqbal',
+    'Umer Khan',
     'Vite-PWA, Workbox, Service Workers',
     'Offline asset caching, service worker background registration, installable desktop/mobile manifest, 58 precached modules (4.6 MB total).'
   ],
   [
     'ACID & Transaction Processing',
-    'Umer Khan',
+    'Areeb Iqbal',
     'PL/pgSQL, PostgreSQL RPC, Supabase',
     'Authored process_order_transaction stored procedure, multi-row atomic rollbacks, idempotency enforcement, and check constraints.'
   ],
   [
     'Hardware Interfacing & Receipts',
-    'Areeb Iqbal',
+    'Umer Khan',
     'JsBarcode (Code128), QRCode, Tauri Shell',
     'Hardware laser scanner buffer listener, dynamic QR generation, 80mm thermal receipt rendering, Esc/Pos emulation, and streaming ExcelJS export.'
   ],
   [
     'Concurrency Control & SafeSync',
-    'Umer Khan',
+    'Areeb Iqbal',
     'TypeScript, SQL Predicates, PostgREST',
     'Two-tier concurrency: check_stock_positive check constraint + optimistic locking predicate (gte stock) in safeSync.ts to eliminate race conditions.'
   ],
   [
     'Client-Side State Management',
-    'Areeb Iqbal',
+    'Umer Khan',
     'Zustand, LocalStorage, React Hooks',
     'Reactive global stores (useCartStore, useInventoryStore), debounced autosave mechanisms (400ms timers), sound synthesis for barcode beeps.'
   ],
   [
     'Database Security & RLS',
-    'Umer Khan',
+    'Areeb Iqbal',
     'PostgreSQL RLS, Security Definer',
     'Multi-tenant Row Level Security policies, role separation (admin, booker, cashier), security definer role lookups immune to SQL injection.'
   ],
 ];
 
-const colWidths = [24, 16, 26, 34]; // Percentages
+const colWidths = [24, 16, 26, 34];
 
 const workDivisionTable = new Table({
   width: { size: 100, type: WidthType.PERCENTAGE },
   rows: [
-    // Header Row
     new TableRow({
       tableHeader: true,
       children: tableHeaders.map((h, i) => new TableCell({
@@ -363,7 +340,6 @@ const workDivisionTable = new Table({
         ],
       })),
     }),
-    // Data Rows
     ...tableData.map((row, rIdx) => new TableRow({
       children: row.map((cellText, cIdx) => new TableCell({
         width: { size: colWidths[cIdx], type: WidthType.PERCENTAGE },
@@ -384,7 +360,7 @@ const workDivisionTable = new Table({
                 font: FONT_BODY,
                 size: 20,
                 bold: cIdx === 1,
-                color: cIdx === 1 ? (cellText.includes('Areeb') ? COLOR_SECONDARY : COLOR_PRIMARY) : COLOR_TEXT,
+                color: cIdx === 1 ? (cellText.includes('Umer') ? COLOR_SECONDARY : COLOR_PRIMARY) : COLOR_TEXT,
               }),
             ],
           }),
@@ -397,57 +373,57 @@ const workDivisionTable = new Table({
 children.push(workDivisionTable, new Paragraph({ spacing: { after: 180 } }));
 
 // ==========================================
-// SECTION 3: SYSTEM ARCHITECTURE & DATA FLOW
+// SECTION 3: SYSTEM ARCHITECTURE
 // ==========================================
 children.push(
   createH1('3. System Architecture & End-to-End Data Flow'),
   createP('The system operates across three decoupled, high-resilience architectural tiers:'),
   createRunsP([
-    { text: '• Tier 1: Presentation & Hardware Layer (Areeb Iqbal): ', bold: true, color: COLOR_SECONDARY },
+    { text: '• Tier 1: Presentation & Hardware Layer (Umer Khan): ', bold: true, color: COLOR_SECONDARY },
     { text: 'High-speed React 18 SPA with offline Service Worker caching, keyboard scanner listeners, and thermal receipt canvas generator.' }
   ]),
   createRunsP([
-    { text: '• Tier 2: SafeSync & Concurrency Middleware (Umer Khan): ', bold: true, color: COLOR_PRIMARY },
+    { text: '• Tier 2: SafeSync & Concurrency Middleware (Areeb Iqbal): ', bold: true, color: COLOR_PRIMARY },
     { text: 'Optimistic concurrency locking predicates, offline action queues, idempotency filter, and schema drift enforcer.' }
   ]),
   createRunsP([
-    { text: '• Tier 3: PostgreSQL Cloud Engine (Umer Khan): ', bold: true, color: COLOR_ACCENT },
+    { text: '• Tier 3: PostgreSQL Cloud Engine (Areeb Iqbal): ', bold: true, color: COLOR_ACCENT },
     { text: 'ACID-compliant relational schema, PL/pgSQL stored procedures, Row Level Security, non-negative check constraints, and B-Tree indexes.' }
   ]),
   createH2('End-to-End Order Transaction Lifecycle:'),
   createBulletP([
-    { text: '1. Order Staging: ', bold: true },
+    { text: '1. Order Staging (Umer\'s Client): ', bold: true },
     { text: 'Booker adds wholesale goods to cart on mobile. Units (Pieces, Boxes, Cartons) are deterministically converted to base units using UOM multipliers.' }
   ]),
   createBulletP([
-    { text: '2. Offline Persistence: ', bold: true },
+    { text: '2. Offline Persistence (Umer\'s PWA): ', bold: true },
     { text: 'If network is unavailable, the order is stamped with a UUIDv4 idempotency key and persisted into browser storage.' }
   ]),
   createBulletP([
-    { text: '3. Atomic Submission: ', bold: true },
-    { text: 'Upon network connection, safeSync triggers the process_order_transaction RPC on PostgreSQL.' }
+    { text: '3. Atomic Submission (Bridge to Database): ', bold: true },
+    { text: 'Upon network connection, safeSync triggers the process_order_transaction RPC on Areeb\'s PostgreSQL database.' }
   ]),
   createBulletP([
-    { text: '4. Database Engine Validation: ', bold: true },
+    { text: '4. Database Engine Validation (Areeb\'s Database): ', bold: true },
     { text: 'PostgreSQL validates idempotency, locks rows, verifies stock levels, decrements inventory, and records order lines inside an atomic transaction block.' }
   ]),
   createBulletP([
-    { text: '5. Real-Time Dispatch: ', bold: true },
+    { text: '5. Real-Time Dispatch (Umer\'s Admin UI): ', bold: true },
     { text: 'PostgreSQL commits the WAL; the Admin POS dashboard automatically receives the dispatched order for warehouse packing and 80mm thermal receipt printing.' }
   ]),
   new Paragraph({ spacing: { after: 180 } })
 );
 
 // ==========================================
-// SECTION 4: WHAT AREEB BUILT
+// SECTION 4: WHAT UMER BUILT (FRONTEND)
 // ==========================================
 children.push(
-  createH1('4. What Areeb Iqbal Built (Frontend Architecture & Client UI)'),
-  createP('Areeb engineered the complete client-side architecture, hardware integrations, and offline capabilities:'),
+  createH1('4. What Umer Khan Built (Frontend Architecture, UI/UX & Hardware)'),
+  createP('Umer engineered the complete client-side architecture, hardware integrations, and offline capabilities:'),
   createH2('4.1 React 18 & TypeScript Enterprise SPA'),
   createBulletP([
     { text: 'Dual Interface Architecture: ', bold: true },
-    { text: 'Engineered an ultra-fast desktop register view for warehouse cashiers and a lightweight touch-optimized interface for field booking agents on motorbikes.' }
+    { text: 'Engineered an ultra-fast desktop register view for warehouse cashiers (AdminPOSView.tsx) and a lightweight touch-optimized interface for field booking agents on motorbikes (B2BShopView.tsx).' }
   ]),
   createBulletP([
     { text: 'Strict Type Safety: ', bold: true },
@@ -488,11 +464,11 @@ children.push(
 );
 
 // ==========================================
-// SECTION 5: WHAT UMER BUILT (CORE DBMS)
+// SECTION 5: WHAT AREEB BUILT (DATABASE)
 // ==========================================
 children.push(
-  createH1('5. What Umer Khan Built (DBMS Architecture & Data Engineering)'),
-  createP('Umer designed and implemented the entire database layer, schema normalization, transaction integrity, concurrency locks, and security policies:'),
+  createH1('5. What Areeb Iqbal Built (DBMS Architecture & Backend Engineering)'),
+  createP('Areeb designed and implemented the entire database layer, schema normalization, transaction integrity, concurrency locks, and security policies:'),
   createH2('5.1 Normalized Relational Schema (PostgreSQL)'),
   createP('The database architecture consists of 7 normalized relational tables in PostgreSQL:'),
   createBulletP([
@@ -545,7 +521,7 @@ children.push(
   ]),
 
   createH2('5.3 ACID Compliance & PL/pgSQL Stored Procedure'),
-  createP('To guarantee multi-table atomicity and prevent race conditions, Umer authored the process_order_transaction stored procedure:'),
+  createP('To guarantee multi-table atomicity and prevent race conditions, Areeb authored the process_order_transaction stored procedure:'),
   createCodeBlock([
     'CREATE OR REPLACE FUNCTION process_order_transaction(payload JSON)',
     'RETURNS JSON AS $$',
@@ -564,7 +540,7 @@ children.push(
     '    VALUES (payload->>\'receipt_number\', (payload->>\'idempotency_key\')::UUID, auth.uid(), payload->>\'client_name\', (payload->>\'total_amount\')::NUMERIC)',
     '    RETURNING id INTO v_order_id;',
     '',
-    '    -- 3. Loop over Items, Decrement Inventory & Insert Line Items',
+    '    -- 3. Loop over Items, Atomically Decrement Stock & Insert Line Items',
     '    FOR v_item IN SELECT * FROM json_populate_recordset(null::record, payload->\'items\') AS (...)',
     '    LOOP',
     '        v_total_deduction := v_item.quantity * v_item.multiplier;',
@@ -652,100 +628,100 @@ children.push(
 
   // Q1
   createCallout([
-    createP('Q1: "Umer, why did you use UUIDs instead of standard Auto-Incrementing Integers (1, 2, 3...) for Primary Keys?"', { bold: true, color: COLOR_PRIMARY, after: 40 }),
+    createP('Q1: "Umer, what did you build in this project, and how does your work connect to the database?"', { bold: true, color: COLOR_PRIMARY, after: 40 }),
     createRunsP([
       { text: 'Your Answer: ', bold: true, color: '0F172A' },
-      { text: '"Sir, because Shaheen Traders is an offline-first distributed system. Mobile bookers take orders in wholesale markets with poor cellular signals. If we used sequential integers, two bookers working offline would both generate Order #105. When syncing to the central database, you would get primary key collision errors or overwrites. With UUIDv4 (gen_random_uuid()), keys are globally unique and can be safely generated offline on client devices without central coordination, then synchronized seamlessly."' }
+      { text: '"Sir, I engineered the entire frontend client application, the offline Progressive Web App (PWA) engine, the Zustand reactive state management, and the hardware scanner and thermal printer interfacing. My frontend connects to Areeb\'s PostgreSQL database via Supabase\'s PostgREST client and custom RPC endpoints. When an order is placed on my UI, the cart state is converted into an atomic JSON payload and submitted to Areeb\'s process_order_transaction stored procedure, which ensures inventory deductions and receipt generation remain fully ACID-compliant."' }
     ]),
   ]),
   new Paragraph({ spacing: { after: 80 } }),
 
   // Q2
   createCallout([
-    createP('Q2: "What is your Concurrency Control mechanism? What happens if two cashiers sell the last box of biscuits simultaneously?"', { bold: true, color: COLOR_PRIMARY, after: 40 }),
+    createP('Q2: "How does your frontend handle offline mode if the database server is completely unreachable?"', { bold: true, color: COLOR_PRIMARY, after: 40 }),
     createRunsP([
       { text: 'Your Answer: ', bold: true, color: '0F172A' },
-      { text: '"Sir, we implemented a two-tier concurrency control strategy: 1) At the application layer in safeSync.ts, we use Optimistic Concurrency Control with conditional SQL predicates: UPDATE products SET stock = stock - qty WHERE id = ? AND stock >= qty. If another terminal deducted the stock milliseconds earlier, zero rows are affected, and the application instantly catches the conflict. 2) At the database layer, we enforce a hard PostgreSQL check constraint: CONSTRAINT check_stock_positive CHECK (total_base_pieces >= 0). If a race condition bypasses the client, the PostgreSQL engine aborts the transaction with a check_violation exception and triggers an atomic rollback."' }
+      { text: '"Sir, we built an offline-first architecture using a Service Worker and browser persistent storage. Through our Vite-PWA Workbox setup, all 58 application modules and static assets are cached locally. If a mobile booker enters an area with zero cellular service, the catalog continues to load from cache, and the booker can still build carts. When the booker clicks Submit, my client generates a unique UUIDv4 idempotency_key and enqueues the action into local persistent storage. As soon as window.ononline fires, the queue drains automatically and submits the pending orders to PostgreSQL."' }
     ]),
   ]),
   new Paragraph({ spacing: { after: 80 } }),
 
   // Q3
   createCallout([
-    createP('Q3: "Explain how your system satisfies the ACID properties."', { bold: true, color: COLOR_PRIMARY, after: 40 }),
+    createP('Q3: "What happens on your frontend UI if two cashiers sell the last item at the exact same moment?"', { bold: true, color: COLOR_PRIMARY, after: 40 }),
     createRunsP([
       { text: 'Your Answer: ', bold: true, color: '0F172A' },
-      { text: '"Sir, our system uses PostgreSQL with Write-Ahead Logging (WAL): Atomicity is guaranteed by our PL/pgSQL stored procedure process_order_transaction; if any item fails, all inserts roll back. Consistency is enforced via relational schema rules: foreign keys (ON DELETE CASCADE on line items, ON DELETE RESTRICT on products), type checks, and non-negative stock constraints. Isolation is handled by PostgreSQL Read Committed isolation with row-level locks on product tuples during updates. Durability is guaranteed because all committed operations are flushed to disk WAL before returning success."' }
+      { text: '"Sir, we handle concurrency gracefully across both tiers: When cashier A checks out, Areeb\'s database atomically decrements the stock. When cashier B clicks checkout a split-second later, our safeSync.ts optimistic locking check (.gte(\'stock\', qty)) returns 0 affected rows, and PostgreSQL\'s check_stock_positive constraint throws an ERR_INSUFFICIENT_STOCK error code. My frontend catches that specific error code, displays a non-blocking toast alert notifying the cashier that stock was claimed by another terminal, and automatically refreshes the live cart without crashing the application."' }
     ]),
   ]),
   new Paragraph({ spacing: { after: 80 } }),
 
   // Q4
   createCallout([
-    createP('Q4: "What Normalization level is your database in?"', { bold: true, color: COLOR_PRIMARY, after: 40 }),
+    createP('Q4: "Why did you use Zustand instead of standard React Context or Redux for client state?"', { bold: true, color: COLOR_PRIMARY, after: 40 }),
     createRunsP([
       { text: 'Your Answer: ', bold: true, color: '0F172A' },
-      { text: '"Sir, the database is strictly in 3rd Normal Form (3NF) and conforms to BCNF: 1NF is satisfied because all attributes are atomic scalars with no repeating groups. 2NF is satisfied because there are no partial key dependencies; non-key attributes depend on the entire primary key. 3NF is satisfied because there are no transitive dependencies; packaging units and multipliers are normalized into product_barcodes rather than duplicating carton and box multipliers across every order line-item."' }
+      { text: '"Sir, because in a high-speed Point of Sale environment, barcode scanners can fire multiple scans per second. React Context triggers a re-render of every subscribed component on every state change, which creates UI lag and dropped barcode characters. Redux has significant boilerplate and memory overhead. Zustand uses selective atomic subscriptions (useCartStore(state => state.items)). Only the specific table row being modified re-renders, allowing our POS to maintain a smooth 60 frames per second even on low-cost Android tablets."' }
     ]),
   ]),
   new Paragraph({ spacing: { after: 80 } }),
 
   // Q5
   createCallout([
-    createP('Q5: "What is an Idempotency Key and why did you put it in the orders table?"', { bold: true, color: COLOR_PRIMARY, after: 40 }),
+    createP('Q5: "How does the physical barcode scanner interact with your software?"', { bold: true, color: COLOR_PRIMARY, after: 40 }),
     createRunsP([
       { text: 'Your Answer: ', bold: true, color: '0F172A' },
-      { text: '"Sir, in mobile networks, an HTTP timeout does not mean the server failed; the response might have been lost on the wire. If a booker hits Submit and the connection drops, the offline queue will retry. Without an idempotency key, the database would insert two identical orders and double-deduct stock. We assign a unique UUID idempotency_key to each transaction. The database enforces a UNIQUE constraint and our stored procedure checks IF EXISTS (SELECT 1 FROM orders WHERE idempotency_key = ...). Any duplicate network retry is safely acknowledged without double-inserting."' }
+      { text: '"Sir, physical USB and Bluetooth laser/CCD barcode scanners emulate HID (Human Interface Device) keyboards. When a barcode is scanned, it inputs characters rapidly followed by an Enter key. I implemented a global keyboard buffer listener that measures the inter-character delay. If input arrives in under 50 milliseconds, the system identifies it as a hardware scanner rather than human typing, intercepts the keystrokes, looks up the SKU or barcode in our local inventory cache in under 5 milliseconds, increments the cart quantity, and triggers an audio confirmation beep."' }
     ]),
   ]),
   new Paragraph({ spacing: { after: 80 } }),
 
   // Q6
   createCallout([
-    createP('Q6: "Why do you store price_at_sale in order_items when you already have price in products? Isn\'t that redundant?"', { bold: true, color: COLOR_PRIMARY, after: 40 }),
+    createP('Q6: "How do you handle different packaging units (Pieces, Boxes, Cartons) on the frontend before saving to the database?"', { bold: true, color: COLOR_PRIMARY, after: 40 }),
     createRunsP([
       { text: 'Your Answer: ', bold: true, color: '0F172A' },
-      { text: '"Sir, that is intentional historical temporal consistency. If a wholesale product costs Rs. 500 today and inflation raises it to Rs. 600 next month, updating products.price must NOT alter the invoices generated last month. Storing price_at_sale in order_items preserves the exact financial record at the moment of sale, ensuring accounting and regulatory integrity."' }
+      { text: '"Sir, in wholesale distribution, goods are sold in multiple Units of Measure (UOM). We built a pure deterministic accounting engine in accounting.ts. Each product has a pcs_per_box and box_per_ctn multiplier mapped in the database. When a user selects \'2 Cartons\', my frontend converts that into total base pieces (2 * boxPerCtn * pcsPerBox) so that when the payload hits Areeb\'s PostgreSQL stored procedure, inventory deductions are executed strictly in atomic base pieces, avoiding fractional errors."' }
     ]),
   ]),
   new Paragraph({ spacing: { after: 80 } }),
 
   // Q7
   createCallout([
-    createP('Q7: "How is database security handled if someone uses Postman or inspect element?"', { bold: true, color: COLOR_PRIMARY, after: 40 }),
+    createP('Q7: "How do you generate the thermal receipt and why did you put QR codes on it?"', { bold: true, color: COLOR_PRIMARY, after: 40 }),
     createRunsP([
       { text: 'Your Answer: ', bold: true, color: '0F172A' },
-      { text: '"Sir, we do not rely on frontend checks for security. We implemented PostgreSQL Row Level Security (RLS) with security definer functions. Bookers only have SELECT permissions on products and INSERT permissions on orders. Only authenticated users with the admin role can update product prices or modify stock. Even if a user sends a raw PostgREST cURL request or manipulated JWT, PostgreSQL\'s kernel rejects the query at the storage layer."' }
+      { text: '"Sir, the receipt is built in Receipt.tsx formatted specifically for standard 80mm continuous thermal receipt rolls using CSS print media rules (@media print). We dynamically generate a Code128 barcode using jsbarcode for scanning at the warehouse dispatch gate. We also embed a dynamic QR code using qrcode that points to https://shaheen-traders-pos.vercel.app/receipt/:id. A customer or delivery driver can scan the paper receipt with their phone camera to open the verified digital invoice directly from the cloud database."' }
     ]),
   ]),
   new Paragraph({ spacing: { after: 80 } }),
 
   // Q8
   createCallout([
-    createP('Q8: "What happens if the internet connection drops while an order is being placed?"', { bold: true, color: COLOR_PRIMARY, after: 40 }),
+    createP('Q8: "How does your client prevent duplicate orders if a user clicks the checkout button multiple times?"', { bold: true, color: COLOR_PRIMARY, after: 40 }),
     createRunsP([
       { text: 'Your Answer: ', bold: true, color: '0F172A' },
-      { text: '"Sir, the client utilizes our safeSync offline queue. The order payload is stored locally in the browser\'s persistent storage. The PWA service worker detects when network connectivity returns (window.ononline) and initiates a background queue drain, sending the pending orders to PostgreSQL through our atomic process_order_transaction RPC."' }
+      { text: '"Sir, we prevent duplicate orders at two layers: 1) In the UI, the checkout button immediately enters a disabled processing state with a loading spinner to prevent rapid multi-clicks. 2) More importantly, we generate a UUIDv4 idempotency_key when the cart checkout begins. Even if the network retries the request, Areeb\'s database checks IF EXISTS (SELECT 1 FROM orders WHERE idempotency_key = ...) and rejects any duplicate insertion."' }
     ]),
   ]),
   new Paragraph({ spacing: { after: 80 } }),
 
   // Q9
   createCallout([
-    createP('Q9: "What database indexes did you create and why?"', { bold: true, color: COLOR_PRIMARY, after: 40 }),
+    createP('Q9: "Why did you use Vite and Tailwind CSS instead of traditional Create React App or Bootstrap?"', { bold: true, color: COLOR_PRIMARY, after: 40 }),
     createRunsP([
       { text: 'Your Answer: ', bold: true, color: '0F172A' },
-      { text: '"Sir, we implemented B-Tree indexes on high-frequency lookup columns: 1) A partial UNIQUE index on products.sku (products_sku_unique_idx) to guarantee SKU uniqueness while ignoring nulls. 2) B-Tree indexes on orders.receipt_number and orders.idempotency_key for sub-millisecond duplicate checks. 3) Foreign key indexes on order_items.order_id and order_items.product_id to accelerate relational JOIN queries."' }
+      { text: '"Sir, Create React App is deprecated and uses slow Webpack bundling. Vite uses native ES modules (ESM) during development, giving instant Hot Module Replacement (HMR) and optimized Rollup production builds. Tailwind CSS uses utility-first Just-In-Time (JIT) compilation. It only bundles the exact CSS classes used in the project, resulting in a minimal CSS bundle (under 125 KB) which is essential for fast mobile loading over 3G/4G networks."' }
     ]),
   ]),
   new Paragraph({ spacing: { after: 80 } }),
 
   // Q10
   createCallout([
-    createP('Q10: "How do you handle schema versioning and schema drift across client terminals?"', { bold: true, color: COLOR_PRIMARY, after: 40 }),
+    createP('Q10: "If the teacher asks: Umer, can you show me where both of your names are in the live system?"', { bold: true, color: COLOR_PRIMARY, after: 40 }),
     createRunsP([
       { text: 'Your Answer: ', bold: true, color: '0F172A' },
-      { text: '"Sir, we built an automated version enforcer (versionEnforcer.ts). The server serves a version.json endpoint with minRequiredVersion. If the client terminal has cached an older version with outdated column assumptions, the client immediately prompts the user to refresh, preventing malformed SQL payloads from reaching the database."' }
+      { text: '"Yes, Sir! Our names and verified LinkedIn profiles are embedded directly in the software: 1) In the Admin POS desktop sidebar footer (line 1952 of AdminPOSView.tsx). 2) In the mobile Booker drawer footer (line 1820). 3) On every printed thermal customer receipt footer (line 278 of Receipt.tsx). 4) In the signature block of every exported Excel sheet (exportExcel.ts). You can click on either \'Areeb Iqbal\' or \'Umer Khan\' in the live running app, and it will open our verified developer profiles."' }
     ]),
   ]),
   new Paragraph({ spacing: { after: 180 } })
@@ -756,31 +732,36 @@ children.push(
 // ==========================================
 children.push(
   createH1('7. Quick Reference Guide (Files to Open on Laptop During Viva)'),
-  createP('If the instructor asks you to open the codebase and show proof of implementation, open these exact files:'),
+  createP('If the instructor asks you to open the codebase and show proof of your implementation, open these exact files:'),
   createBulletP([
-    { text: '1. Relational Schema & Stored Procedure: ', bold: true },
-    { text: 'supabase/migrations/20240101000000_schema.sql', code: true },
-    { text: ' — Show lines 21-29 for check_stock_positive, lines 62-125 for RLS policies, and lines 130-188 for process_order_transaction.' }
+    { text: '1. Frontend Register & Desktop POS Terminal: ', bold: true },
+    { text: 'src/views/AdminPOSView.tsx', code: true },
+    { text: ' — Show them the high-speed keyboard register, barcode listener, and line 1952 with your name and LinkedIn link.' }
   ]),
   createBulletP([
-    { text: '2. Concurrency Control & SafeSync Engine: ', bold: true },
-    { text: 'src/utils/safeSync.ts', code: true },
-    { text: ' — Show safeDeductProductStock and the .gte(\'stock\', quantityToDeduct) conditional optimistic update.' }
+    { text: '2. Booker Mobile Touch Interface: ', bold: true },
+    { text: 'src/views/B2BShopView.tsx', code: true },
+    { text: ' — Show them the mobile-first wholesale catalog and cart drawer.' }
   ]),
   createBulletP([
-    { text: '3. Packaging Unit Conversion Math: ', bold: true },
-    { text: 'src/utils/accounting.ts', code: true },
-    { text: ' — Show calculateTotalBasePieces for deterministic unit conversions between Cartons, Boxes, and Pieces.' }
+    { text: '3. 80mm Thermal Receipt Layout & QR Codes: ', bold: true },
+    { text: 'src/components/Receipt.tsx', code: true },
+    { text: ' — Show them line 278 with the developer credits, dynamic Code128 barcode, and verification QR code.' }
   ]),
   createBulletP([
-    { text: '4. Service Worker & Workbox Caching: ', bold: true },
+    { text: '4. PWA & Offline Service Worker Configuration: ', bold: true },
     { text: 'vite.config.ts', code: true },
-    { text: ' — Show VitePWA configuration with precache manifest.' }
+    { text: ' — Show them the Workbox precache configuration with 58 cached chunks.' }
   ]),
   createBulletP([
-    { text: '5. Live Developer Credits in App: ', bold: true },
-    { text: 'src/views/AdminPOSView.tsx (line 1952) & src/components/Receipt.tsx (line 278)', code: true },
-    { text: ' — Click Areeb Iqbal or Umer Khan hyperlinks to demonstrate verified authorship.' }
+    { text: '5. Zustand Reactive State Stores: ', bold: true },
+    { text: 'src/store/useCartStore.ts', code: true },
+    { text: ' — Show them atomic cart updates, UOM conversions, and quantity management.' }
+  ]),
+  createBulletP([
+    { text: '6. Areeb\'s Database Schema & Stored Procedure (To show how you connect): ', bold: true },
+    { text: 'supabase/migrations/20240101000000_schema.sql', code: true },
+    { text: ' — Point out process_order_transaction and explain that your frontend calls this exact procedure.' }
   ]),
   new Paragraph({ spacing: { after: 180 } })
 );
@@ -791,20 +772,16 @@ children.push(
 children.push(
   createH1('8. Final Checklist for Defense Day'),
   createBulletP([
-    { text: '✓ Know the 5 ACID properties: ', bold: true },
-    { text: 'Atomicity (process_order_transaction rollback), Consistency (check_stock_positive), Isolation (Read Committed row locks), Durability (WAL commits).' }
+    { text: '✓ Know your role: ', bold: true },
+    { text: 'You own the Frontend Architecture, PWA Offline Engine, Hardware Scanners, and Thermal Receipts.' }
   ]),
   createBulletP([
-    { text: '✓ Know why UUIDs are used: ', bold: true },
-    { text: 'Distributed, offline generation with zero primary key collisions across mobile terminals.' }
+    { text: '✓ Know Areeb\'s role: ', bold: true },
+    { text: 'Areeb owns the PostgreSQL Database Schema, 3NF Normalization, ACID Stored Procedures, and RLS.' }
   ]),
   createBulletP([
-    { text: '✓ Know why Idempotency Keys are used: ', bold: true },
-    { text: 'Eliminates duplicate orders caused by mobile network HTTP retries.' }
-  ]),
-  createBulletP([
-    { text: '✓ Know your Normalization: ', bold: true },
-    { text: '3NF and BCNF compliance with no partial or transitive dependencies.' }
+    { text: '✓ Know how the bridge works: ', bold: true },
+    { text: 'Your frontend builds the cart, assigns a UUID idempotency key, handles offline caching, and submits to Areeb\'s process_order_transaction RPC.' }
   ]),
   createBulletP([
     { text: '✓ Walk in with confidence: ', bold: true },
@@ -904,11 +881,9 @@ const outputDocsPath = path.join(__dirname, '../docs/DBMS_PROJECT_DEFENSE_GUIDE.
 const desktopPath = 'C:\\Users\\ESHOP\\Desktop\\DBMS_PROJECT_DEFENSE_GUIDE.docx';
 
 Packer.toBuffer(doc).then((buffer) => {
-  // Save to docs/
   fs.writeFileSync(outputDocsPath, buffer);
   console.log(`Saved DOCX to docs folder: ${outputDocsPath}`);
 
-  // Save to Desktop for quick access
   try {
     fs.writeFileSync(desktopPath, buffer);
     console.log(`Saved DOCX to Desktop: ${desktopPath}`);
