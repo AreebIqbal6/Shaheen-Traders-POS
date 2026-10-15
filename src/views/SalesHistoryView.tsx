@@ -78,9 +78,9 @@ export default function SalesHistoryView() {
                      </td>
                      <td className="py-4">-</td>
                      <td className="py-4 flex items-center gap-2">
-                       <div className="w-8 h-8 rounded bg-yellow-600 text-white flex items-center justify-center font-bold">AI</div>
+                       <div className="w-8 h-8 rounded bg-yellow-600 text-white flex items-center justify-center font-bold text-[10px]">AI/UK</div>
                        <div>
-                         <p className="font-bold"><a href="https://www.linkedin.com/in/areeb-iqbal-63b444247/" onClick={(e) => { if (window.__TAURI_INTERNALS__) { e.preventDefault(); import("@tauri-apps/plugin-shell").then(m => m.open("https://www.linkedin.com/in/areeb-iqbal-63b444247/")).catch(console.error); } }} target="_blank" rel="noopener noreferrer" className="hover:underline text-blue-500 hover:text-blue-400 transition-colors">Areeb Iqbal</a></p>
+                         <p className="font-bold"><a href="https://www.linkedin.com/in/areeb-iqbal-63b444247/" onClick={(e) => { if (window.__TAURI_INTERNALS__) { e.preventDefault(); import("@tauri-apps/plugin-shell").then(m => m.open("https://www.linkedin.com/in/areeb-iqbal-63b444247/")).catch(console.error); } }} target="_blank" rel="noopener noreferrer" className="hover:underline text-blue-500 hover:text-blue-400 transition-colors">Areeb Iqbal</a> & <a href="https://www.linkedin.com/in/umer-khan-9491a5316/" onClick={(e) => { if (window.__TAURI_INTERNALS__) { e.preventDefault(); import("@tauri-apps/plugin-shell").then(m => m.open("https://www.linkedin.com/in/umer-khan-9491a5316/")).catch(console.error); } }} target="_blank" rel="noopener noreferrer" className="hover:underline text-blue-500 hover:text-blue-400 transition-colors">Umer Khan</a></p>
                          <p className="text-xs text-gray-400">Main Outlet</p>
                        </div>
                      </td>

@@ -165,10 +165,15 @@ export const exportReceiptToExcel = async (data: ReceiptData) => {
   sheet.mergeCells(`A${currentRow}:C${currentRow}`);
   sheet.getCell(`A${currentRow}`).alignment = { horizontal: 'center' };
 
-  const footerSign = sheet.getCell(`E${currentRow}`);
-  footerSign.value = { text: 'Software by Areeb Iqbal', hyperlink: 'https://www.linkedin.com/in/areeb-iqbal-63b444247/' };
-  sheet.mergeCells(`E${currentRow}:G${currentRow}`);
-  footerSign.alignment = { horizontal: 'right' };
+  sheet.mergeCells(`D${currentRow}:E${currentRow}`);
+  const sign1 = sheet.getCell(`D${currentRow}`);
+  sign1.value = { text: 'Software by Areeb Iqbal', hyperlink: 'https://www.linkedin.com/in/areeb-iqbal-63b444247/' };
+  sign1.alignment = { horizontal: 'right' };
+
+  sheet.mergeCells(`F${currentRow}:G${currentRow}`);
+  const sign2 = sheet.getCell(`F${currentRow}`);
+  sign2.value = { text: ' & Umer Khan', hyperlink: 'https://www.linkedin.com/in/umer-khan-9491a5316/' };
+  sign2.alignment = { horizontal: 'left' };
 
   // Generate and return buffer
   const buffer = await workbook.xlsx.writeBuffer();
